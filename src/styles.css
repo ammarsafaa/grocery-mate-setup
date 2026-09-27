@@ -84,6 +84,18 @@
   --sidebar-ring: oklch(0.72 0.17 165);
   --product-font: "Cairo", sans-serif;
   --product-font-size: 1rem;
+  --overlay: oklch(0 0 0 / 0.65);
+  --receipt: oklch(1 0 0);
+  --receipt-foreground: oklch(0.12 0 0);
+  --muted-receipt: oklch(0.55 0 0);
+}
+
+@theme inline {
+  --color-overlay: var(--overlay);
+  --color-receipt: var(--receipt);
+  --color-receipt-foreground: var(--receipt-foreground);
+  --color-muted-receipt: var(--muted-receipt);
+  --color-warning: oklch(0.75 0.16 80);
 }
 
 :root[data-mode="light"] {

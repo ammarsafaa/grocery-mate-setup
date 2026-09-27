@@ -9,16 +9,25 @@ import {
   Settings as SettingsIcon,
   LogOut,
   Store,
+  FolderTree,
+  Truck,
+  Boxes,
+  ReceiptText,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useAuth } from "@/lib/auth";
 import { getSettings } from "@/lib/db";
+import { applyTheme } from "@/lib/theme";
 
 const NAV = [
   { to: "/", label: "نقطة البيع", icon: ShoppingCart },
   { to: "/products", label: "المنتجات", icon: Package },
+  { to: "/groups", label: "المجموعات", icon: FolderTree, admin: true },
+  { to: "/purchases", label: "المشتريات", icon: Truck, admin: true },
+  { to: "/inventory", label: "المخزون", icon: Boxes, admin: true },
   { to: "/shifts", label: "الورديات", icon: Clock },
   { to: "/reports", label: "التقارير", icon: BarChart3 },
+  { to: "/receipt-designer", label: "تصميم الفاتورة", icon: ReceiptText, admin: true },
   { to: "/settings", label: "الإعدادات", icon: SettingsIcon },
 ] as const;
 
@@ -27,6 +36,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const storeName = getSettings().storeName;
+  useEffect(() => {
+    const refresh = () => applyTheme(getSettings());
+    refresh();
+    window.addEventListener("grocery-pos:settings-updated", refresh);
+    return () => window.removeEventListener("grocery-pos:settings-updated", refresh);
+  }, []);
   useEffect(() => {
     isLicensed().then((ok) => { if (!ok) navigate({ to: "/activate" }); });
   }, [navigate]);
@@ -42,7 +57,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </div>
 
         <nav className="flex flex-1 flex-col gap-1">
-          {NAV.map(({ to, label, icon: Icon }) => {
+          {NAV.filter((item) => !("admin" in item) || !item.admin || user?.role === "admin").map(({ to, label, icon: Icon }) => {
             const active = pathname === to;
             return (
               <Link

@@ -16,6 +16,8 @@ import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as LicenseGeneratorRouteImport } from './routes/license-generator'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ProductsRouteImport } from './routes/products'
+import { Route as PurchasesRouteImport } from './routes/purchases'
+import { Route as ReceiptDesignerRouteImport } from './routes/receipt-designer'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ShiftsRouteImport } from './routes/shifts'
@@ -55,6 +57,16 @@ const ProductsRoute = ProductsRouteImport.update({
   path: '/products',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PurchasesRoute = PurchasesRouteImport.update({
+  id: '/purchases',
+  path: '/purchases',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReceiptDesignerRoute = ReceiptDesignerRouteImport.update({
+  id: '/receipt-designer',
+  path: '/receipt-designer',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReportsRoute = ReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -79,6 +91,8 @@ export interface FileRoutesByFullPath {
   '/license-generator': typeof LicenseGeneratorRoute
   '/login': typeof LoginRoute
   '/products': typeof ProductsRoute
+  '/purchases': typeof PurchasesRoute
+  '/receipt-designer': typeof ReceiptDesignerRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/shifts': typeof ShiftsRoute
@@ -91,6 +105,8 @@ export interface FileRoutesByTo {
   '/license-generator': typeof LicenseGeneratorRoute
   '/login': typeof LoginRoute
   '/products': typeof ProductsRoute
+  '/purchases': typeof PurchasesRoute
+  '/receipt-designer': typeof ReceiptDesignerRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/shifts': typeof ShiftsRoute
@@ -104,6 +120,8 @@ export interface FileRoutesById {
   '/license-generator': typeof LicenseGeneratorRoute
   '/login': typeof LoginRoute
   '/products': typeof ProductsRoute
+  '/purchases': typeof PurchasesRoute
+  '/receipt-designer': typeof ReceiptDesignerRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/shifts': typeof ShiftsRoute
@@ -118,6 +136,8 @@ export interface FileRouteTypes {
     | '/license-generator'
     | '/login'
     | '/products'
+    | '/purchases'
+    | '/receipt-designer'
     | '/reports'
     | '/settings'
     | '/shifts'
@@ -130,6 +150,8 @@ export interface FileRouteTypes {
     | '/license-generator'
     | '/login'
     | '/products'
+    | '/purchases'
+    | '/receipt-designer'
     | '/reports'
     | '/settings'
     | '/shifts'
@@ -142,6 +164,8 @@ export interface FileRouteTypes {
     | '/license-generator'
     | '/login'
     | '/products'
+    | '/purchases'
+    | '/receipt-designer'
     | '/reports'
     | '/settings'
     | '/shifts'
@@ -155,6 +179,8 @@ export interface RootRouteChildren {
   LicenseGeneratorRoute: typeof LicenseGeneratorRoute
   LoginRoute: typeof LoginRoute
   ProductsRoute: typeof ProductsRoute
+  PurchasesRoute: typeof PurchasesRoute
+  ReceiptDesignerRoute: typeof ReceiptDesignerRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
   ShiftsRoute: typeof ShiftsRoute
@@ -211,6 +237,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/purchases': {
+      id: '/purchases'
+      path: '/purchases'
+      fullPath: '/purchases'
+      preLoaderRoute: typeof PurchasesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/receipt-designer': {
+      id: '/receipt-designer'
+      path: '/receipt-designer'
+      fullPath: '/receipt-designer'
+      preLoaderRoute: typeof ReceiptDesignerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reports': {
       id: '/reports'
       path: '/reports'
@@ -243,6 +283,8 @@ const rootRouteChildren: RootRouteChildren = {
   LicenseGeneratorRoute: LicenseGeneratorRoute,
   LoginRoute: LoginRoute,
   ProductsRoute: ProductsRoute,
+  PurchasesRoute: PurchasesRoute,
+  ReceiptDesignerRoute: ReceiptDesignerRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
   ShiftsRoute: ShiftsRoute,
