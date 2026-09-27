@@ -1,3 +1,4 @@
+import { native } from "@/lib/native";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { ShieldCheck, Copy } from "lucide-react";
@@ -23,6 +24,7 @@ function GeneratorPage() {
   const [priv, setPriv] = useState("");
   const [mid, setMid] = useState("");
   const [out, setOut] = useState("");
+  if (native()) return null;
 
   const run = async () => {
     try {

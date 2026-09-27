@@ -9,3 +9,4 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 - Licensing: offline ECDSA P-256 signature of machine ID; only public key in app (src/lib/license.ts), private key held by owner — no server needed.
+- Windows app: Electron shell in electron/, builds SPA via ELECTRON_BUILD=1, installer built by GitHub Actions on windows-latest (can't build exe in sandbox).

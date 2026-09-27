@@ -1,3 +1,4 @@
+import { native } from "@/lib/native";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Scale, Trash2, ShoppingBasket, PlayCircle } from "lucide-react";
@@ -12,6 +13,7 @@ import {
   saveProducts,
   formatMoney,
   maybeAutoBackup,
+  getSettings,
   uid,
 } from "@/lib/db";
 import type { CartItem, Product } from "@/lib/types";
@@ -59,6 +61,14 @@ function PosPage() {
     if (p.unit === "kg") {
       setWeight("");
       setWeightModal(p);
+      const n = native();
+      if (n) {
+        const s = getSettings();
+        n.readWeight(s.scaleIp, s.scalePort).then((r) => {
+          if (r.ok && r.weight) setWeight(r.weight.toFixed(3));
+          else toast.error("تعذر قراءة الوزن من الميزان — أدخله يدوياً");
+        });
+      }
       return;
     }
     setCart((c) => {
