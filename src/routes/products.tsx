@@ -1,6 +1,27 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, ImageIcon } from "lucide-react";
+
+function resizeImage(file: File, max = 256): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const s = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement("canvas");
+        c.width = Math.round(img.width * s);
+        c.height = Math.round(img.height * s);
+        c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL("image/jpeg", 0.8));
+      };
+      img.onerror = reject;
+      img.src = reader.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/AppLayout";
@@ -98,7 +119,12 @@ function ProductsPage() {
             <tbody>
               {products.map((p) => (
                 <tr key={p.id} className="border-t border-border">
-                  <td className="p-3 font-bold">{p.name}</td>
+                  <td className="p-3 font-bold">
+                    <div className="flex items-center gap-2">
+                      {p.image && <img src={p.image} alt="" className="h-10 w-10 rounded-lg object-cover" />}
+                      {p.name}
+                    </div>
+                  </td>
                   <td className="p-3 text-muted-foreground">{p.category}</td>
                   <td className="p-3">{formatMoney(p.price)}</td>
                   <td className="p-3">{p.unit === "kg" ? "كغم" : "قطعة"}</td>
@@ -183,6 +209,37 @@ function ProductsPage() {
                 placeholder="الباركود (اختياري)"
                 className="h-12 w-full rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary"
               />
+              <div className="flex items-center gap-3">
+                {editing.image ? (
+                  <img src={editing.image} alt="" className="h-20 w-20 rounded-xl object-cover" />
+                ) : (
+                  <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-secondary">
+                    <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                )}
+                <label className="cursor-pointer rounded-xl bg-secondary px-4 py-3 font-bold hover:bg-accent">
+                  {editing.image ? "تغيير الصورة" : "إضافة صورة"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const f = e.target.files?.[0];
+                      if (!f) return;
+                      const img = await resizeImage(f);
+                      setEditing((ed) => (ed ? { ...ed, image: img } : ed));
+                    }}
+                  />
+                </label>
+                {editing.image && (
+                  <button
+                    onClick={() => setEditing({ ...editing, image: undefined })}
+                    className="text-sm text-destructive"
+                  >
+                    حذف
+                  </button>
+                )}
+              </div>
             </div>
             <div className="mt-5 flex gap-2">
               <button
