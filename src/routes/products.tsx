@@ -184,7 +184,7 @@ function ProductsPage() {
       </div>
 
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4">
           <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6">
             <h3 className="mb-4 text-xl font-bold">{isNew ? "منتج جديد" : "تعديل منتج"}</h3>
             <div className="space-y-3">

@@ -295,7 +295,7 @@ function PosPage() {
 
       {/* Weight modal */}
       {weightModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4">
           <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6">
             <h3 className="mb-1 text-xl font-bold">{weightModal.name}</h3>
             <p className="mb-4 text-sm text-muted-foreground">

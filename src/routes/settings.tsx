@@ -1,7 +1,7 @@
 import { native } from "@/lib/native";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Download, Upload, Plus, Trash2, Scale, HardDrive } from "lucide-react";
+import { Download, Upload, Plus, Trash2, Scale, HardDrive, Palette, Printer, Layers3, ReceiptText } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/AppLayout";
@@ -15,6 +15,7 @@ import {
   uid,
 } from "@/lib/db";
 import type { PosUser, Settings } from "@/lib/types";
+import { applyTheme } from "@/lib/theme";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -36,6 +37,7 @@ function SettingsPage() {
   const [users, setUsers] = useState<PosUser[]>([]);
   const [newUser, setNewUser] = useState({ name: "", pin: "", role: "cashier" as const });
   const fileRef = useRef<HTMLInputElement>(null);
+  const [printers, setPrinters] = useState<Array<{ name: string; displayName?: string; isDefault?: boolean }>>([]);
 
   useEffect(() => {
     if (!ready) return;
@@ -44,12 +46,14 @@ function SettingsPage() {
   }, [user, ready, navigate]);
 
   useEffect(() => setUsers(getUsers()), []);
+  useEffect(() => { const n = native(); if (n) n.listPrinters().then(setPrinters).catch(() => setPrinters([])); }, []);
 
   if (!ready || !user || user.role !== "admin") return null;
 
   const save = (s: Settings) => {
     setSettings(s);
     saveSettings(s);
+    applyTheme(s);
     toast.success("تم حفظ الإعدادات");
   };
 
@@ -133,6 +137,34 @@ function SettingsPage() {
           >
             حفظ
           </button>
+        </section>
+
+        <section className="rounded-lg border border-border bg-card p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-bold"><Layers3 className="h-5 w-5 text-primary"/>عرض المجموعات</h2>
+          <label className="flex items-center justify-between gap-4 rounded-lg bg-secondary p-4"><div><div className="font-bold">عرض المجموعات أولاً في نقطة البيع</div><div className="text-sm text-muted-foreground">عند تعطيله تظهر جميع المنتجات مباشرة</div></div><input type="checkbox" checked={settings.useProductGroups} onChange={(e) => setSettings({ ...settings, useProductGroups: e.target.checked })} className="h-5 w-5 accent-primary"/></label>
+          <div className="mt-4 flex gap-2"><button onClick={() => save(settings)} className="rounded-lg bg-primary px-6 py-3 font-bold text-primary-foreground">حفظ</button><Link to="/groups" className="rounded-lg bg-secondary px-6 py-3 font-bold">إدارة المجموعات</Link></div>
+        </section>
+
+        <section className="rounded-lg border border-border bg-card p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-bold"><Palette className="h-5 w-5 text-primary"/>ألوان النظام وخط المنتجات</h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div><label className="mb-1 block text-sm text-muted-foreground">نظام الألوان</label><select value={settings.colorPreset} onChange={(e) => setSettings({ ...settings, colorPreset: e.target.value as Settings["colorPreset"] })} className="h-12 w-full rounded-lg border border-border bg-secondary px-4"><option value="emerald">أخضر</option><option value="blue">أزرق</option><option value="red">أحمر</option><option value="amber">ذهبي</option><option value="custom">لون مخصص</option></select></div>
+            <div><label className="mb-1 block text-sm text-muted-foreground">المظهر</label><select value={settings.colorMode} onChange={(e) => setSettings({ ...settings, colorMode: e.target.value as Settings["colorMode"] })} className="h-12 w-full rounded-lg border border-border bg-secondary px-4"><option value="dark">داكن</option><option value="light">فاتح</option></select></div>
+            {settings.colorPreset === "custom" && <div><label className="mb-1 block text-sm text-muted-foreground">اللون المخصص</label><input type="color" value={settings.customColor} onChange={(e) => setSettings({ ...settings, customColor: e.target.value })} className="h-12 w-full rounded-lg border border-border bg-secondary p-2"/></div>}
+            <div><label className="mb-1 block text-sm text-muted-foreground">خط أسماء المنتجات</label><select value={settings.productFont} onChange={(e) => setSettings({ ...settings, productFont: e.target.value as Settings["productFont"] })} className="h-12 w-full rounded-lg border border-border bg-secondary px-4"><option>Cairo</option><option>Tajawal</option><option>Noto Kufi Arabic</option><option>Arial</option></select></div>
+            <div><label className="mb-1 block text-sm text-muted-foreground">حجم خط المنتجات: {settings.productFontSize}</label><input type="range" min="12" max="28" value={settings.productFontSize} onChange={(e) => setSettings({ ...settings, productFontSize: Number(e.target.value) })} className="w-full accent-primary"/></div>
+          </div><button onClick={() => save(settings)} className="mt-4 rounded-lg bg-primary px-6 py-3 font-bold text-primary-foreground">حفظ وتطبيق</button>
+        </section>
+
+        <section className="rounded-lg border border-border bg-card p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-bold"><Printer className="h-5 w-5 text-primary"/>الطابعة والفاتورة</h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div><label className="mb-1 block text-sm text-muted-foreground">الطابعة</label><select value={settings.printerName} onChange={(e) => setSettings({ ...settings, printerName: e.target.value })} className="h-12 w-full rounded-lg border border-border bg-secondary px-4"><option value="">الطابعة الافتراضية</option>{printers.map((p) => <option key={p.name} value={p.name}>{p.displayName || p.name}{p.isDefault ? " — الافتراضية" : ""}</option>)}</select>{!native() && <p className="mt-1 text-xs text-muted-foreground">تظهر طابعات Windows بعد تثبيت البرنامج</p>}</div>
+            <div><label className="mb-1 block text-sm text-muted-foreground">مقاس الورق</label><select value={settings.paperWidth} onChange={(e) => setSettings({ ...settings, paperWidth: Number(e.target.value) as 58 | 80 })} className="h-12 w-full rounded-lg border border-border bg-secondary px-4"><option value={58}>58 ملم</option><option value={80}>80 ملم</option></select></div>
+            <div><label className="mb-1 block text-sm text-muted-foreground">عدد النسخ</label><input type="number" min="1" max="5" value={settings.printCopies} onChange={(e) => setSettings({ ...settings, printCopies: Math.max(1, Number(e.target.value)) })} className="h-12 w-full rounded-lg border border-border bg-secondary px-4"/></div>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-3"><label className="flex items-center gap-3 rounded-lg bg-secondary p-3"><input type="checkbox" checked={settings.autoPrint} onChange={(e) => setSettings({ ...settings, autoPrint: e.target.checked })}/>طباعة بعد البيع</label><label className="flex items-center gap-3 rounded-lg bg-secondary p-3"><input type="checkbox" checked={settings.autoCut} onChange={(e) => setSettings({ ...settings, autoCut: e.target.checked })}/>قص الورق</label><label className="flex items-center gap-3 rounded-lg bg-secondary p-3"><input type="checkbox" checked={settings.openDrawer} onChange={(e) => setSettings({ ...settings, openDrawer: e.target.checked })}/>فتح درج النقد</label></div>
+          <div className="mt-4 flex gap-2"><button onClick={() => save(settings)} className="rounded-lg bg-primary px-6 py-3 font-bold text-primary-foreground">حفظ</button><Link to="/receipt-designer" className="flex items-center gap-2 rounded-lg bg-secondary px-6 py-3 font-bold"><ReceiptText className="h-4 w-4"/>تصميم الفاتورة</Link></div>
         </section>
 
         {/* Scale */}
