@@ -16,6 +16,7 @@ import {
   getSettings,
   getGroups,
   recordSaleMovements,
+  roundToCash250,
   uid,
 } from "@/lib/db";
 import { buildReceiptHtml } from "@/lib/receipt";
@@ -81,7 +82,8 @@ function PosPage() {
     [products, search, selectedGroup],
   );
 
-  const total = cart.reduce((s, i) => s + i.total, 0);
+  const itemsTotal = cart.reduce((sum, item) => sum + item.total, 0);
+  const total = roundToCash250(itemsTotal);
 
   // Poll the scale continuously while the weight window is open
   useEffect(() => {
@@ -145,7 +147,7 @@ function PosPage() {
         unit: "kg",
         price: p.price,
         qty: w,
-        total: Math.round(w * p.price),
+        total: roundToCash250(w * p.price),
       },
     ]);
     setWeightModal(null);
@@ -264,7 +266,7 @@ function PosPage() {
                 <div>
                   <div className="font-bold text-foreground">{i.name}</div>
                   <div className="text-xs text-muted-foreground">
-                    {i.unit === "kg" ? `${i.qty} كغم × ${formatMoney(i.price)}` : `${i.qty} × ${formatMoney(i.price)}`}
+                    {i.unit === "kg" ? `${i.qty.toFixed(3)} كغم × ${formatMoney(i.price)} / كغم` : `${i.qty} قطعة × ${formatMoney(i.price)}`}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -284,6 +286,7 @@ function PosPage() {
               <span>الإجمالي</span>
               <span className="text-primary">{formatMoney(total)}</span>
             </div>
+            {itemsTotal !== total && <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground"><span>تقريب نقدي</span><span>{formatMoney(total - itemsTotal)}</span></div>}
             <button
               onClick={checkout}
               disabled={cart.length === 0}
@@ -313,7 +316,7 @@ function PosPage() {
             </p>
             {parseFloat(weight) > 0 && (
               <p className="mb-4 text-center text-lg font-bold text-primary">
-                {formatMoney(Math.round(parseFloat(weight) * weightModal.price))}
+                {formatMoney(roundToCash250(parseFloat(weight) * weightModal.price))}
               </p>
             )}
             <div className="flex gap-2">
