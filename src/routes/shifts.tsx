@@ -13,6 +13,7 @@ export const Route = createFileRoute("/shifts")({
       { title: "الورديات — نظام البقالة" },
       { name: "description", content: "فتح وغلق الورديات وتقاريرها" },
       { property: "og:title", content: "الورديات — نظام البقالة" },
+      { property: "og:description", content: "فتح وغلق الورديات ومراجعة تقاريرها" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

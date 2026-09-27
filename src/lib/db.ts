@@ -5,6 +5,12 @@ import type {
   Shift,
   Settings,
   LicenseState,
+  ProductGroup,
+  Purchase,
+  Supplier,
+  SupplierPayment,
+  StockMovement,
+  ReceiptDesign,
 } from "./types";
 
 /**
@@ -125,6 +131,28 @@ export function saveProducts(products: Product[]) {
   window.dispatchEvent(new CustomEvent("grocery-pos:products-updated"));
 }
 
+// ---------- Product groups ----------
+export function getGroups(): ProductGroup[] {
+  const saved = read<ProductGroup[] | null>("groups", null);
+  if (saved) return saved.slice().sort((a, b) => a.order - b.order);
+  const names = [...new Set(getProducts().map((p) => p.category).filter(Boolean))];
+  const groups = names.map((name, order) => ({ id: uid(), name, color: "primary", icon: "package", order, active: true }));
+  write("groups", groups);
+  if (groups.length) {
+    const byName = new Map(groups.map((g) => [g.name, g.id]));
+    saveProducts(getProducts().map((p) => {
+      const groupId = p.groupId ?? byName.get(p.category);
+      return groupId ? { ...p, groupId } : p;
+    }));
+  }
+  return groups;
+}
+
+export function saveGroups(groups: ProductGroup[]) {
+  write("groups", groups);
+  window.dispatchEvent(new CustomEvent("grocery-pos:groups-updated"));
+}
+
 // ---------- Sales ----------
 export function getSales(): Sale[] {
   return read<Sale[]>("sales", []);
@@ -134,6 +162,75 @@ export function addSale(sale: Sale) {
   const sales = getSales();
   sales.push(sale);
   write("sales", sales);
+}
+
+// ---------- Suppliers, purchases and stock ----------
+export function getSuppliers(): Supplier[] { return read<Supplier[]>("suppliers", []); }
+export function saveSuppliers(items: Supplier[]) { write("suppliers", items); }
+export function getPurchases(): Purchase[] { return read<Purchase[]>("purchases", []); }
+export function savePurchases(items: Purchase[]) { write("purchases", items); }
+export function getSupplierPayments(): SupplierPayment[] { return read<SupplierPayment[]>("supplierPayments", []); }
+export function saveSupplierPayments(items: SupplierPayment[]) { write("supplierPayments", items); }
+export function getStockMovements(): StockMovement[] { return read<StockMovement[]>("stockMovements", []); }
+export function saveStockMovements(items: StockMovement[]) { write("stockMovements", items); }
+
+export function postPurchase(purchase: Purchase, userName: string) {
+  savePurchases([...getPurchases(), purchase]);
+  const movements = getStockMovements();
+  const quantities = new Map<string, { qty: number; cost: number }>();
+  for (const item of purchase.items) {
+    const current = quantities.get(item.productId) ?? { qty: 0, cost: item.cost };
+    quantities.set(item.productId, { qty: current.qty + item.qty, cost: item.cost });
+  }
+  const products = getProducts().map((product) => {
+    const item = quantities.get(product.id);
+    if (!item) return product;
+    const stock = product.stock + item.qty;
+    movements.push({ id: uid(), productId: product.id, productName: product.name, type: "purchase", qty: item.qty, balanceAfter: stock, referenceId: purchase.id, userName, createdAt: purchase.createdAt });
+    return { ...product, stock, costPrice: item.cost };
+  });
+  saveProducts(products);
+  saveStockMovements(movements);
+}
+
+export function cancelPurchase(id: string, userName: string): boolean {
+  const purchases = getPurchases();
+  const purchase = purchases.find((p) => p.id === id && p.status === "posted");
+  if (!purchase) return false;
+  const movements = getStockMovements();
+  const quantities = new Map<string, number>();
+  for (const item of purchase.items) quantities.set(item.productId, (quantities.get(item.productId) ?? 0) + item.qty);
+  const products = getProducts().map((product) => {
+    const qty = quantities.get(product.id);
+    if (!qty) return product;
+    const stock = Math.max(0, product.stock - qty);
+    movements.push({ id: uid(), productId: product.id, productName: product.name, type: "purchase-cancel", qty: -qty, balanceAfter: stock, referenceId: purchase.id, userName, createdAt: new Date().toISOString() });
+    return { ...product, stock };
+  });
+  saveProducts(products);
+  saveStockMovements(movements);
+  savePurchases(purchases.map((p) => p.id === id ? { ...p, status: "cancelled" } : p));
+  return true;
+}
+
+export function adjustStock(productId: string, newQty: number, reason: string, userName: string) {
+  const products = getProducts();
+  const product = products.find((p) => p.id === productId);
+  if (!product) return false;
+  const qty = newQty - product.stock;
+  saveProducts(products.map((p) => p.id === productId ? { ...p, stock: newQty } : p));
+  saveStockMovements([...getStockMovements(), { id: uid(), productId, productName: product.name, type: reason === "تلف" ? "damage" : "adjustment", qty, balanceAfter: newQty, note: reason, userName, createdAt: new Date().toISOString() }]);
+  return true;
+}
+
+export function recordSaleMovements(sale: Sale) {
+  const products = getProducts();
+  const movements = getStockMovements();
+  for (const item of sale.items) {
+    const product = products.find((p) => p.id === item.productId);
+    if (product) movements.push({ id: uid(), productId: item.productId, productName: item.name, type: "sale", qty: -item.qty, balanceAfter: product.stock, referenceId: sale.id, userName: sale.userName, createdAt: sale.createdAt });
+  }
+  saveStockMovements(movements);
 }
 
 export function nextSaleNumber(): number {
@@ -162,6 +259,18 @@ const DEFAULT_SETTINGS: Settings = {
   autoBackup: true,
   scaleIp: "192.168.1.87",
   scalePort: 3001,
+  useProductGroups: false,
+  colorPreset: "emerald",
+  colorMode: "dark",
+  customColor: "#10b981",
+  productFont: "Cairo",
+  productFontSize: 16,
+  printerName: "",
+  paperWidth: 80,
+  autoPrint: false,
+  printCopies: 1,
+  autoCut: true,
+  openDrawer: false,
 };
 
 export function getSettings(): Settings {
@@ -170,7 +279,25 @@ export function getSettings(): Settings {
 
 export function saveSettings(s: Settings) {
   write("settings", s);
+  window.dispatchEvent(new CustomEvent("grocery-pos:settings-updated"));
 }
+
+const DEFAULT_RECEIPT_ELEMENTS: ReceiptDesign["elements"] = [
+  { id: "logo", label: "الشعار", visible: true, fontSize: 12, fontFamily: "Cairo", bold: false, align: "center", spacing: 4, divider: false },
+  { id: "store", label: "اسم المتجر", visible: true, fontSize: 20, fontFamily: "Cairo", bold: true, align: "center", spacing: 4, divider: false },
+  { id: "contact", label: "العنوان والهاتف", visible: true, fontSize: 11, fontFamily: "Cairo", bold: false, align: "center", spacing: 5, divider: true },
+  { id: "invoice", label: "رقم الفاتورة", visible: true, fontSize: 12, fontFamily: "Cairo", bold: true, align: "right", spacing: 2, divider: false },
+  { id: "date", label: "التاريخ والوقت", visible: true, fontSize: 11, fontFamily: "Cairo", bold: false, align: "right", spacing: 2, divider: false },
+  { id: "cashier", label: "اسم الكاشير", visible: true, fontSize: 11, fontFamily: "Cairo", bold: false, align: "right", spacing: 5, divider: true },
+  { id: "items", label: "جدول المنتجات", visible: true, fontSize: 11, fontFamily: "Cairo", bold: false, align: "right", spacing: 5, divider: true },
+  { id: "totals", label: "الإجمالي والمدفوع والباقي", visible: true, fontSize: 14, fontFamily: "Cairo", bold: true, align: "right", spacing: 5, divider: true },
+  { id: "footer", label: "الرسالة الختامية", visible: true, fontSize: 11, fontFamily: "Cairo", bold: false, align: "center", spacing: 2, divider: false },
+];
+
+export function getReceiptDesign(width: 58 | 80): ReceiptDesign {
+  return read<ReceiptDesign>(`receiptDesign:${width}`, { paperWidth: width, elements: DEFAULT_RECEIPT_ELEMENTS.map((e) => ({ ...e })), address: "", phone: "", footer: "شكراً لتسوقكم معنا" });
+}
+export function saveReceiptDesign(design: ReceiptDesign) { write(`receiptDesign:${design.paperWidth}`, design); }
 
 // ---------- License ----------
 export function getLicense(): LicenseState {
@@ -199,6 +326,13 @@ export function exportBackup(): string {
     sales: getSales(),
     shifts: getShifts(),
     settings: getSettings(),
+    groups: getGroups(),
+    suppliers: getSuppliers(),
+    purchases: getPurchases(),
+    supplierPayments: getSupplierPayments(),
+    stockMovements: getStockMovements(),
+    receipt58: getReceiptDesign(58),
+    receipt80: getReceiptDesign(80),
   };
   return JSON.stringify(data, null, 2);
 }
@@ -211,6 +345,13 @@ export function importBackup(json: string): boolean {
     if (data.sales) write("sales", data.sales);
     if (data.shifts) write("shifts", data.shifts);
     if (data.settings) write("settings", data.settings);
+    if (data.groups) write("groups", data.groups);
+    if (data.suppliers) write("suppliers", data.suppliers);
+    if (data.purchases) write("purchases", data.purchases);
+    if (data.supplierPayments) write("supplierPayments", data.supplierPayments);
+    if (data.stockMovements) write("stockMovements", data.stockMovements);
+    if (data.receipt58) write("receiptDesign:58", data.receipt58);
+    if (data.receipt80) write("receiptDesign:80", data.receipt80);
     return true;
   } catch {
     return false;

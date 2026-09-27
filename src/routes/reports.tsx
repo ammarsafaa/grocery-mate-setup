@@ -4,6 +4,11 @@ import { useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/AppLayout";
 import { getSales, formatMoney } from "@/lib/db";
 import type { Sale } from "@/lib/types";
+import { Printer } from "lucide-react";
+import { native } from "@/lib/native";
+import { buildReceiptHtml } from "@/lib/receipt";
+import { getSettings } from "@/lib/db";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/reports")({
   head: () => ({
@@ -11,6 +16,7 @@ export const Route = createFileRoute("/reports")({
       { title: "التقارير — نظام البقالة" },
       { name: "description", content: "تقارير المبيعات اليومية والأسبوعية والشهرية" },
       { property: "og:title", content: "التقارير — نظام البقالة" },
+      { property: "og:description", content: "تقارير المبيعات اليومية والأسبوعية والشهرية" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -116,7 +122,7 @@ function ReportsPage() {
                   <th className="p-3 text-right font-semibold">الوقت</th>
                   <th className="p-3 text-right font-semibold">الكاشير</th>
                   <th className="p-3 text-right font-semibold">المواد</th>
-                  <th className="p-3 text-right font-semibold">الإجمالي</th>
+                  <th className="p-3 text-right font-semibold">الإجمالي</th><th className="p-3">طباعة</th>
                 </tr>
               </thead>
               <tbody>
@@ -128,12 +134,12 @@ function ReportsPage() {
                     <td className="p-3 text-muted-foreground">
                       {s.items.map((i) => i.name).join("، ")}
                     </td>
-                    <td className="p-3 font-bold text-primary">{formatMoney(s.total)}</td>
+                    <td className="p-3 font-bold text-primary">{formatMoney(s.total)}</td><td className="p-3 text-center"><button title="إعادة طباعة" onClick={async () => { const n = native(); if (!n) { toast.info("الطباعة متاحة في نسخة Windows"); return; } const settings = getSettings(); const result = await n.printReceipt(buildReceiptHtml(s), settings.printerName, settings.printCopies); if (result.ok) toast.success("تم إرسال الفاتورة للطابعة"); else toast.error("تعذرت الطباعة"); }} className="rounded-lg p-2 hover:bg-accent"><Printer className="h-4 w-4"/></button></td>
                   </tr>
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
                       لا توجد مبيعات في هذه الفترة
                     </td>
                   </tr>

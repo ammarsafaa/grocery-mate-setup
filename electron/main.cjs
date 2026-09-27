@@ -102,6 +102,26 @@ ipcMain.handle("read-weight", (_e, host, port) => new Promise((resolve) => {
   });
 }));
 
+ipcMain.handle("list-printers", async (event) => {
+  return event.sender.getPrintersAsync();
+});
+
+ipcMain.handle("print-receipt", async (_event, html, printerName, copies) => {
+  const printWindow = new BrowserWindow({ show: false, webPreferences: { sandbox: true } });
+  try {
+    await printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+    return await new Promise((resolve) => {
+      printWindow.webContents.print({ silent: true, deviceName: printerName || undefined, copies: Math.max(1, Number(copies) || 1), printBackground: true, margins: { marginType: "none" } }, (success, failureReason) => {
+        printWindow.close();
+        resolve(success ? { ok: true } : { ok: false, error: failureReason });
+      });
+    });
+  } catch (error) {
+    if (!printWindow.isDestroyed()) printWindow.close();
+    return { ok: false, error: error instanceof Error ? error.message : "print-error" };
+  }
+});
+
 app.whenReady().then(async () => {
   initDb();
   const url = await startServer();

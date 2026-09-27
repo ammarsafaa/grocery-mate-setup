@@ -1,7 +1,7 @@
 import { native } from "@/lib/native";
 import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Scale, Trash2, ShoppingBasket, PlayCircle } from "lucide-react";
+import { ArrowRight, FolderOpen, Printer, Scale, Trash2, ShoppingBasket, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/AppLayout";
@@ -14,9 +14,12 @@ import {
   formatMoney,
   maybeAutoBackup,
   getSettings,
+  getGroups,
+  recordSaleMovements,
   uid,
 } from "@/lib/db";
-import type { CartItem, Product } from "@/lib/types";
+import { buildReceiptHtml } from "@/lib/receipt";
+import type { CartItem, Product, ProductGroup, Sale } from "@/lib/types";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -24,6 +27,7 @@ export const Route = createFileRoute("/")({
       { title: "نقطة البيع — نظام البقالة" },
       { name: "description", content: "شاشة الكاشير لبيع المنتجات بالوزن أو بالقطعة" },
       { property: "og:title", content: "نقطة البيع — نظام البقالة" },
+      { property: "og:description", content: "شاشة الكاشير لبيع المنتجات بالوزن أو بالقطعة" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -42,12 +46,15 @@ function PosPage() {
   const [weightModal, setWeightModal] = useState<Product | null>(null);
   const [weight, setWeight] = useState("");
   const [scaleStatus, setScaleStatus] = useState("");
+  const [settings, setSettings] = useState(getSettings());
+  const [groups, setGroups] = useState<ProductGroup[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
 
   useEffect(() => {
     if (ready && !user) navigate({ to: "/login" });
   }, [user, ready, navigate]);
 
-  const loadProducts = () => setProducts(getProducts().filter((p) => p.active !== false));
+  const loadProducts = () => { setProducts(getProducts().filter((p) => p.active !== false)); setGroups(getGroups().filter((g) => g.active)); setSettings(getSettings()); };
 
   useEffect(() => {
     if (pathname === "/") loadProducts();
@@ -70,8 +77,8 @@ function PosPage() {
   }, []);
 
   const filtered = useMemo(
-    () => products.filter((p) => p.name.includes(search) || p.barcode?.includes(search)),
-    [products, search],
+    () => products.filter((p) => (!selectedGroup || p.groupId === selectedGroup) && (p.name.includes(search) || p.barcode?.includes(search))),
+    [products, search, selectedGroup],
   );
 
   const total = cart.reduce((s, i) => s + i.total, 0);
@@ -144,9 +151,9 @@ function PosPage() {
     setWeightModal(null);
   };
 
-  const checkout = () => {
+  const checkout = async () => {
     if (!user || !shift || cart.length === 0) return;
-    addSale({
+    const sale: Sale = {
       id: uid(),
       number: nextSaleNumber(),
       shiftId: shift.id,
@@ -155,16 +162,29 @@ function PosPage() {
       items: cart,
       total,
       createdAt: new Date().toISOString(),
-    });
-    // decrement stock
+      paid: total,
+      change: 0,
+    };
+    addSale(sale);
+    // Decrement stock once per product, even when it appears on several cart lines.
+    const sold = new Map<string, number>();
+    for (const item of cart) sold.set(item.productId, (sold.get(item.productId) ?? 0) + item.qty);
     const all = getProducts().map((p) => {
-      const item = cart.find((i) => i.productId === p.id);
-      return item ? { ...p, stock: Math.max(0, p.stock - item.qty) } : p;
+      const qty = sold.get(p.id);
+      return qty ? { ...p, stock: Math.max(0, p.stock - qty) } : p;
     });
     saveProducts(all);
+    recordSaleMovements(sale);
     setProducts(all.filter((p) => p.active));
     setCart([]);
     toast.success(`تم حفظ الفاتورة رقم ${nextSaleNumber() - 1}`);
+    if (settings.autoPrint) {
+      const n = native();
+      if (n) {
+        const result = await n.printReceipt(buildReceiptHtml(sale), settings.printerName, settings.printCopies);
+        if (!result.ok) toast.error("حُفظت الفاتورة لكن تعذرت طباعتها");
+      }
+    }
   };
 
   if (!ready || !user) return null;
@@ -198,8 +218,12 @@ function PosPage() {
             placeholder="ابحث بالاسم أو الباركود..."
             className="mb-4 h-12 rounded-xl border border-border bg-card px-4 text-foreground outline-none focus:border-primary"
           />
+          {settings.useProductGroups && !search && <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+            {selectedGroup && <button onClick={() => setSelectedGroup(null)} className="flex min-w-24 items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-3 font-bold"><ArrowRight className="h-4 w-4"/>رجوع</button>}
+            {!selectedGroup && groups.map((group) => <button key={group.id} onClick={() => setSelectedGroup(group.id)} className="flex min-w-32 flex-col items-center gap-2 rounded-lg border border-border bg-card px-5 py-4 font-bold hover:border-primary"><FolderOpen className="h-7 w-7 text-primary"/>{group.name}</button>)}
+          </div>}
           <div className="grid flex-1 grid-cols-2 content-start gap-3 overflow-auto lg:grid-cols-3 xl:grid-cols-4">
-            {filtered.map((p) => (
+            {(!settings.useProductGroups || selectedGroup || search ? filtered : []).map((p) => (
               <button
                 key={p.id}
                 onClick={() => addProduct(p)}
@@ -210,12 +234,13 @@ function PosPage() {
                 ) : (
                   p.unit === "kg" && <Scale className="h-5 w-5 text-primary" />
                 )}
-                <span className="text-base font-bold text-foreground">{p.name}</span>
+                 <span className="product-name font-bold text-foreground">{p.name}</span>
                 <span className="text-sm text-muted-foreground">
                   {formatMoney(p.price)} {p.unit === "kg" ? "/ كغم" : ""}
                 </span>
               </button>
             ))}
+            {settings.useProductGroups && !selectedGroup && !search && groups.length === 0 && <p className="col-span-full p-8 text-center text-muted-foreground">أضف مجموعات أو عطّل عرض المجموعات من الإعدادات</p>}
           </div>
         </div>
 
@@ -264,6 +289,7 @@ function PosPage() {
               disabled={cart.length === 0}
               className="h-14 w-full rounded-xl bg-primary text-lg font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-40"
             >
+              <Printer className="ml-2 inline h-5 w-5" />
               دفع وحفظ الفاتورة
             </button>
           </div>
@@ -272,7 +298,7 @@ function PosPage() {
 
       {/* Weight modal */}
       {weightModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4">
           <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6">
             <h3 className="mb-1 text-xl font-bold">{weightModal.name}</h3>
             <p className="mb-4 text-sm text-muted-foreground">

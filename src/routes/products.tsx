@@ -30,8 +30,8 @@ function resizeImage(file: File, max = 256): Promise<string> {
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/AppLayout";
-import { getProducts, saveProducts, formatMoney, uid } from "@/lib/db";
-import type { Product } from "@/lib/types";
+import { getGroups, getProducts, saveProducts, formatMoney, uid } from "@/lib/db";
+import type { Product, ProductGroup } from "@/lib/types";
 
 export const Route = createFileRoute("/products")({
   head: () => ({
@@ -39,6 +39,7 @@ export const Route = createFileRoute("/products")({
       { title: "المنتجات — نظام البقالة" },
       { name: "description", content: "إدارة المنتجات والأسعار والمخزون" },
       { property: "og:title", content: "المنتجات — نظام البقالة" },
+      { property: "og:description", content: "إدارة المنتجات والأسعار والصور والمخزون" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -63,13 +64,14 @@ function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [editing, setEditing] = useState<Product | null>(null);
   const [isNew, setIsNew] = useState(false);
+  const [groups, setGroups] = useState<ProductGroup[]>([]);
 
   useEffect(() => {
     if (ready && !user) navigate({ to: "/login" });
   }, [user, ready, navigate]);
 
   useEffect(() => {
-    if (pathname === "/products") setProducts(getProducts());
+    if (pathname === "/products") { setProducts(getProducts()); setGroups(getGroups()); }
   }, [pathname]);
 
   useEffect(() => {
@@ -132,7 +134,7 @@ function ProductsPage() {
             <thead className="bg-secondary text-muted-foreground">
               <tr>
                 <th className="p-3 text-right font-semibold">الاسم</th>
-                <th className="p-3 text-right font-semibold">الفئة</th>
+                <th className="p-3 text-right font-semibold">المجموعة</th>
                 <th className="p-3 text-right font-semibold">السعر</th>
                 <th className="p-3 text-right font-semibold">الوحدة</th>
                 <th className="p-3 text-right font-semibold">المخزون</th>
@@ -149,7 +151,7 @@ function ProductsPage() {
                       {p.name}
                     </div>
                   </td>
-                  <td className="p-3 text-muted-foreground">{p.category}</td>
+                  <td className="p-3 text-muted-foreground">{groups.find((g) => g.id === p.groupId)?.name ?? p.category}</td>
                   <td className="p-3">{formatMoney(p.price)}</td>
                   <td className="p-3">{p.unit === "kg" ? "كغم" : "قطعة"}</td>
                   <td className="p-3">{p.stock}</td>
@@ -183,7 +185,7 @@ function ProductsPage() {
       </div>
 
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4">
           <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6">
             <h3 className="mb-4 text-xl font-bold">{isNew ? "منتج جديد" : "تعديل منتج"}</h3>
             <div className="space-y-3">
@@ -220,13 +222,12 @@ function ProductsPage() {
                   <option value="piece">قطعة</option>
                   <option value="kg">كغم (ميزان)</option>
                 </select>
-                <input
-                  value={editing.category}
-                  onChange={(e) => setEditing({ ...editing, category: e.target.value })}
-                  placeholder="الفئة"
-                  className="h-12 rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary"
-                />
+                 <select value={editing.groupId ?? ""} onChange={(e) => { const group = groups.find((g) => g.id === e.target.value); setEditing({ ...editing, groupId: e.target.value || undefined, category: group?.name ?? "عام" }); }} className="h-12 rounded-xl border border-border bg-secondary px-4 outline-none"><option value="">بدون مجموعة</option>{groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}</select>
               </div>
+               <div className="grid grid-cols-2 gap-3">
+                 <input type="number" value={editing.costPrice || ""} onChange={(e) => setEditing({ ...editing, costPrice: Number(e.target.value) })} placeholder="سعر الشراء" className="h-12 rounded-xl border border-border bg-secondary px-4"/>
+                 <input type="number" value={editing.minStock ?? ""} onChange={(e) => setEditing({ ...editing, minStock: Number(e.target.value) })} placeholder="حد تنبيه المخزون" className="h-12 rounded-xl border border-border bg-secondary px-4"/>
+               </div>
               <input
                 value={editing.barcode || ""}
                 onChange={(e) => setEditing({ ...editing, barcode: e.target.value })}

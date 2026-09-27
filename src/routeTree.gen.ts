@@ -11,9 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ActivateRouteImport } from './routes/activate'
+import { Route as GroupsRouteImport } from './routes/groups'
+import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as LicenseGeneratorRouteImport } from './routes/license-generator'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ProductsRouteImport } from './routes/products'
+import { Route as PurchasesRouteImport } from './routes/purchases'
+import { Route as ReceiptDesignerRouteImport } from './routes/receipt-designer'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ShiftsRouteImport } from './routes/shifts'
@@ -26,6 +30,16 @@ const IndexRoute = IndexRouteImport.update({
 const ActivateRoute = ActivateRouteImport.update({
   id: '/activate',
   path: '/activate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GroupsRoute = GroupsRouteImport.update({
+  id: '/groups',
+  path: '/groups',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InventoryRoute = InventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LicenseGeneratorRoute = LicenseGeneratorRouteImport.update({
@@ -41,6 +55,16 @@ const LoginRoute = LoginRouteImport.update({
 const ProductsRoute = ProductsRouteImport.update({
   id: '/products',
   path: '/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PurchasesRoute = PurchasesRouteImport.update({
+  id: '/purchases',
+  path: '/purchases',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReceiptDesignerRoute = ReceiptDesignerRouteImport.update({
+  id: '/receipt-designer',
+  path: '/receipt-designer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsRoute = ReportsRouteImport.update({
@@ -62,9 +86,13 @@ const ShiftsRoute = ShiftsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/activate': typeof ActivateRoute
+  '/groups': typeof GroupsRoute
+  '/inventory': typeof InventoryRoute
   '/license-generator': typeof LicenseGeneratorRoute
   '/login': typeof LoginRoute
   '/products': typeof ProductsRoute
+  '/purchases': typeof PurchasesRoute
+  '/receipt-designer': typeof ReceiptDesignerRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/shifts': typeof ShiftsRoute
@@ -72,9 +100,13 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/activate': typeof ActivateRoute
+  '/groups': typeof GroupsRoute
+  '/inventory': typeof InventoryRoute
   '/license-generator': typeof LicenseGeneratorRoute
   '/login': typeof LoginRoute
   '/products': typeof ProductsRoute
+  '/purchases': typeof PurchasesRoute
+  '/receipt-designer': typeof ReceiptDesignerRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/shifts': typeof ShiftsRoute
@@ -83,9 +115,13 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/activate': typeof ActivateRoute
+  '/groups': typeof GroupsRoute
+  '/inventory': typeof InventoryRoute
   '/license-generator': typeof LicenseGeneratorRoute
   '/login': typeof LoginRoute
   '/products': typeof ProductsRoute
+  '/purchases': typeof PurchasesRoute
+  '/receipt-designer': typeof ReceiptDesignerRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/shifts': typeof ShiftsRoute
@@ -95,9 +131,13 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/activate'
+    | '/groups'
+    | '/inventory'
     | '/license-generator'
     | '/login'
     | '/products'
+    | '/purchases'
+    | '/receipt-designer'
     | '/reports'
     | '/settings'
     | '/shifts'
@@ -105,9 +145,13 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/activate'
+    | '/groups'
+    | '/inventory'
     | '/license-generator'
     | '/login'
     | '/products'
+    | '/purchases'
+    | '/receipt-designer'
     | '/reports'
     | '/settings'
     | '/shifts'
@@ -115,9 +159,13 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/activate'
+    | '/groups'
+    | '/inventory'
     | '/license-generator'
     | '/login'
     | '/products'
+    | '/purchases'
+    | '/receipt-designer'
     | '/reports'
     | '/settings'
     | '/shifts'
@@ -126,9 +174,13 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActivateRoute: typeof ActivateRoute
+  GroupsRoute: typeof GroupsRoute
+  InventoryRoute: typeof InventoryRoute
   LicenseGeneratorRoute: typeof LicenseGeneratorRoute
   LoginRoute: typeof LoginRoute
   ProductsRoute: typeof ProductsRoute
+  PurchasesRoute: typeof PurchasesRoute
+  ReceiptDesignerRoute: typeof ReceiptDesignerRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
   ShiftsRoute: typeof ShiftsRoute
@@ -150,6 +202,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ActivateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/groups': {
+      id: '/groups'
+      path: '/groups'
+      fullPath: '/groups'
+      preLoaderRoute: typeof GroupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inventory': {
+      id: '/inventory'
+      path: '/inventory'
+      fullPath: '/inventory'
+      preLoaderRoute: typeof InventoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/license-generator': {
       id: '/license-generator'
       path: '/license-generator'
@@ -169,6 +235,20 @@ declare module '@tanstack/react-router' {
       path: '/products'
       fullPath: '/products'
       preLoaderRoute: typeof ProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/purchases': {
+      id: '/purchases'
+      path: '/purchases'
+      fullPath: '/purchases'
+      preLoaderRoute: typeof PurchasesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/receipt-designer': {
+      id: '/receipt-designer'
+      path: '/receipt-designer'
+      fullPath: '/receipt-designer'
+      preLoaderRoute: typeof ReceiptDesignerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports': {
@@ -198,9 +278,13 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActivateRoute: ActivateRoute,
+  GroupsRoute: GroupsRoute,
+  InventoryRoute: InventoryRoute,
   LicenseGeneratorRoute: LicenseGeneratorRoute,
   LoginRoute: LoginRoute,
   ProductsRoute: ProductsRoute,
+  PurchasesRoute: PurchasesRoute,
+  ReceiptDesignerRoute: ReceiptDesignerRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
   ShiftsRoute: ShiftsRoute,
