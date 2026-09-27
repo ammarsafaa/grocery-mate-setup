@@ -1,13 +1,13 @@
 {
   "name": "grocery-pos",
-  "productName": "نظام البقالة",
+  "productName": "زيروس",
   "version": "1.0.0",
   "main": "electron/main.cjs",
   "description": "Grocery POS",
   "author": "Grocery POS",
   "build": {
     "appId": "com.grocery.pos",
-    "productName": "Grocery POS",
+    "productName": "Zeros",
     "files": [
       "electron/**"
     ],
@@ -21,6 +21,7 @@
       }
     ],
     "win": {
+      "icon": "electron/build/icon.ico",
       "target": [
         {
           "target": "nsis",
@@ -31,10 +32,13 @@
       ]
     },
     "nsis": {
+      "installerIcon": "electron/build/icon.ico",
+      "uninstallerIcon": "electron/build/icon.ico",
+      "installerHeaderIcon": "electron/build/icon.ico",
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "shortcutName": "نظام البقالة",
+      "shortcutName": "زيروس",
       "language": "1025"
     },
     "directories": {

@@ -152,6 +152,8 @@ app.whenReady().then(async () => {
   const url = await startServer();
   const win = new BrowserWindow({
     width: 1366, height: 800, autoHideMenuBar: true,
+    title: "زيروس",
+    icon: path.join(__dirname, "build", "icon.ico"),
     webPreferences: { preload: path.join(__dirname, "preload.cjs"), contextIsolation: true },
   });
   updWin = win;
