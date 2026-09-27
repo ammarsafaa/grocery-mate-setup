@@ -65,6 +65,21 @@ function ProductsPage() {
   const [editing, setEditing] = useState<Product | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [groups, setGroups] = useState<ProductGroup[]>([]);
+  const [priceEditId, setPriceEditId] = useState<string | null>(null);
+  const [priceDraft, setPriceDraft] = useState("");
+
+  const saveQuickPrice = (id: string) => {
+    const value = Number(priceDraft);
+    if (!value || value <= 0) {
+      toast.error("أدخل سعراً صحيحاً");
+      return;
+    }
+    const next = products.map((p) => (p.id === id ? { ...p, price: value } : p));
+    saveProducts(next);
+    setProducts(next);
+    setPriceEditId(null);
+    toast.success("تم تحديث السعر");
+  };
 
   useEffect(() => {
     if (ready && !user) navigate({ to: "/login" });
@@ -152,7 +167,33 @@ function ProductsPage() {
                     </div>
                   </td>
                   <td className="p-3 text-muted-foreground">{groups.find((g) => g.id === p.groupId)?.name ?? p.category}</td>
-                  <td className="p-3">{formatMoney(p.price)}</td>
+                  <td className="p-3">
+                    {priceEditId === p.id ? (
+                      <div className="flex items-center gap-1">
+                        <input
+                          autoFocus
+                          type="number"
+                          value={priceDraft}
+                          onChange={(e) => setPriceDraft(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") saveQuickPrice(p.id);
+                            if (e.key === "Escape") setPriceEditId(null);
+                          }}
+                          className="h-10 w-28 rounded-lg border border-primary bg-secondary px-2 outline-none"
+                        />
+                        <button onClick={() => saveQuickPrice(p.id)} className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground">حفظ</button>
+                        <button onClick={() => setPriceEditId(null)} className="rounded-lg bg-secondary px-3 py-2 text-xs font-bold">إلغاء</button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => { setPriceEditId(p.id); setPriceDraft(String(p.price)); }}
+                        className="rounded-lg px-2 py-1 font-bold text-primary hover:bg-accent"
+                        title="اضغط لتغيير السعر بسرعة"
+                      >
+                        {formatMoney(p.price)}
+                      </button>
+                    )}
+                  </td>
                   <td className="p-3">{p.unit === "kg" ? "كغم" : "قطعة"}</td>
                   <td className="p-3">{p.stock}</td>
                   <td className="p-3 text-muted-foreground">{p.barcode || "—"}</td>

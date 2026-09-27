@@ -1,7 +1,7 @@
 import { native } from "@/lib/native";
 import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, FolderOpen, Printer, Scale, Trash2, ShoppingBasket, PlayCircle } from "lucide-react";
+import { ArrowRight, FolderOpen, Printer, Scale, Trash2, ShoppingBasket, PlayCircle, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/AppLayout";
@@ -50,6 +50,23 @@ function PosPage() {
   const [settings, setSettings] = useState(getSettings());
   const [groups, setGroups] = useState<ProductGroup[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [priceMode, setPriceMode] = useState(false);
+  const [priceEdit, setPriceEdit] = useState<Product | null>(null);
+  const [priceDraft, setPriceDraft] = useState("");
+
+  const saveQuickPrice = () => {
+    const value = Number(priceDraft);
+    if (!priceEdit || !value || value <= 0) {
+      toast.error("أدخل سعراً صحيحاً");
+      return;
+    }
+    const all = getProducts().map((p) => (p.id === priceEdit.id ? { ...p, price: value } : p));
+    saveProducts(all);
+    setProducts(all.filter((p) => p.active !== false));
+    setPriceEdit(null);
+    setPriceMode(false);
+    toast.success(`تم تحديث سعر ${priceEdit.name}`);
+  };
 
   useEffect(() => {
     if (ready && !user) navigate({ to: "/login" });
@@ -115,6 +132,11 @@ function PosPage() {
   }, [weightModal]);
 
   const addProduct = (p: Product) => {
+    if (priceMode) {
+      setPriceEdit(p);
+      setPriceDraft(String(p.price));
+      return;
+    }
     if (p.unit === "kg") {
       setWeight("");
       setWeightModal(p);
@@ -214,12 +236,21 @@ function PosPage() {
       <div className="flex h-screen">
         {/* Products grid */}
         <div className="flex flex-1 flex-col p-4">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="ابحث بالاسم أو الباركود..."
-            className="mb-4 h-12 rounded-xl border border-border bg-card px-4 text-foreground outline-none focus:border-primary"
-          />
+          <div className="mb-4 flex gap-2">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="ابحث بالاسم أو الباركود..."
+              className="h-12 flex-1 rounded-xl border border-border bg-card px-4 text-foreground outline-none focus:border-primary"
+            />
+            <button
+              onClick={() => setPriceMode((v) => !v)}
+              className={`flex h-12 items-center gap-2 rounded-xl px-5 font-bold transition ${priceMode ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
+            >
+              <Pencil className="h-4 w-4" />
+              {priceMode ? "اضغط على منتج لتغيير سعره" : "تغيير سعر"}
+            </button>
+          </div>
           {settings.useProductGroups && !search && <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
             {selectedGroup && <button onClick={() => setSelectedGroup(null)} className="flex min-w-24 items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-3 font-bold"><ArrowRight className="h-4 w-4"/>رجوع</button>}
             {!selectedGroup && groups.map((group) => <button key={group.id} onClick={() => setSelectedGroup(group.id)} className="flex min-w-32 flex-col items-center gap-2 rounded-lg border border-border bg-card px-5 py-4 font-bold hover:border-primary"><FolderOpen className="h-7 w-7 text-primary"/>{group.name}</button>)}
@@ -298,6 +329,31 @@ function PosPage() {
           </div>
         </div>
       </div>
+
+      {/* Quick price modal */}
+      {priceEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6">
+            <h3 className="mb-1 text-xl font-bold">{priceEdit.name}</h3>
+            <p className="mb-4 text-sm text-muted-foreground">
+              السعر الحالي: {formatMoney(priceEdit.price)} {priceEdit.unit === "kg" ? "/ كغم" : "/ قطعة"}
+            </p>
+            <label className="mb-2 block text-sm font-semibold">السعر الجديد (د.ع)</label>
+            <input
+              autoFocus
+              type="number"
+              value={priceDraft}
+              onChange={(e) => setPriceDraft(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") saveQuickPrice(); }}
+              className="mb-4 h-14 w-full rounded-xl border border-border bg-secondary px-4 text-center text-2xl font-bold outline-none focus:border-primary"
+            />
+            <div className="flex gap-2">
+              <button onClick={saveQuickPrice} className="h-12 flex-1 rounded-xl bg-primary font-bold text-primary-foreground">حفظ السعر</button>
+              <button onClick={() => { setPriceEdit(null); setPriceMode(false); }} className="h-12 flex-1 rounded-xl bg-secondary font-bold">إلغاء</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Weight modal */}
       {weightModal && (
