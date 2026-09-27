@@ -177,6 +177,14 @@ export function maybeAutoBackup() {
   if (!s.autoBackup) return;
   const today = new Date().toISOString().slice(0, 10);
   if (s.lastBackupAt === today) return;
+  const n = (window as unknown as { posNative?: { saveBackup: (f: string, n: string, c: string) => Promise<boolean> } }).posNative;
+  if (n && s.backupFolder) {
+    // Windows app: silent save into the chosen folder
+    n.saveBackup(s.backupFolder, `backup-${today}.json`, exportBackup()).then(() =>
+      saveSettings({ ...getSettings(), lastBackupAt: today }),
+    );
+    return;
+  }
   const blob = new Blob([exportBackup()], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);

@@ -178,13 +178,26 @@ function SettingsPage() {
           </h2>
           <div className="mb-4">
             <label className="mb-1 block text-sm text-muted-foreground">مكان حفظ النسخ</label>
-            <input
-              dir="ltr"
-              value={settings.backupFolder}
-              onChange={(e) => setSettings({ ...settings, backupFolder: e.target.value })}
-              placeholder="مثال: D:\backups (في نسخة الويندوز تُختار من مستكشف الملفات)"
-              className="h-12 w-full rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary"
-            />
+            <div className="flex gap-2">
+              <input
+                dir="ltr"
+                value={settings.backupFolder}
+                onChange={(e) => setSettings({ ...settings, backupFolder: e.target.value })}
+                placeholder="D:\backups"
+                className="h-12 flex-1 rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary"
+              />
+              <button
+                onClick={async () => {
+                  const n = native();
+                  if (!n) return toast.info("اختيار المجلد متاح في نسخة الويندوز");
+                  const f = await n.pickFolder();
+                  if (f) save({ ...settings, backupFolder: f });
+                }}
+                className="rounded-xl bg-secondary px-4 font-bold"
+              >
+                اختيار مجلد
+              </button>
+            </div>
           </div>
           <label className="mb-4 flex items-center gap-3">
             <input
