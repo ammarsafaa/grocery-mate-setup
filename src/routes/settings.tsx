@@ -137,7 +137,7 @@ function SettingsPage() {
         {/* Scale */}
         <section className="rounded-2xl border border-border bg-card p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
-            <Scale className="h-5 w-5 text-primary" /> الميزان (رونكتا RLS1000)
+            <Scale className="h-5 w-5 text-primary" /> الميزان (رونكتا RLS1100)
           </h2>
           <div className="grid gap-4 md:grid-cols-2">
             <div>
