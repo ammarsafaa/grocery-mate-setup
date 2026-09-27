@@ -165,13 +165,15 @@ function PosPage() {
       change: 0,
     };
     addSale(sale);
-    recordSaleMovements(sale);
-    // decrement stock
+    // Decrement stock once per product, even when it appears on several cart lines.
+    const sold = new Map<string, number>();
+    for (const item of cart) sold.set(item.productId, (sold.get(item.productId) ?? 0) + item.qty);
     const all = getProducts().map((p) => {
-      const item = cart.find((i) => i.productId === p.id);
-      return item ? { ...p, stock: Math.max(0, p.stock - item.qty) } : p;
+      const qty = sold.get(p.id);
+      return qty ? { ...p, stock: Math.max(0, p.stock - qty) } : p;
     });
     saveProducts(all);
+    recordSaleMovements(sale);
     setProducts(all.filter((p) => p.active));
     setCart([]);
     toast.success(`تم حفظ الفاتورة رقم ${nextSaleNumber() - 1}`);

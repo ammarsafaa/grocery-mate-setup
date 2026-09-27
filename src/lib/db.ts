@@ -177,8 +177,13 @@ export function saveStockMovements(items: StockMovement[]) { write("stockMovemen
 export function postPurchase(purchase: Purchase, userName: string) {
   savePurchases([...getPurchases(), purchase]);
   const movements = getStockMovements();
+  const quantities = new Map<string, { qty: number; cost: number }>();
+  for (const item of purchase.items) {
+    const current = quantities.get(item.productId) ?? { qty: 0, cost: item.cost };
+    quantities.set(item.productId, { qty: current.qty + item.qty, cost: item.cost });
+  }
   const products = getProducts().map((product) => {
-    const item = purchase.items.find((x) => x.productId === product.id);
+    const item = quantities.get(product.id);
     if (!item) return product;
     const stock = product.stock + item.qty;
     movements.push({ id: uid(), productId: product.id, productName: product.name, type: "purchase", qty: item.qty, balanceAfter: stock, referenceId: purchase.id, userName, createdAt: purchase.createdAt });
@@ -193,11 +198,13 @@ export function cancelPurchase(id: string, userName: string): boolean {
   const purchase = purchases.find((p) => p.id === id && p.status === "posted");
   if (!purchase) return false;
   const movements = getStockMovements();
+  const quantities = new Map<string, number>();
+  for (const item of purchase.items) quantities.set(item.productId, (quantities.get(item.productId) ?? 0) + item.qty);
   const products = getProducts().map((product) => {
-    const item = purchase.items.find((x) => x.productId === product.id);
-    if (!item) return product;
-    const stock = Math.max(0, product.stock - item.qty);
-    movements.push({ id: uid(), productId: product.id, productName: product.name, type: "purchase-cancel", qty: -item.qty, balanceAfter: stock, referenceId: purchase.id, userName, createdAt: new Date().toISOString() });
+    const qty = quantities.get(product.id);
+    if (!qty) return product;
+    const stock = Math.max(0, product.stock - qty);
+    movements.push({ id: uid(), productId: product.id, productName: product.name, type: "purchase-cancel", qty: -qty, balanceAfter: stock, referenceId: purchase.id, userName, createdAt: new Date().toISOString() });
     return { ...product, stock };
   });
   saveProducts(products);
