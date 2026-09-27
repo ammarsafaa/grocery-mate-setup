@@ -82,7 +82,23 @@
   --sidebar-accent-foreground: oklch(0.96 0.01 160);
   --sidebar-border: oklch(0.3 0.03 170);
   --sidebar-ring: oklch(0.72 0.17 165);
+  --product-font: "Cairo", sans-serif;
+  --product-font-size: 1rem;
 }
+
+:root[data-mode="light"] {
+  --background: oklch(0.97 0.01 160); --foreground: oklch(0.2 0.02 170);
+  --card: oklch(1 0 0); --card-foreground: oklch(0.2 0.02 170);
+  --popover: oklch(1 0 0); --popover-foreground: oklch(0.2 0.02 170);
+  --secondary: oklch(0.93 0.015 165); --secondary-foreground: oklch(0.23 0.02 170);
+  --muted: oklch(0.93 0.015 165); --muted-foreground: oklch(0.48 0.03 170);
+  --accent: oklch(0.9 0.03 165); --accent-foreground: oklch(0.2 0.02 170);
+  --border: oklch(0.84 0.02 165); --input: oklch(0.84 0.02 165);
+  --sidebar: oklch(0.94 0.02 165); --sidebar-foreground: oklch(0.2 0.02 170);
+  --sidebar-accent: oklch(0.89 0.03 165); --sidebar-accent-foreground: oklch(0.2 0.02 170); --sidebar-border: oklch(0.84 0.02 165);
+}
+
+.product-name { font-family: var(--product-font); font-size: var(--product-font-size); }
 
 @layer base {
   * {

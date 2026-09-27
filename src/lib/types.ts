@@ -18,6 +18,18 @@ export interface Product {
   stock: number;
   active: boolean;
   image?: string | undefined; // small data URL
+  groupId?: string;
+  costPrice?: number;
+  minStock?: number;
+}
+
+export interface ProductGroup {
+  id: string;
+  name: string;
+  color: string;
+  icon: string;
+  order: number;
+  active: boolean;
 }
 
 export interface CartItem {
@@ -38,6 +50,85 @@ export interface Sale {
   items: CartItem[];
   total: number;
   createdAt: string; // ISO
+  paid?: number;
+  change?: number;
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  phone?: string;
+  address?: string;
+  notes?: string;
+  active: boolean;
+}
+
+export interface PurchaseItem {
+  productId: string;
+  name: string;
+  unit: "piece" | "kg";
+  qty: number;
+  cost: number;
+  total: number;
+}
+
+export interface Purchase {
+  id: string;
+  number: string;
+  supplierId: string;
+  supplierName: string;
+  items: PurchaseItem[];
+  total: number;
+  paid: number;
+  balance: number;
+  createdAt: string;
+  status: "posted" | "cancelled";
+}
+
+export interface SupplierPayment {
+  id: string;
+  supplierId: string;
+  amount: number;
+  note?: string;
+  createdAt: string;
+}
+
+export type StockMovementType = "purchase" | "sale" | "return" | "adjustment" | "damage" | "purchase-cancel";
+
+export interface StockMovement {
+  id: string;
+  productId: string;
+  productName: string;
+  type: StockMovementType;
+  qty: number;
+  balanceAfter: number;
+  referenceId?: string;
+  note?: string;
+  userName?: string;
+  createdAt: string;
+}
+
+export type ReceiptElementType = "logo" | "store" | "contact" | "invoice" | "date" | "cashier" | "items" | "totals" | "footer";
+
+export interface ReceiptElement {
+  id: ReceiptElementType;
+  label: string;
+  visible: boolean;
+  fontSize: number;
+  fontFamily: string;
+  bold: boolean;
+  align: "right" | "center" | "left";
+  spacing: number;
+  divider: boolean;
+}
+
+export interface ReceiptDesign {
+  paperWidth: 58 | 80;
+  elements: ReceiptElement[];
+  logo?: string;
+  address: string;
+  phone: string;
+  footer: string;
 }
 
 export interface Shift {
@@ -60,6 +151,18 @@ export interface Settings {
   lastBackupAt?: string;
   scaleIp: string;
   scalePort: number;
+  useProductGroups: boolean;
+  colorPreset: "emerald" | "blue" | "red" | "amber" | "custom";
+  colorMode: "dark" | "light";
+  customColor: string;
+  productFont: "Cairo" | "Tajawal" | "Noto Kufi Arabic" | "Arial";
+  productFontSize: number;
+  printerName: string;
+  paperWidth: 58 | 80;
+  autoPrint: boolean;
+  printCopies: number;
+  autoCut: boolean;
+  openDrawer: boolean;
 }
 
 export interface LicenseState {

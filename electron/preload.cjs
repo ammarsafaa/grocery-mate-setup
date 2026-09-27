@@ -9,4 +9,6 @@ contextBridge.exposeInMainWorld("posNative", {
   dbGetAll: () => ipcRenderer.sendSync("db-get-all"),
   dbSet: (key, value) => ipcRenderer.sendSync("db-set", key, value),
   backupDb: (folder) => ipcRenderer.invoke("backup-db", folder),
+  listPrinters: () => ipcRenderer.invoke("list-printers"),
+  printReceipt: (html, printerName, copies) => ipcRenderer.invoke("print-receipt", html, printerName, copies),
 });
