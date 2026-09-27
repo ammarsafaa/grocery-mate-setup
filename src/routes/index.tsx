@@ -13,6 +13,7 @@ import {
   saveProducts,
   formatMoney,
   maybeAutoBackup,
+  getSettings,
   uid,
 } from "@/lib/db";
 import type { CartItem, Product } from "@/lib/types";

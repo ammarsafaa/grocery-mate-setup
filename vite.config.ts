@@ -7,7 +7,7 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 // ELECTRON_BUILD=1 produces a static SPA shell for the offline Windows app.
-const electron = process.env.ELECTRON_BUILD === "1";
+const electron = process.env['ELECTRON_BUILD'] === "1";
 
 export default defineConfig({
   tanstackStart: {

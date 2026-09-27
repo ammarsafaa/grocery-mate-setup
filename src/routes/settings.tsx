@@ -190,7 +190,7 @@ function SettingsPage() {
               <button
                 onClick={async () => {
                   const n = native();
-                  if (!n) return toast.info("اختيار المجلد متاح في نسخة الويندوز");
+                  if (!n) { toast.info("اختيار المجلد متاح في نسخة الويندوز"); return; }
                   const f = await n.pickFolder();
                   if (f) save({ ...settings, backupFolder: f });
                 }}
