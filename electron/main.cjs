@@ -131,6 +131,14 @@ app.whenReady().then(async () => {
   });
   win.maximize();
   win.loadURL(url + "/login");
+  // Ask the app to force closing the shift + printing the day report before quitting
+  let allowQuit = false;
+  win.on("close", (e) => {
+    if (allowQuit) return;
+    e.preventDefault();
+    win.webContents.send("app-close-requested");
+  });
+  ipcMain.on("confirm-quit", () => { allowQuit = true; win.close(); });
 });
 
 app.on("window-all-closed", () => app.quit());
