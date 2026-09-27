@@ -53,7 +53,8 @@ export function saveUsers(users: PosUser[]) {
 
 // ---------- Products ----------
 export function getProducts(): Product[] {
-  return read<Product[]>("products", seedProducts());
+  const saved = read<Product[] | null>("products", null);
+  return saved ?? seedProducts();
 }
 
 function seedProducts(): Product[] {
