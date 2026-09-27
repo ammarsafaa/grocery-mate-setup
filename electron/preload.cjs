@@ -11,4 +11,10 @@ contextBridge.exposeInMainWorld("posNative", {
   backupDb: (folder) => ipcRenderer.invoke("backup-db", folder),
   listPrinters: () => ipcRenderer.invoke("list-printers"),
   printReceipt: (html, printerName, copies) => ipcRenderer.invoke("print-receipt", html, printerName, copies),
+  onCloseRequested: (cb) => {
+    const h = () => cb();
+    ipcRenderer.on("app-close-requested", h);
+    return () => ipcRenderer.removeListener("app-close-requested", h);
+  },
+  quitApp: () => ipcRenderer.send("confirm-quit"),
 });

@@ -13,6 +13,7 @@ import { Toaster } from "sonner";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "../lib/auth";
+import { CloseAppGuard } from "../components/CloseAppGuard";
 import "@fontsource/cairo/400.css";
 import "@fontsource/cairo/600.css";
 import "@fontsource/cairo/700.css";
@@ -111,6 +112,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Outlet />
+        <CloseAppGuard />
         <Toaster position="top-center" richColors dir="rtl" />
       </AuthProvider>
     </QueryClientProvider>

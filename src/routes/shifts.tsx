@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/AppLayout";
 import { getShifts, saveShifts, getOpenShift, getSales, formatMoney, uid } from "@/lib/db";
+import { buildShiftReportHtml, closeShift as doCloseShift, printHtml } from "@/lib/shiftReport";
 import type { Shift } from "@/lib/types";
 
 export const Route = createFileRoute("/shifts")({
@@ -51,25 +52,22 @@ function ShiftsPage() {
     toast.success("تم فتح الوردية");
   };
 
-  const closeShift = () => {
+  useEffect(() => {
+    const r = () => setShifts(getShifts().slice().reverse());
+    window.addEventListener("grocery-pos:shift-closed", r);
+    return () => window.removeEventListener("grocery-pos:shift-closed", r);
+  }, []);
+
+  const closeShift = async () => {
     if (!open) return;
-    const sales = getSales().filter((s) => s.shiftId === open.id);
-    const updated = getShifts().map((s) =>
-      s.id === open.id
-        ? {
-            ...s,
-            closedAt: new Date().toISOString(),
-            closingCash: Number(closeCash) || 0,
-            salesTotal: sales.reduce((t, x) => t + x.total, 0),
-            salesCount: sales.length,
-          }
-        : s,
-    );
-    saveShifts(updated);
-    setShifts(updated.slice().reverse());
+    const { shift, sales } = doCloseShift(open.id, Number(closeCash) || 0);
+    setShifts(getShifts().slice().reverse());
     setCloseCash("");
-    toast.success("تم غلق الوردية وحفظ تقريرها");
+    toast.success("تم غلق الوردية، جارٍ طباعة تقرير اليوم");
+    await printHtml(buildShiftReportHtml(shift, sales));
   };
+
+  const reprint = (s: Shift) => printHtml(buildShiftReportHtml(s, getSales().filter((x) => x.shiftId === s.id)));
 
   if (!ready || !user) return null;
 
@@ -165,6 +163,9 @@ function ShiftsPage() {
                     >
                       {s.closedAt ? "مغلقة" : "مفتوحة"}
                     </span>
+                    {s.closedAt && (
+                      <button onClick={() => reprint(s)} className="mr-2 rounded-lg bg-secondary px-3 py-1 text-xs font-bold">طباعة التقرير</button>
+                    )}
                   </td>
                 </tr>
               ))}

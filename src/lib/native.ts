@@ -9,6 +9,8 @@ export interface PosNative {
   backupDb: (folder: string) => Promise<{ ok: boolean; path?: string; error?: string }>;
   listPrinters: () => Promise<Array<{ name: string; displayName?: string; isDefault?: boolean }>>;
   printReceipt: (html: string, printerName: string, copies: number) => Promise<{ ok: boolean; error?: string }>;
+  onCloseRequested?: (cb: () => void) => () => void;
+  quitApp?: () => void;
 }
 
 export function native(): PosNative | undefined {
