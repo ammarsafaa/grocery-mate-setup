@@ -6,7 +6,11 @@ const net = require("net");
 const crypto = require("crypto");
 const { execSync } = require("child_process");
 
-const ROOT = path.join(__dirname, "..", "dist", "client");
+// In an installed build, the UI is copied to resources/app so it cannot be
+// omitted from app.asar. Development still reads the normal Vite output.
+const ROOT = app.isPackaged
+  ? path.join(process.resourcesPath, "app")
+  : path.join(__dirname, "..", "dist", "client");
 const TYPES = { ".js": "text/javascript", ".css": "text/css", ".html": "text/html", ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".json": "application/json", ".woff2": "font/woff2" };
 
 function startServer() {

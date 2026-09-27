@@ -9,8 +9,16 @@
     "appId": "com.grocery.pos",
     "productName": "Grocery POS",
     "files": [
-      "electron/**",
-      "dist/client/**"
+      "electron/**"
+    ],
+    "extraResources": [
+      {
+        "from": "dist/client",
+        "to": "app",
+        "filter": [
+          "**/*"
+        ]
+      }
     ],
     "win": {
       "target": [
@@ -31,7 +39,14 @@
     },
     "directories": {
       "output": "release"
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "ammarsafaa",
+        "repo": "grocery-mate-setup"
+      }
+    ]
   },
   "dependencies": {
     "better-sqlite3": "11.10.0",
