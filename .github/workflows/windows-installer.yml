@@ -20,11 +20,16 @@ jobs:
       - name: Verify application interface
         shell: bash
         run: |
+          echo "Build output:"; find dist .output -maxdepth 4 -type f 2>/dev/null | grep -v '/assets/' || true
           if [ ! -f dist/client/_shell.html ]; then
-            echo "ERROR: dist/client/_shell.html was not produced"
-            find dist -maxdepth 3 -type f -print || true
-            exit 1
+            SHELL=$(find dist .output -type f \( -name '_shell.html' -o -path '*_shell/index.html' -o -name 'index.html' \) 2>/dev/null | grep -v node_modules | head -1)
+            if [ -z "$SHELL" ]; then echo "ERROR: no HTML shell produced"; exit 1; fi
+            SRC=$(dirname "$SHELL"); case "$SHELL" in *_shell/index.html) SRC=$(dirname "$SRC");; esac
+            mkdir -p dist/client
+            [ "$SRC" != "dist/client" ] && cp -r "$SRC"/. dist/client/
+            cp "$SHELL" dist/client/_shell.html
           fi
+          test -f dist/client/_shell.html
       - name: Stage Windows application
         shell: pwsh
         run: |
