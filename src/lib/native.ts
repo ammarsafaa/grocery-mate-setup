@@ -11,6 +11,18 @@ export interface PosNative {
   printReceipt: (html: string, printerName: string, copies: number) => Promise<{ ok: boolean; error?: string }>;
   onCloseRequested?: (cb: () => void) => () => void;
   quitApp?: () => void;
+  appVersion?: () => string;
+  checkUpdate?: () => Promise<{ ok: boolean; error?: string }>;
+  downloadUpdate?: () => Promise<{ ok: boolean; error?: string }>;
+  installUpdate?: () => void;
+  onUpdateStatus?: (cb: (s: UpdateStatus) => void) => () => void;
+}
+
+export interface UpdateStatus {
+  state: "available" | "none" | "downloading" | "ready" | "error";
+  version?: string;
+  percent?: number;
+  error?: string;
 }
 
 export function native(): PosNative | undefined {

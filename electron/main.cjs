@@ -122,6 +122,27 @@ ipcMain.handle("print-receipt", async (_event, html, printerName, copies) => {
   }
 });
 
+// ---- Auto updates (GitHub Releases). Only needs internet while updating ----
+let updater = null;
+try { updater = require("electron-updater").autoUpdater; updater.autoDownload = false; } catch { updater = null; }
+let updWin = null;
+function sendUpd(s) { if (updWin && !updWin.isDestroyed()) updWin.webContents.send("update-status", s); }
+if (updater) {
+  updater.on("update-available", (i) => sendUpd({ state: "available", version: i.version }));
+  updater.on("update-not-available", () => sendUpd({ state: "none" }));
+  updater.on("download-progress", (p) => sendUpd({ state: "downloading", percent: Math.round(p.percent) }));
+  updater.on("update-downloaded", (i) => sendUpd({ state: "ready", version: i.version }));
+  updater.on("error", (e) => sendUpd({ state: "error", error: String(e && e.message || e) }));
+}
+ipcMain.on("app-version", (e) => { e.returnValue = app.getVersion(); });
+ipcMain.handle("update-check", async () => {
+  if (!updater) return { ok: false, error: "no-updater" };
+  try { await updater.checkForUpdates(); return { ok: true }; } catch (e) { return { ok: false, error: String(e.message || e) }; }
+});
+ipcMain.handle("update-download", async () => { try { await updater.downloadUpdate(); return { ok: true }; } catch (e) { return { ok: false, error: String(e.message || e) }; } });
+ipcMain.on("update-install", () => { allowQuitGlobal = true; updater.quitAndInstall(false, true); });
+let allowQuitGlobal = false;
+
 app.whenReady().then(async () => {
   initDb();
   const url = await startServer();
@@ -129,12 +150,13 @@ app.whenReady().then(async () => {
     width: 1366, height: 800, autoHideMenuBar: true,
     webPreferences: { preload: path.join(__dirname, "preload.cjs"), contextIsolation: true },
   });
+  updWin = win;
   win.maximize();
   win.loadURL(url + "/login");
   // Ask the app to force closing the shift + printing the day report before quitting
   let allowQuit = false;
   win.on("close", (e) => {
-    if (allowQuit) return;
+    if (allowQuit || allowQuitGlobal) return;
     e.preventDefault();
     win.webContents.send("app-close-requested");
   });
