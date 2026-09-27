@@ -5,6 +5,7 @@ import { Download, Upload, Plus, Trash2, Scale, HardDrive, Palette, Printer, Lay
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/AppLayout";
+import { UpdatePanel } from "@/components/UpdatePanel";
 import {
   getSettings,
   saveSettings,
@@ -260,6 +261,8 @@ function SettingsPage() {
           <p className="mt-3 text-xs text-muted-foreground">مثال: 21 00015 01175 8 ← منتج رقم 15 في الميزان، وزن 1.175 كغم. أضف «رقم المنتج في الميزان» لكل منتج بالوزن من صفحة المنتجات.</p>
           <button onClick={() => save(settings)} className="mt-4 rounded-xl bg-primary px-6 py-3 font-bold text-primary-foreground">حفظ</button>
         </section>
+
+        <UpdatePanel />
 
         {/* Backup */}
         <section className="rounded-2xl border border-border bg-card p-6">
