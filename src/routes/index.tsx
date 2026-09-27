@@ -1,5 +1,5 @@
 import { native } from "@/lib/native";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Scale, Trash2, ShoppingBasket, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -34,6 +34,7 @@ export const Route = createFileRoute("/")({
 function PosPage() {
   const { user, ready } = useAuth();
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [search, setSearch] = useState("");
@@ -46,16 +47,24 @@ function PosPage() {
     if (ready && !user) navigate({ to: "/login" });
   }, [user, ready, navigate]);
 
+  const loadProducts = () => setProducts(getProducts().filter((p) => p.active !== false));
+
   useEffect(() => {
-    const load = () => setProducts(getProducts().filter((p) => p.active !== false));
+    if (pathname === "/") loadProducts();
+  }, [pathname]);
+
+  useEffect(() => {
+    const load = () => loadProducts();
     load();
     maybeAutoBackup();
     window.addEventListener("focus", load);
     window.addEventListener("storage", load);
+    window.addEventListener("grocery-pos:products-updated", load);
     document.addEventListener("visibilitychange", load);
     return () => {
       window.removeEventListener("focus", load);
       window.removeEventListener("storage", load);
+      window.removeEventListener("grocery-pos:products-updated", load);
       document.removeEventListener("visibilitychange", load);
     };
   }, []);

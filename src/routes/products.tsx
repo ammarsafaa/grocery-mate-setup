@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, ImageIcon } from "lucide-react";
 
@@ -12,7 +12,12 @@ function resizeImage(file: File, max = 256): Promise<string> {
         const c = document.createElement("canvas");
         c.width = Math.round(img.width * s);
         c.height = Math.round(img.height * s);
-        c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height);
+        const context = c.getContext("2d");
+        if (!context) {
+          reject(new Error("تعذر تجهيز الصورة"));
+          return;
+        }
+        context.drawImage(img, 0, 0, c.width, c.height);
         resolve(c.toDataURL("image/jpeg", 0.8));
       };
       img.onerror = reject;
@@ -54,6 +59,7 @@ const EMPTY: Omit<Product, "id"> = {
 function ProductsPage() {
   const { user, ready } = useAuth();
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [products, setProducts] = useState<Product[]>([]);
   const [editing, setEditing] = useState<Product | null>(null);
   const [isNew, setIsNew] = useState(false);
@@ -62,7 +68,15 @@ function ProductsPage() {
     if (ready && !user) navigate({ to: "/login" });
   }, [user, ready, navigate]);
 
-  useEffect(() => setProducts(getProducts()), []);
+  useEffect(() => {
+    if (pathname === "/products") setProducts(getProducts());
+  }, [pathname]);
+
+  useEffect(() => {
+    const reload = () => setProducts(getProducts());
+    window.addEventListener("grocery-pos:products-updated", reload);
+    return () => window.removeEventListener("grocery-pos:products-updated", reload);
+  }, []);
 
   const save = () => {
     if (!editing || !editing.name || editing.price <= 0) {
@@ -74,11 +88,16 @@ function ProductsPage() {
       : products.map((p) => (p.id === editing.id ? editing : p));
     try {
       saveProducts(next);
+      const saved = getProducts();
+      const savedProduct = saved.find((product) => product.id === editing.id);
+      if (!savedProduct || savedProduct.image !== editing.image) {
+        throw new Error("لم تُحفظ صورة المنتج");
+      }
+      setProducts(saved);
     } catch {
       toast.error("لا توجد مساحة كافية لحفظ الصورة، جرّب صورة أصغر");
       return;
     }
-    setProducts(next);
     setEditing(null);
     toast.success("تم الحفظ");
   };

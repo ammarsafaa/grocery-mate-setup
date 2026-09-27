@@ -77,6 +77,7 @@ function seedProducts(): Product[] {
 
 export function saveProducts(products: Product[]) {
   write("products", products);
+  window.dispatchEvent(new CustomEvent("grocery-pos:products-updated"));
 }
 
 // ---------- Sales ----------
