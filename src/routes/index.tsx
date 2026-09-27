@@ -40,6 +40,7 @@ function PosPage() {
   const [shift, setShift] = useState(getOpenShift());
   const [weightModal, setWeightModal] = useState<Product | null>(null);
   const [weight, setWeight] = useState("");
+  const [scaleStatus, setScaleStatus] = useState("");
 
   useEffect(() => {
     if (ready && !user) navigate({ to: "/login" });
@@ -57,18 +58,39 @@ function PosPage() {
 
   const total = cart.reduce((s, i) => s + i.total, 0);
 
+  // Poll the scale continuously while the weight window is open
+  useEffect(() => {
+    if (!weightModal) return;
+    const n = native();
+    if (!n) {
+      setScaleStatus("الميزان يعمل فقط في نسخة الويندوز المثبتة على الكاشير");
+      return;
+    }
+    let alive = true;
+    const s = getSettings();
+    const tick = async () => {
+      if (!alive) return;
+      const r = await n.readWeight(s.scaleIp, s.scalePort).catch(() => ({ ok: false }) as any);
+      if (!alive) return;
+      if (r.ok && r.weight > 0) {
+        setWeight(r.weight.toFixed(3));
+        setScaleStatus("تم جلب الوزن من الميزان");
+      } else {
+        setScaleStatus("بانتظار الوزن من الميزان... ضع المنتج على الميزان");
+      }
+      setTimeout(tick, 500);
+    };
+    setScaleStatus("جاري الاتصال بالميزان...");
+    tick();
+    return () => {
+      alive = false;
+    };
+  }, [weightModal]);
+
   const addProduct = (p: Product) => {
     if (p.unit === "kg") {
       setWeight("");
       setWeightModal(p);
-      const n = native();
-      if (n) {
-        const s = getSettings();
-        n.readWeight(s.scaleIp, s.scalePort).then((r) => {
-          if (r.ok && r.weight) setWeight(r.weight.toFixed(3));
-          else toast.error("تعذر قراءة الوزن من الميزان — أدخله يدوياً");
-        });
-      }
       return;
     }
     setCart((c) => {
@@ -163,9 +185,13 @@ function PosPage() {
               <button
                 key={p.id}
                 onClick={() => addProduct(p)}
-                className="flex h-28 flex-col items-center justify-center gap-1 rounded-2xl border border-border bg-card p-3 transition hover:border-primary hover:bg-accent active:scale-95"
+                className="flex min-h-28 flex-col items-center justify-center gap-1 rounded-2xl border border-border bg-card p-3 transition hover:border-primary hover:bg-accent active:scale-95"
               >
-                {p.unit === "kg" && <Scale className="h-5 w-5 text-primary" />}
+                {p.image ? (
+                  <img src={p.image} alt={p.name} className="h-20 w-20 rounded-xl object-cover" />
+                ) : (
+                  p.unit === "kg" && <Scale className="h-5 w-5 text-primary" />
+                )}
                 <span className="text-base font-bold text-foreground">{p.name}</span>
                 <span className="text-sm text-muted-foreground">
                   {formatMoney(p.price)} {p.unit === "kg" ? "/ كغم" : ""}
@@ -234,19 +260,12 @@ function PosPage() {
             <p className="mb-4 text-sm text-muted-foreground">
               السعر: {formatMoney(weightModal.price)} / كغم
             </p>
-            <label className="mb-2 block text-sm font-semibold">الوزن (كغم)</label>
-            <input
-              autoFocus
-              type="number"
-              step="0.001"
-              value={weight}
-              onChange={(e) => setWeight(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && confirmWeight()}
-              placeholder="0.000"
-              className="mb-2 h-14 w-full rounded-xl border border-border bg-secondary px-4 text-center text-2xl font-bold outline-none focus:border-primary"
-            />
-            <p className="mb-4 text-xs text-muted-foreground">
-              عند ربط الميزان سيُجلب الوزن تلقائياً من الميزان بدون كتابة
+            <label className="mb-2 block text-sm font-semibold">الوزن من الميزان (كغم)</label>
+            <div className="mb-2 flex h-16 w-full items-center justify-center rounded-xl border border-border bg-secondary text-3xl font-bold">
+              {weight || "—"}
+            </div>
+            <p className="mb-4 text-center text-xs text-muted-foreground">
+              {scaleStatus}
             </p>
             {parseFloat(weight) > 0 && (
               <p className="mb-4 text-center text-lg font-bold text-primary">

@@ -17,6 +17,7 @@ export interface Product {
   category: string;
   stock: number;
   active: boolean;
+  image?: string | undefined; // small data URL
 }
 
 export interface CartItem {
