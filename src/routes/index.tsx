@@ -17,6 +17,7 @@ import {
   getGroups,
   recordSaleMovements,
   roundToCash250,
+  parseScaleLabel,
   uid,
 } from "@/lib/db";
 import { buildReceiptHtml } from "@/lib/receipt";
@@ -157,6 +158,22 @@ function PosPage() {
     });
   };
 
+  const handleScan = () => {
+    const code = search.trim();
+    if (!code) return;
+    const label = parseScaleLabel(code, getSettings(), products);
+    if (label) {
+      if ("error" in label) { toast.error(label.error); setSearch(""); return; }
+      const { product: p, qty, total: lineTotal } = label;
+      setCart((c) => [...c, { productId: p.id, name: p.name, unit: p.unit, price: p.price, qty, total: lineTotal }]);
+      toast.success(`${p.name} — ${qty.toFixed(3)} كغم`);
+      setSearch("");
+      return;
+    }
+    const exact = products.find((p) => p.barcode && p.barcode === code);
+    if (exact) { addProduct(exact); setSearch(""); }
+  };
+
   const confirmWeight = () => {
     const w = parseFloat(weight);
     if (!weightModal || !w || w <= 0) return;
@@ -240,7 +257,9 @@ function PosPage() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="ابحث بالاسم أو الباركود..."
+              onKeyDown={(e) => { if (e.key === "Enter") handleScan(); }}
+              autoFocus
+              placeholder="ابحث بالاسم أو امسح الباركود..."
               className="h-12 flex-1 rounded-xl border border-border bg-card px-4 text-foreground outline-none focus:border-primary"
             />
             <button

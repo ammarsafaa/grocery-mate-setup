@@ -275,6 +275,15 @@ function ProductsPage() {
                 placeholder="الباركود (اختياري)"
                 className="h-12 w-full rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary"
               />
+              {editing.unit === "kg" && (
+                <input
+                  inputMode="numeric"
+                  value={editing.plu || ""}
+                  onChange={(e) => setEditing({ ...editing, plu: e.target.value.replace(/\D/g, "") })}
+                  placeholder="رقم المنتج في الميزان (لملصقات الباركود)"
+                  className="h-12 w-full rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary"
+                />
+              )}
               <div className="flex items-center gap-3">
                 {editing.image ? (
                   <img src={editing.image} alt="" className="h-20 w-20 rounded-xl object-cover" />
