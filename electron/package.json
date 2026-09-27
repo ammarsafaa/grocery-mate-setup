@@ -9,8 +9,16 @@
     "appId": "com.grocery.pos",
     "productName": "Grocery POS",
     "files": [
-      "electron/**",
-      "dist/client/**"
+      "electron/**"
+    ],
+    "extraResources": [
+      {
+        "from": "dist/client",
+        "to": "app",
+        "filter": [
+          "**/*"
+        ]
+      }
     ],
     "win": {
       "target": [
