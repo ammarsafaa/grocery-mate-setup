@@ -228,7 +228,7 @@ export function recordSaleMovements(sale: Sale) {
   const movements = getStockMovements();
   for (const item of sale.items) {
     const product = products.find((p) => p.id === item.productId);
-    if (product) movements.push({ id: uid(), productId: item.productId, productName: item.name, type: "sale", qty: -item.qty, balanceAfter: Math.max(0, product.stock - item.qty), referenceId: sale.id, userName: sale.userName, createdAt: sale.createdAt });
+    if (product) movements.push({ id: uid(), productId: item.productId, productName: item.name, type: "sale", qty: -item.qty, balanceAfter: product.stock, referenceId: sale.id, userName: sale.userName, createdAt: sale.createdAt });
   }
   saveStockMovements(movements);
 }
