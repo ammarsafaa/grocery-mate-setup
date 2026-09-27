@@ -21,15 +21,15 @@ export const Route = createFileRoute("/shifts")({
 });
 
 function ShiftsPage() {
-  const { user } = useAuth();
+  const { user, ready } = useAuth();
   const navigate = useNavigate();
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [openCash, setOpenCash] = useState("");
   const [closeCash, setCloseCash] = useState("");
 
   useEffect(() => {
-    if (!user) navigate({ to: "/login" });
-  }, [user, navigate]);
+    if (ready && !user) navigate({ to: "/login" });
+  }, [user, ready, navigate]);
 
   useEffect(() => setShifts(getShifts().slice().reverse()), []);
 
@@ -70,7 +70,7 @@ function ShiftsPage() {
     toast.success("تم غلق الوردية وحفظ تقريرها");
   };
 
-  if (!user) return null;
+  if (!ready || !user) return null;
 
   return (
     <AppLayout>

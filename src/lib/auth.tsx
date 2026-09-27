@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSessionUserId(null);
   };
 
-  return <Ctx.Provider value={{ user, login, logout }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ user, ready, login, logout }}>{children}</Ctx.Provider>;
 }
 
 export function useAuth() {

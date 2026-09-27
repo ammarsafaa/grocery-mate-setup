@@ -30,7 +30,7 @@ export const Route = createFileRoute("/")({
 });
 
 function PosPage() {
-  const { user } = useAuth();
+  const { user, ready } = useAuth();
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -40,8 +40,8 @@ function PosPage() {
   const [weight, setWeight] = useState("");
 
   useEffect(() => {
-    if (!user) navigate({ to: "/login" });
-  }, [user, navigate]);
+    if (ready && !user) navigate({ to: "/login" });
+  }, [user, ready, navigate]);
 
   useEffect(() => {
     setProducts(getProducts().filter((p) => p.active));
@@ -117,7 +117,7 @@ function PosPage() {
     toast.success(`تم حفظ الفاتورة رقم ${nextSaleNumber() - 1}`);
   };
 
-  if (!user) return null;
+  if (!ready || !user) return null;
 
   if (!shift) {
     return (

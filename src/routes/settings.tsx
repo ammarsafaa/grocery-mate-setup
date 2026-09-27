@@ -29,7 +29,7 @@ export const Route = createFileRoute("/settings")({
 });
 
 function SettingsPage() {
-  const { user } = useAuth();
+  const { user, ready } = useAuth();
   const navigate = useNavigate();
   const [settings, setSettings] = useState<Settings>(getSettings());
   const [users, setUsers] = useState<PosUser[]>([]);
@@ -37,13 +37,14 @@ function SettingsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (!ready) return;
     if (!user) navigate({ to: "/login" });
     else if (user.role !== "admin") navigate({ to: "/" });
-  }, [user, navigate]);
+  }, [user, ready, navigate]);
 
   useEffect(() => setUsers(getUsers()), []);
 
-  if (!user || user.role !== "admin") return null;
+  if (!ready || !user || user.role !== "admin") return null;
 
   const save = (s: Settings) => {
     setSettings(s);

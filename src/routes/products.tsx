@@ -31,15 +31,15 @@ const EMPTY: Omit<Product, "id"> = {
 };
 
 function ProductsPage() {
-  const { user } = useAuth();
+  const { user, ready } = useAuth();
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [editing, setEditing] = useState<Product | null>(null);
   const [isNew, setIsNew] = useState(false);
 
   useEffect(() => {
-    if (!user) navigate({ to: "/login" });
-  }, [user, navigate]);
+    if (ready && !user) navigate({ to: "/login" });
+  }, [user, ready, navigate]);
 
   useEffect(() => setProducts(getProducts()), []);
 
@@ -64,7 +64,7 @@ function ProductsPage() {
     toast.success("تم حذف المنتج");
   };
 
-  if (!user) return null;
+  if (!ready || !user) return null;
 
   return (
     <AppLayout>

@@ -34,14 +34,14 @@ function inPeriod(s: Sale, period: Period): boolean {
 }
 
 function ReportsPage() {
-  const { user } = useAuth();
+  const { user, ready } = useAuth();
   const navigate = useNavigate();
   const [period, setPeriod] = useState<Period>("day");
   const [sales, setSales] = useState<Sale[]>([]);
 
   useEffect(() => {
-    if (!user) navigate({ to: "/login" });
-  }, [user, navigate]);
+    if (ready && !user) navigate({ to: "/login" });
+  }, [user, ready, navigate]);
 
   useEffect(() => setSales(getSales().slice().reverse()), []);
 
@@ -60,7 +60,7 @@ function ReportsPage() {
     return [...map.values()].sort((a, b) => b.total - a.total).slice(0, 10);
   }, [filtered]);
 
-  if (!user) return null;
+  if (!ready || !user) return null;
 
   const tabs: { key: Period; label: string }[] = [
     { key: "day", label: "اليوم" },
