@@ -10,3 +10,5 @@
 <!-- LOVABLE:END -->
 - Licensing: offline ECDSA P-256 signature of machine ID; only public key in app (src/lib/license.ts), private key held by owner — no server needed.
 - Windows app: Electron shell in electron/, builds SPA via ELECTRON_BUILD=1, installer built by GitHub Actions on windows-latest (can't build exe in sandbox).
+- Business records use append-only stock movements; posted purchases are reversed on cancellation so inventory history remains auditable.
+- Receipt layouts are stored as structured element settings per paper width, not arbitrary HTML, to keep printing safe and portable.
