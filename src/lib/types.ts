@@ -125,6 +125,7 @@ export interface ReceiptElement {
 export interface ReceiptDesign {
   paperWidth: 58 | 80;
   elements: ReceiptElement[];
+  tableBorders?: boolean;
   logo?: string;
   address: string;
   phone: string;

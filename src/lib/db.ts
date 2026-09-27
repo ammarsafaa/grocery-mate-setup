@@ -295,7 +295,9 @@ const DEFAULT_RECEIPT_ELEMENTS: ReceiptDesign["elements"] = [
 ];
 
 export function getReceiptDesign(width: 58 | 80): ReceiptDesign {
-  return read<ReceiptDesign>(`receiptDesign:${width}`, { paperWidth: width, elements: DEFAULT_RECEIPT_ELEMENTS.map((e) => ({ ...e })), address: "", phone: "", footer: "شكراً لتسوقكم معنا" });
+  const saved = read<ReceiptDesign | null>(`receiptDesign:${width}`, null);
+  if (saved) return { ...saved, tableBorders: saved.tableBorders ?? true };
+  return { paperWidth: width, elements: DEFAULT_RECEIPT_ELEMENTS.map((e) => ({ ...e })), tableBorders: true, address: "", phone: "", footer: "شكراً لتسوقكم معنا" };
 }
 export function saveReceiptDesign(design: ReceiptDesign) { write(`receiptDesign:${design.paperWidth}`, design); }
 
