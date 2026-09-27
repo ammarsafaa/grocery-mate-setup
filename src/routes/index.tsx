@@ -47,8 +47,17 @@ function PosPage() {
   }, [user, ready, navigate]);
 
   useEffect(() => {
-    setProducts(getProducts().filter((p) => p.active));
+    const load = () => setProducts(getProducts().filter((p) => p.active !== false));
+    load();
     maybeAutoBackup();
+    window.addEventListener("focus", load);
+    window.addEventListener("storage", load);
+    document.addEventListener("visibilitychange", load);
+    return () => {
+      window.removeEventListener("focus", load);
+      window.removeEventListener("storage", load);
+      document.removeEventListener("visibilitychange", load);
+    };
   }, []);
 
   const filtered = useMemo(

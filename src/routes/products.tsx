@@ -72,7 +72,12 @@ function ProductsPage() {
     const next = isNew
       ? [...products, editing]
       : products.map((p) => (p.id === editing.id ? editing : p));
-    saveProducts(next);
+    try {
+      saveProducts(next);
+    } catch {
+      toast.error("لا توجد مساحة كافية لحفظ الصورة، جرّب صورة أصغر");
+      return;
+    }
     setProducts(next);
     setEditing(null);
     toast.success("تم الحفظ");
@@ -225,9 +230,15 @@ function ProductsPage() {
                     className="hidden"
                     onChange={async (e) => {
                       const f = e.target.files?.[0];
+                      e.target.value = "";
                       if (!f) return;
-                      const img = await resizeImage(f);
-                      setEditing((ed) => (ed ? { ...ed, image: img } : ed));
+                      try {
+                        const img = await resizeImage(f);
+                        setEditing((ed) => (ed ? { ...ed, image: img } : ed));
+                        toast.success("تمت إضافة الصورة، اضغط حفظ");
+                      } catch {
+                        toast.error("تعذر قراءة الصورة، جرّب صورة JPG أو PNG");
+                      }
                     }}
                   />
                 </label>
