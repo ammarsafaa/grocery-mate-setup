@@ -53,7 +53,8 @@ export function saveUsers(users: PosUser[]) {
 
 // ---------- Products ----------
 export function getProducts(): Product[] {
-  return read<Product[]>("products", seedProducts());
+  const saved = read<Product[] | null>("products", null);
+  return saved ?? seedProducts();
 }
 
 function seedProducts(): Product[] {
@@ -77,6 +78,7 @@ function seedProducts(): Product[] {
 
 export function saveProducts(products: Product[]) {
   write("products", products);
+  window.dispatchEvent(new CustomEvent("grocery-pos:products-updated"));
 }
 
 // ---------- Sales ----------
