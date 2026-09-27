@@ -1,3 +1,4 @@
+import { native } from "@/lib/native";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Download, Upload, Plus, Trash2, Scale, HardDrive } from "lucide-react";

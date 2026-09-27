@@ -1,3 +1,4 @@
+import { native } from "@/lib/native";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Scale, Trash2, ShoppingBasket, PlayCircle } from "lucide-react";
