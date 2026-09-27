@@ -39,6 +39,7 @@ export const Route = createFileRoute("/products")({
       { title: "المنتجات — نظام البقالة" },
       { name: "description", content: "إدارة المنتجات والأسعار والمخزون" },
       { property: "og:title", content: "المنتجات — نظام البقالة" },
+      { property: "og:description", content: "إدارة المنتجات والأسعار والصور والمخزون" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

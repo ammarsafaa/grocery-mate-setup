@@ -27,6 +27,7 @@ export const Route = createFileRoute("/")({
       { title: "نقطة البيع — نظام البقالة" },
       { name: "description", content: "شاشة الكاشير لبيع المنتجات بالوزن أو بالقطعة" },
       { property: "og:title", content: "نقطة البيع — نظام البقالة" },
+      { property: "og:description", content: "شاشة الكاشير لبيع المنتجات بالوزن أو بالقطعة" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

@@ -24,6 +24,7 @@ export const Route = createFileRoute("/settings")({
       { title: "الإعدادات — نظام البقالة" },
       { name: "description", content: "إعدادات المتجر والميزان والنسخ الاحتياطي والمستخدمين" },
       { property: "og:title", content: "الإعدادات — نظام البقالة" },
+      { property: "og:description", content: "إعدادات المتجر والميزان والطباعة والنسخ الاحتياطي والمستخدمين" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

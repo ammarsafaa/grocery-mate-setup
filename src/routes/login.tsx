@@ -12,6 +12,7 @@ export const Route = createFileRoute("/login")({
       { title: "تسجيل الدخول — نظام البقالة" },
       { name: "description", content: "تسجيل الدخول برقم سري" },
       { property: "og:title", content: "تسجيل الدخول — نظام البقالة" },
+      { property: "og:description", content: "تسجيل الدخول الآمن إلى نظام البقالة برقم سري" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

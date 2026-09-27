@@ -16,6 +16,7 @@ export const Route = createFileRoute("/reports")({
       { title: "التقارير — نظام البقالة" },
       { name: "description", content: "تقارير المبيعات اليومية والأسبوعية والشهرية" },
       { property: "og:title", content: "التقارير — نظام البقالة" },
+      { property: "og:description", content: "تقارير المبيعات اليومية والأسبوعية والشهرية" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
