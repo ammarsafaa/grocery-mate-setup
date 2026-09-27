@@ -38,7 +38,7 @@ export function CloseAppGuard() {
     if (!ok) toast.error("تعذرت الطباعة، تم غلق الوردية وحفظ التقرير");
     else toast.success("تم غلق الوردية وطباعة التقرير");
     window.dispatchEvent(new Event("grocery-pos:shift-closed"));
-    setTimeout(() => (native()?.quitApp ? native()!.quitApp() : setShow(false)), 800);
+    setTimeout(() => { const q = native()?.quitApp; if (q) q(); else setShow(false); }, 800);
   };
 
   return (
