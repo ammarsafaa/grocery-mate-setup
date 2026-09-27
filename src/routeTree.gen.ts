@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ActivateRouteImport } from './routes/activate'
+import { Route as GroupsRouteImport } from './routes/groups'
+import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as LicenseGeneratorRouteImport } from './routes/license-generator'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ProductsRouteImport } from './routes/products'
@@ -26,6 +28,16 @@ const IndexRoute = IndexRouteImport.update({
 const ActivateRoute = ActivateRouteImport.update({
   id: '/activate',
   path: '/activate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GroupsRoute = GroupsRouteImport.update({
+  id: '/groups',
+  path: '/groups',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InventoryRoute = InventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LicenseGeneratorRoute = LicenseGeneratorRouteImport.update({
@@ -62,6 +74,8 @@ const ShiftsRoute = ShiftsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/activate': typeof ActivateRoute
+  '/groups': typeof GroupsRoute
+  '/inventory': typeof InventoryRoute
   '/license-generator': typeof LicenseGeneratorRoute
   '/login': typeof LoginRoute
   '/products': typeof ProductsRoute
@@ -72,6 +86,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/activate': typeof ActivateRoute
+  '/groups': typeof GroupsRoute
+  '/inventory': typeof InventoryRoute
   '/license-generator': typeof LicenseGeneratorRoute
   '/login': typeof LoginRoute
   '/products': typeof ProductsRoute
@@ -83,6 +99,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/activate': typeof ActivateRoute
+  '/groups': typeof GroupsRoute
+  '/inventory': typeof InventoryRoute
   '/license-generator': typeof LicenseGeneratorRoute
   '/login': typeof LoginRoute
   '/products': typeof ProductsRoute
@@ -95,6 +113,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/activate'
+    | '/groups'
+    | '/inventory'
     | '/license-generator'
     | '/login'
     | '/products'
@@ -105,6 +125,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/activate'
+    | '/groups'
+    | '/inventory'
     | '/license-generator'
     | '/login'
     | '/products'
@@ -115,6 +137,8 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/activate'
+    | '/groups'
+    | '/inventory'
     | '/license-generator'
     | '/login'
     | '/products'
@@ -126,6 +150,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActivateRoute: typeof ActivateRoute
+  GroupsRoute: typeof GroupsRoute
+  InventoryRoute: typeof InventoryRoute
   LicenseGeneratorRoute: typeof LicenseGeneratorRoute
   LoginRoute: typeof LoginRoute
   ProductsRoute: typeof ProductsRoute
@@ -148,6 +174,20 @@ declare module '@tanstack/react-router' {
       path: '/activate'
       fullPath: '/activate'
       preLoaderRoute: typeof ActivateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/groups': {
+      id: '/groups'
+      path: '/groups'
+      fullPath: '/groups'
+      preLoaderRoute: typeof GroupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inventory': {
+      id: '/inventory'
+      path: '/inventory'
+      fullPath: '/inventory'
+      preLoaderRoute: typeof InventoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/license-generator': {
@@ -198,6 +238,8 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActivateRoute: ActivateRoute,
+  GroupsRoute: GroupsRoute,
+  InventoryRoute: InventoryRoute,
   LicenseGeneratorRoute: LicenseGeneratorRoute,
   LoginRoute: LoginRoute,
   ProductsRoute: ProductsRoute,
