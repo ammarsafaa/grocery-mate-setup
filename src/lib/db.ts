@@ -160,8 +160,8 @@ const DEFAULT_SETTINGS: Settings = {
   currency: "د.ع",
   backupFolder: "",
   autoBackup: true,
-  scaleIp: "192.168.1.50",
-  scalePort: 9000,
+  scaleIp: "192.168.1.87",
+  scalePort: 3001,
 };
 
 export function getSettings(): Settings {
@@ -223,12 +223,12 @@ export function maybeAutoBackup() {
   if (!s.autoBackup) return;
   const today = new Date().toISOString().slice(0, 10);
   if (s.lastBackupAt === today) return;
-  const n = (window as unknown as { posNative?: { saveBackup: (f: string, n: string, c: string) => Promise<boolean> } }).posNative;
+  const n = native();
   if (n && s.backupFolder) {
-    // Windows app: silent save into the chosen folder
-    n.saveBackup(s.backupFolder, `backup-${today}.json`, exportBackup()).then(() =>
-      saveSettings({ ...getSettings(), lastBackupAt: today }),
-    );
+    // Windows app: copy the real SQLite database file into the chosen folder
+    n.backupDb(s.backupFolder).then((r) => {
+      if (r.ok) saveSettings({ ...getSettings(), lastBackupAt: today });
+    });
     return;
   }
   const blob = new Blob([exportBackup()], { type: "application/json" });
