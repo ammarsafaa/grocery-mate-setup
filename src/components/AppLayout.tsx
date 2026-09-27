@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { isLicensed } from "@/lib/license";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   ShoppingCart,
@@ -25,6 +27,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const storeName = getSettings().storeName;
+  useEffect(() => {
+    isLicensed().then((ok) => { if (!ok) navigate({ to: "/activate" }); });
+  }, [navigate]);
 
   return (
     <div className="flex min-h-screen bg-background">

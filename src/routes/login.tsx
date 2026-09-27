@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { isLicensed } from "@/lib/license";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Delete, LockKeyhole } from "lucide-react";
@@ -23,6 +25,9 @@ function LoginPage() {
   const [pin, setPin] = useState("");
   const [error, setError] = useState(false);
   const storeName = getSettings().storeName;
+  useEffect(() => {
+    isLicensed().then((ok) => { if (!ok) navigate({ to: "/activate" }); });
+  }, [navigate]);
 
   const press = (d: string) => {
     if (pin.length >= 8) return;
