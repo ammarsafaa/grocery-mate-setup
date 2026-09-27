@@ -3,6 +3,8 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: windows-latest
@@ -20,8 +22,15 @@ jobs:
           cp -r electron dist pkg/
           cp electron/package.json pkg/package.json
           cd pkg
+          npm version "1.0.${{ github.run_number }}" --no-git-tag-version --allow-same-version
           npm install
-          npx electron-builder --win --publish never
+          npx electron-builder --win --publish always \
+            -c.publish.provider=github \
+            -c.publish.owner="${{ github.repository_owner }}" \
+            -c.publish.repo="${{ github.event.repository.name }}" \
+            -c.publish.releaseType=release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/upload-artifact@v4
         with:
           name: GroceryPOS-Setup
