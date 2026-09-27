@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { isLicensed } from "@/lib/license";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Delete, LockKeyhole } from "lucide-react";
+import { Delete } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { getSettings } from "@/lib/db";
 import zerosLogo from "@/assets/zeros-logo.png";

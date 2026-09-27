@@ -8,7 +8,6 @@ import {
   BarChart3,
   Settings as SettingsIcon,
   LogOut,
-  Store,
   FolderTree,
   Truck,
   Boxes,
