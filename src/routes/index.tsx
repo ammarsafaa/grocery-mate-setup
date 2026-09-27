@@ -330,6 +330,31 @@ function PosPage() {
         </div>
       </div>
 
+      {/* Quick price modal */}
+      {priceEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6">
+            <h3 className="mb-1 text-xl font-bold">{priceEdit.name}</h3>
+            <p className="mb-4 text-sm text-muted-foreground">
+              السعر الحالي: {formatMoney(priceEdit.price)} {priceEdit.unit === "kg" ? "/ كغم" : "/ قطعة"}
+            </p>
+            <label className="mb-2 block text-sm font-semibold">السعر الجديد (د.ع)</label>
+            <input
+              autoFocus
+              type="number"
+              value={priceDraft}
+              onChange={(e) => setPriceDraft(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") saveQuickPrice(); }}
+              className="mb-4 h-14 w-full rounded-xl border border-border bg-secondary px-4 text-center text-2xl font-bold outline-none focus:border-primary"
+            />
+            <div className="flex gap-2">
+              <button onClick={saveQuickPrice} className="h-12 flex-1 rounded-xl bg-primary font-bold text-primary-foreground">حفظ السعر</button>
+              <button onClick={() => { setPriceEdit(null); setPriceMode(false); }} className="h-12 flex-1 rounded-xl bg-secondary font-bold">إلغاء</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Weight modal */}
       {weightModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4">
