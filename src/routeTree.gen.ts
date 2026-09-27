@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ActivateRouteImport } from './routes/activate'
+import { Route as LicenseGeneratorRouteImport } from './routes/license-generator'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as ReportsRouteImport } from './routes/reports'
@@ -19,6 +21,16 @@ import { Route as ShiftsRouteImport } from './routes/shifts'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActivateRoute = ActivateRouteImport.update({
+  id: '/activate',
+  path: '/activate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LicenseGeneratorRoute = LicenseGeneratorRouteImport.update({
+  id: '/license-generator',
+  path: '/license-generator',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -49,6 +61,8 @@ const ShiftsRoute = ShiftsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/activate': typeof ActivateRoute
+  '/license-generator': typeof LicenseGeneratorRoute
   '/login': typeof LoginRoute
   '/products': typeof ProductsRoute
   '/reports': typeof ReportsRoute
@@ -57,6 +71,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/activate': typeof ActivateRoute
+  '/license-generator': typeof LicenseGeneratorRoute
   '/login': typeof LoginRoute
   '/products': typeof ProductsRoute
   '/reports': typeof ReportsRoute
@@ -66,6 +82,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/activate': typeof ActivateRoute
+  '/license-generator': typeof LicenseGeneratorRoute
   '/login': typeof LoginRoute
   '/products': typeof ProductsRoute
   '/reports': typeof ReportsRoute
@@ -74,12 +92,30 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/products' | '/reports' | '/settings' | '/shifts'
+  fullPaths:
+    | '/'
+    | '/activate'
+    | '/license-generator'
+    | '/login'
+    | '/products'
+    | '/reports'
+    | '/settings'
+    | '/shifts'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/products' | '/reports' | '/settings' | '/shifts'
+  to:
+    | '/'
+    | '/activate'
+    | '/license-generator'
+    | '/login'
+    | '/products'
+    | '/reports'
+    | '/settings'
+    | '/shifts'
   id:
     | '__root__'
     | '/'
+    | '/activate'
+    | '/license-generator'
     | '/login'
     | '/products'
     | '/reports'
@@ -89,6 +125,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ActivateRoute: typeof ActivateRoute
+  LicenseGeneratorRoute: typeof LicenseGeneratorRoute
   LoginRoute: typeof LoginRoute
   ProductsRoute: typeof ProductsRoute
   ReportsRoute: typeof ReportsRoute
@@ -103,6 +141,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/activate': {
+      id: '/activate'
+      path: '/activate'
+      fullPath: '/activate'
+      preLoaderRoute: typeof ActivateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/license-generator': {
+      id: '/license-generator'
+      path: '/license-generator'
+      fullPath: '/license-generator'
+      preLoaderRoute: typeof LicenseGeneratorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -145,6 +197,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ActivateRoute: ActivateRoute,
+  LicenseGeneratorRoute: LicenseGeneratorRoute,
   LoginRoute: LoginRoute,
   ProductsRoute: ProductsRoute,
   ReportsRoute: ReportsRoute,
