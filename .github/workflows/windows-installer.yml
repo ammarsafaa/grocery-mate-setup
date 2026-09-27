@@ -20,9 +20,9 @@ jobs:
           cp -r electron dist pkg/
           cp electron/package.json pkg/package.json
           cd pkg
-          npm install --no-save electron@33 electron-builder@25
+          npm install
           npx electron-builder --win --publish never
       - uses: actions/upload-artifact@v4
         with:
           name: GroceryPOS-Setup
-          path: pkg/dist/*.exe
+          path: pkg/release/*.exe

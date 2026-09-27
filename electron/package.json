@@ -8,14 +8,33 @@
   "build": {
     "appId": "com.grocery.pos",
     "productName": "Grocery POS",
-    "files": ["electron/**", "dist/client/**"],
-    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }] },
+    "files": [
+      "electron/**",
+      "dist/client/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "shortcutName": "نظام البقالة",
       "language": "1025"
+    },
+    "directories": {
+      "output": "release"
     }
+  },
+  "devDependencies": {
+    "electron": "33.2.0",
+    "electron-builder": "25.1.8"
   }
 }
