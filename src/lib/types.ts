@@ -18,7 +18,7 @@ export interface Product {
   stock: number;
   active: boolean;
   image?: string | undefined; // small data URL
-  groupId?: string;
+  groupId?: string | undefined;
   costPrice?: number;
   minStock?: number;
 }

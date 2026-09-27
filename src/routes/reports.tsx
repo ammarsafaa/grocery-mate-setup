@@ -133,7 +133,7 @@ function ReportsPage() {
                     <td className="p-3 text-muted-foreground">
                       {s.items.map((i) => i.name).join("، ")}
                     </td>
-                    <td className="p-3 font-bold text-primary">{formatMoney(s.total)}</td><td className="p-3 text-center"><button title="إعادة طباعة" onClick={async () => { const n = native(); if (!n) return toast.info("الطباعة متاحة في نسخة Windows"); const settings = getSettings(); const result = await n.printReceipt(buildReceiptHtml(s), settings.printerName, settings.printCopies); result.ok ? toast.success("تم إرسال الفاتورة للطابعة") : toast.error("تعذرت الطباعة"); }} className="rounded-lg p-2 hover:bg-accent"><Printer className="h-4 w-4"/></button></td>
+                    <td className="p-3 font-bold text-primary">{formatMoney(s.total)}</td><td className="p-3 text-center"><button title="إعادة طباعة" onClick={async () => { const n = native(); if (!n) { toast.info("الطباعة متاحة في نسخة Windows"); return; } const settings = getSettings(); const result = await n.printReceipt(buildReceiptHtml(s), settings.printerName, settings.printCopies); if (result.ok) toast.success("تم إرسال الفاتورة للطابعة"); else toast.error("تعذرت الطباعة"); }} className="rounded-lg p-2 hover:bg-accent"><Printer className="h-4 w-4"/></button></td>
                   </tr>
                 ))}
                 {filtered.length === 0 && (

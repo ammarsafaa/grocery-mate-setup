@@ -140,7 +140,10 @@ export function getGroups(): ProductGroup[] {
   write("groups", groups);
   if (groups.length) {
     const byName = new Map(groups.map((g) => [g.name, g.id]));
-    saveProducts(getProducts().map((p) => ({ ...p, groupId: p.groupId ?? byName.get(p.category) })));
+    saveProducts(getProducts().map((p) => {
+      const groupId = p.groupId ?? byName.get(p.category);
+      return groupId ? { ...p, groupId } : p;
+    }));
   }
   return groups;
 }

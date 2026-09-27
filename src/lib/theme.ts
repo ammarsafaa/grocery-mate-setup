@@ -5,7 +5,7 @@ const PRESETS = { emerald: "#10b981", blue: "#2563eb", red: "#dc2626", amber: "#
 export function applyTheme(settings: Settings) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
-  root.dataset.mode = settings.colorMode;
+  root.dataset["mode"] = settings.colorMode;
   const color = settings.colorPreset === "custom" ? settings.customColor : PRESETS[settings.colorPreset];
   root.style.setProperty("--primary", color);
   root.style.setProperty("--ring", color);

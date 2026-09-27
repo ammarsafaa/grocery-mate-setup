@@ -30,11 +30,13 @@ function GroupsPage() {
   const commit = (next: ProductGroup[]) => { setGroups(next); saveGroups(next); };
   const move = (index: number, delta: number) => {
     const target = index + delta; if (target < 0 || target >= groups.length) return;
-    const next = [...groups]; [next[index], next[target]] = [next[target], next[index]];
+    const current = groups[index]; const destination = groups[target];
+    if (!current || !destination) return;
+    const next = [...groups]; next[index] = destination; next[target] = current;
     commit(next.map((g, order) => ({ ...g, order })));
   };
   const save = () => {
-    if (!editing?.name.trim()) return toast.error("أدخل اسم المجموعة");
+    if (!editing?.name.trim()) { toast.error("أدخل اسم المجموعة"); return; }
     const exists = groups.some((g) => g.id === editing.id);
     commit(exists ? groups.map((g) => g.id === editing.id ? editing : g) : [...groups, { ...editing, order: groups.length }]);
     setEditing(null); toast.success("تم حفظ المجموعة");
