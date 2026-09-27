@@ -2,9 +2,10 @@ import { useEffect } from "react";
 import { isLicensed } from "@/lib/license";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Delete, LockKeyhole } from "lucide-react";
+import { Delete } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { getSettings } from "@/lib/db";
+import zerosLogo from "@/assets/zeros-logo.png";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -52,9 +53,8 @@ function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-8 shadow-2xl">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/15">
-            <LockKeyhole className="h-8 w-8 text-primary" />
-          </div>
+          <img src={zerosLogo} alt="شعار زيروس" className="mx-auto mb-3 h-24 w-24 object-contain" />
+          <div className="mb-1 text-sm font-bold text-primary">زيروس</div>
           <h1 className="text-2xl font-bold text-foreground">{storeName}</h1>
           <p className="mt-1 text-sm text-muted-foreground">أدخل الرقم السري للدخول</p>
         </div>

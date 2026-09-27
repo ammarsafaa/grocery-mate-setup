@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { KeyRound, Copy } from "lucide-react";
+import { Copy } from "lucide-react";
 import { toast } from "sonner";
 import { activate, getMachineId } from "@/lib/license";
+import zerosLogo from "@/assets/zeros-logo.png";
 
 export const Route = createFileRoute("/activate")({
   head: () => ({
@@ -40,10 +41,8 @@ function ActivatePage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-md rounded-3xl border border-border bg-card p-8 shadow-2xl">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/15">
-            <KeyRound className="h-8 w-8 text-primary" />
-          </div>
-          <h1 className="text-2xl font-bold">تفعيل النظام</h1>
+          <img src={zerosLogo} alt="شعار زيروس" className="mx-auto mb-3 h-24 w-24 object-contain" />
+          <h1 className="text-2xl font-bold">تفعيل زيروس</h1>
           <p className="mt-1 text-sm text-muted-foreground">أرسل رمز الجهاز إلى صاحب النظام للحصول على مفتاح التفعيل</p>
         </div>
         <label className="mb-1 block text-sm text-muted-foreground">رمز الجهاز</label>
