@@ -50,6 +50,23 @@ function PosPage() {
   const [settings, setSettings] = useState(getSettings());
   const [groups, setGroups] = useState<ProductGroup[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [priceMode, setPriceMode] = useState(false);
+  const [priceEdit, setPriceEdit] = useState<Product | null>(null);
+  const [priceDraft, setPriceDraft] = useState("");
+
+  const saveQuickPrice = () => {
+    const value = Number(priceDraft);
+    if (!priceEdit || !value || value <= 0) {
+      toast.error("أدخل سعراً صحيحاً");
+      return;
+    }
+    const all = getProducts().map((p) => (p.id === priceEdit.id ? { ...p, price: value } : p));
+    saveProducts(all);
+    setProducts(all.filter((p) => p.active !== false));
+    setPriceEdit(null);
+    setPriceMode(false);
+    toast.success(`تم تحديث سعر ${priceEdit.name}`);
+  };
 
   useEffect(() => {
     if (ready && !user) navigate({ to: "/login" });
