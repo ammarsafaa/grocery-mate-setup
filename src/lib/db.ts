@@ -15,9 +15,46 @@ import type {
 
 const PREFIX = "grocery-pos:";
 
+type NativeBridge = {
+  dbGetAll: () => Record<string, string>;
+  dbSet: (key: string, value: string) => boolean;
+  backupDb: (folder: string) => Promise<{ ok: boolean; path?: string; error?: string }>;
+  saveBackup: (f: string, n: string, c: string) => Promise<boolean>;
+};
+
+function native(): NativeBridge | null {
+  const n = (window as unknown as { posNative?: NativeBridge }).posNative;
+  return n && typeof n.dbGetAll === "function" ? n : null;
+}
+
+// In the Windows app, SQLite rows are mirrored into memory once at startup
+// so the rest of the code keeps a simple synchronous API.
+let sqliteCache: Record<string, string> | null = null;
+
+function store(): Record<string, string> {
+  const n = native();
+  if (n) {
+    if (!sqliteCache) {
+      try {
+        sqliteCache = n.dbGetAll() ?? {};
+      } catch {
+        sqliteCache = {};
+      }
+    }
+    return sqliteCache;
+  }
+  // Browser preview fallback: localStorage
+  const out: Record<string, string> = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith(PREFIX)) out[k.slice(PREFIX.length)] = localStorage.getItem(k) ?? "";
+  }
+  return out;
+}
+
 function read<T>(key: string, fallback: T): T {
   try {
-    const raw = localStorage.getItem(PREFIX + key);
+    const raw = store()[key];
     return raw ? (JSON.parse(raw) as T) : fallback;
   } catch {
     return fallback;
@@ -25,7 +62,14 @@ function read<T>(key: string, fallback: T): T {
 }
 
 function write<T>(key: string, value: T) {
-  localStorage.setItem(PREFIX + key, JSON.stringify(value));
+  const json = JSON.stringify(value);
+  const n = native();
+  if (n && sqliteCache) {
+    sqliteCache[key] = json;
+    n.dbSet(key, json);
+    return;
+  }
+  localStorage.setItem(PREFIX + key, json);
 }
 
 export function uid(): string {
