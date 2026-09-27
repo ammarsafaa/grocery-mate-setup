@@ -385,3 +385,8 @@ export function formatMoney(n: number, currency?: string): string {
   const c = currency ?? getSettings().currency;
   return `${n.toLocaleString("ar-IQ")} ${c}`;
 }
+
+/** Cash denominations start at 250 IQD, so sale amounts settle to the nearest 250. */
+export function roundToCash250(amount: number): number {
+  return Math.round(amount / 250) * 250;
+}
