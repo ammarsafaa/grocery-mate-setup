@@ -21,6 +21,8 @@ jobs:
           mkdir -p pkg
           cp -r electron dist pkg/
           cp electron/package.json pkg/package.json
+          # Fail loudly if the app UI files are missing — never ship a broken installer
+          test -f pkg/dist/client/_shell.html
           cd pkg
           npm version "1.0.${{ github.run_number }}" --no-git-tag-version --allow-same-version
           npm install
