@@ -271,6 +271,11 @@ const DEFAULT_SETTINGS: Settings = {
   printCopies: 1,
   autoCut: true,
   openDrawer: false,
+  labelBarcodeEnabled: false,
+  labelPrefixes: "20,21,22",
+  labelPluLength: 5,
+  labelValueType: "weight",
+  labelWeightDecimals: 3,
 };
 
 export function getSettings(): Settings {
@@ -391,4 +396,27 @@ export function formatMoney(n: number, currency?: string): string {
 /** Cash denominations start at 250 IQD, so sale amounts settle to the nearest 250. */
 export function roundToCash250(amount: number): number {
   return Math.round(amount / 250) * 250;
+}
+
+/** Parse an EAN-13 scale label barcode. Returns null when it isn't a scale label. */
+export function parseScaleLabel(code: string, s: Settings, products: Product[]) {
+  const c = code.trim();
+  if (!s.labelBarcodeEnabled || !/^\d{13}$/.test(c)) return null;
+  const prefixes = s.labelPrefixes.split(",").map((x) => x.trim()).filter(Boolean);
+  const prefix = prefixes.find((x) => c.startsWith(x));
+  if (!prefix) return null;
+  const pluLen = Math.max(1, Math.min(6, s.labelPluLength || 5));
+  const plu = c.slice(prefix.length, prefix.length + pluLen);
+  const valueDigits = c.slice(prefix.length + pluLen, 12);
+  const product = products.find((p) => p.plu && Number(p.plu) === Number(plu));
+  if (!product) return { error: `لا يوجد منتج برقم الميزان ${Number(plu)}` } as const;
+  const raw = Number(valueDigits);
+  if (s.labelValueType === "price") {
+    const total = raw;
+    const qty = product.price > 0 ? Math.round((total / product.price) * 1000) / 1000 : 1;
+    return { product, qty, total } as const;
+  }
+  const qty = raw / Math.pow(10, s.labelWeightDecimals ?? 3);
+  if (qty <= 0) return { error: "الوزن في الملصق غير صحيح" } as const;
+  return { product, qty, total: roundToCash250(qty * product.price) } as const;
 }

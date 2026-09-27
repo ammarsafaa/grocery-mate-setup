@@ -21,6 +21,7 @@ export interface Product {
   groupId?: string | undefined;
   costPrice?: number;
   minStock?: number;
+  plu?: string; // scale product code (PLU)
 }
 
 export interface ProductGroup {
@@ -164,6 +165,11 @@ export interface Settings {
   printCopies: number;
   autoCut: boolean;
   openDrawer: boolean;
+  labelBarcodeEnabled: boolean;
+  labelPrefixes: string; // comma separated, e.g. "20,21,22"
+  labelPluLength: number;
+  labelValueType: "weight" | "price";
+  labelWeightDecimals: number;
 }
 
 export interface LicenseState {
