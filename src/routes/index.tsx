@@ -132,6 +132,11 @@ function PosPage() {
   }, [weightModal]);
 
   const addProduct = (p: Product) => {
+    if (priceMode) {
+      setPriceEdit(p);
+      setPriceDraft(String(p.price));
+      return;
+    }
     if (p.unit === "kg") {
       setWeight("");
       setWeightModal(p);
@@ -237,6 +242,13 @@ function PosPage() {
             placeholder="ابحث بالاسم أو الباركود..."
             className="mb-4 h-12 rounded-xl border border-border bg-card px-4 text-foreground outline-none focus:border-primary"
           />
+          <button
+            onClick={() => setPriceMode((v) => !v)}
+            className={`mb-4 flex h-12 items-center gap-2 rounded-xl px-5 font-bold transition ${priceMode ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
+          >
+            <Pencil className="h-4 w-4" />
+            {priceMode ? "وضع تغيير السعر مفعّل — اضغط على أي منتج" : "تغيير سعر"}
+          </button>
           {settings.useProductGroups && !search && <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
             {selectedGroup && <button onClick={() => setSelectedGroup(null)} className="flex min-w-24 items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-3 font-bold"><ArrowRight className="h-4 w-4"/>رجوع</button>}
             {!selectedGroup && groups.map((group) => <button key={group.id} onClick={() => setSelectedGroup(group.id)} className="flex min-w-32 flex-col items-center gap-2 rounded-lg border border-border bg-card px-5 py-4 font-bold hover:border-primary"><FolderOpen className="h-7 w-7 text-primary"/>{group.name}</button>)}
