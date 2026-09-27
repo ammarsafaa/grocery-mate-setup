@@ -4,7 +4,7 @@ import { FolderOpen, GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { useAuth } from "@/lib/auth";
-import { getGroups, saveGroups, uid } from "@/lib/db";
+import { getGroups, getProducts, saveGroups, uid } from "@/lib/db";
 import type { ProductGroup } from "@/lib/types";
 
 export const Route = createFileRoute("/groups")({
@@ -41,6 +41,13 @@ function GroupsPage() {
     commit(exists ? groups.map((g) => g.id === editing.id ? editing : g) : [...groups, { ...editing, order: groups.length }]);
     setEditing(null); toast.success("تم حفظ المجموعة");
   };
+  const remove = (group: ProductGroup) => {
+    if (getProducts().some((product) => product.groupId === group.id)) {
+      toast.error("لا يمكن حذف مجموعة تحتوي على منتجات؛ انقل المنتجات أولاً أو أخفِ المجموعة");
+      return;
+    }
+    if (confirm(`حذف مجموعة ${group.name}؟`)) commit(groups.filter((item) => item.id !== group.id));
+  };
   return <AppLayout><div className="space-y-5 p-6">
     <div className="flex items-center justify-between"><div><h1 className="text-2xl font-bold">مجموعات المنتجات</h1><p className="text-sm text-muted-foreground">رتّب المجموعات كما تريد أن تظهر للكاشير</p></div><button onClick={() => setEditing({ id: uid(), name: "", color: "primary", icon: "package", order: groups.length, active: true })} className="flex items-center gap-2 rounded-lg bg-primary px-5 py-3 font-bold text-primary-foreground"><Plus className="h-5 w-5"/>مجموعة جديدة</button></div>
     <div className="overflow-hidden rounded-lg border border-border bg-card">
@@ -50,7 +57,7 @@ function GroupsPage() {
         <button title="للأعلى" onClick={() => move(index, -1)} className="rounded-lg bg-secondary px-3 py-2">↑</button><button title="للأسفل" onClick={() => move(index, 1)} className="rounded-lg bg-secondary px-3 py-2">↓</button>
         <button onClick={() => commit(groups.map((g) => g.id === group.id ? { ...g, active: !g.active } : g))} className="rounded-lg bg-secondary px-3 py-2 text-sm font-bold">{group.active ? "إخفاء" : "إظهار"}</button>
         <button title="تعديل" onClick={() => setEditing({ ...group })} className="rounded-lg p-2 hover:bg-accent"><Pencil className="h-4 w-4"/></button>
-        <button title="حذف" onClick={() => commit(groups.filter((g) => g.id !== group.id))} className="rounded-lg p-2 text-destructive hover:bg-accent"><Trash2 className="h-4 w-4"/></button>
+        <button title="حذف" onClick={() => remove(group)} className="rounded-lg p-2 text-destructive hover:bg-accent"><Trash2 className="h-4 w-4"/></button>
       </div>)}
       {!groups.length && <div className="p-10 text-center text-muted-foreground">لا توجد مجموعات</div>}
     </div>

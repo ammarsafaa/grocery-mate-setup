@@ -16,6 +16,7 @@ import {
 } from "@/lib/db";
 import type { PosUser, Settings } from "@/lib/types";
 import { applyTheme } from "@/lib/theme";
+import { buildReceiptHtml } from "@/lib/receipt";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -105,6 +106,15 @@ function SettingsPage() {
     setUsers(next);
   };
 
+  const testPrint = async () => {
+    const n = native();
+    if (!n) { toast.info("الطباعة التجريبية متاحة في نسخة Windows"); return; }
+    const now = new Date().toISOString();
+    const html = buildReceiptHtml({ id: "test", number: 1, shiftId: "test", userId: user.id, userName: user.name, items: [{ productId: "test", name: "منتج تجريبي", unit: "piece", price: 1000, qty: 1, total: 1000 }], total: 1000, paid: 1000, change: 0, createdAt: now });
+    const result = await n.printReceipt(html, settings.printerName, 1);
+    if (result.ok) toast.success("تم إرسال الفاتورة التجريبية للطابعة"); else toast.error("تعذرت الطباعة التجريبية");
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6 p-6">
@@ -164,7 +174,7 @@ function SettingsPage() {
             <div><label className="mb-1 block text-sm text-muted-foreground">عدد النسخ</label><input type="number" min="1" max="5" value={settings.printCopies} onChange={(e) => setSettings({ ...settings, printCopies: Math.max(1, Number(e.target.value)) })} className="h-12 w-full rounded-lg border border-border bg-secondary px-4"/></div>
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-3"><label className="flex items-center gap-3 rounded-lg bg-secondary p-3"><input type="checkbox" checked={settings.autoPrint} onChange={(e) => setSettings({ ...settings, autoPrint: e.target.checked })}/>طباعة بعد البيع</label><label className="flex items-center gap-3 rounded-lg bg-secondary p-3"><input type="checkbox" checked={settings.autoCut} onChange={(e) => setSettings({ ...settings, autoCut: e.target.checked })}/>قص الورق</label><label className="flex items-center gap-3 rounded-lg bg-secondary p-3"><input type="checkbox" checked={settings.openDrawer} onChange={(e) => setSettings({ ...settings, openDrawer: e.target.checked })}/>فتح درج النقد</label></div>
-          <div className="mt-4 flex gap-2"><button onClick={() => save(settings)} className="rounded-lg bg-primary px-6 py-3 font-bold text-primary-foreground">حفظ</button><Link to="/receipt-designer" className="flex items-center gap-2 rounded-lg bg-secondary px-6 py-3 font-bold"><ReceiptText className="h-4 w-4"/>تصميم الفاتورة</Link></div>
+          <div className="mt-4 flex flex-wrap gap-2"><button onClick={() => save(settings)} className="rounded-lg bg-primary px-6 py-3 font-bold text-primary-foreground">حفظ</button><button onClick={testPrint} className="rounded-lg bg-secondary px-6 py-3 font-bold">طباعة تجريبية</button><Link to="/receipt-designer" className="flex items-center gap-2 rounded-lg bg-secondary px-6 py-3 font-bold"><ReceiptText className="h-4 w-4"/>تصميم الفاتورة</Link></div>
         </section>
 
         {/* Scale */}
@@ -194,7 +204,7 @@ function SettingsPage() {
             </div>
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            سيتم تفعيل جلب الوزن المباشر بعد تأكيد موديل الميزان النهائي.
+            عنوان RLS1100 محفوظ، والمنفذ قابل للتغيير بعد تجربته على الميزان الحقيقي.
           </p>
           <button
             onClick={() => save(settings)}
