@@ -20,7 +20,6 @@ function startServer() {
       res.setHeader("Content-Type", TYPES[path.extname(file)] || "application/octet-stream");
       fs.createReadStream(file).pipe(res);
     });
-    // fixed port keeps localStorage (the data) on the same origin across runs
     srv.listen(47821, "127.0.0.1", () => resolve("http://127.0.0.1:47821"));
   });
 }
@@ -36,6 +35,41 @@ function machineId() {
   return h.match(/.{4}/g).join("-");
 }
 const MID = machineId();
+
+// ---------- SQLite database ----------
+// All app data lives in one file: <userData>/grocery-pos.db
+let db = null;
+let dbPath = null;
+
+function initDb() {
+  const Database = require("better-sqlite3");
+  dbPath = path.join(app.getPath("userData"), "grocery-pos.db");
+  db = new Database(dbPath);
+  db.pragma("journal_mode = WAL");
+  db.exec("CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
+}
+
+ipcMain.on("db-get-all", (e) => {
+  const rows = db.prepare("SELECT key, value FROM kv").all();
+  const out = {};
+  for (const r of rows) out[r.key] = r.value;
+  e.returnValue = out;
+});
+
+ipcMain.on("db-set", (e, key, value) => {
+  db.prepare("INSERT INTO kv (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(key, value);
+  e.returnValue = true;
+});
+
+// Copies the whole SQLite file to the chosen backup folder (real database backup).
+ipcMain.handle("backup-db", async (_e, folder) => {
+  if (!db || !dbPath) return { ok: false, error: "no-db" };
+  fs.mkdirSync(folder, { recursive: true });
+  const today = new Date().toISOString().slice(0, 10);
+  const dest = path.join(folder, `grocery-pos-backup-${today}.db`);
+  await db.backup(dest);
+  return { ok: true, path: dest };
+});
 
 ipcMain.on("machine-id", (e) => { e.returnValue = MID; });
 
@@ -69,6 +103,7 @@ ipcMain.handle("read-weight", (_e, host, port) => new Promise((resolve) => {
 }));
 
 app.whenReady().then(async () => {
+  initDb();
   const url = await startServer();
   const win = new BrowserWindow({
     width: 1366, height: 800, autoHideMenuBar: true,
