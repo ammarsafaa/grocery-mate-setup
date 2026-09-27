@@ -76,7 +76,9 @@ function PurchasesPage() {
   };
   const addPayment = () => {
     if (!paymentSupplier || paymentAmount <= 0) { toast.error("أدخل مبلغاً صحيحاً"); return; }
-    saveSupplierPayments([...getSupplierPayments(), { id: uid(), supplierId: paymentSupplier.id, amount: paymentAmount, note: paymentNote.trim() || undefined, createdAt: new Date().toISOString() }]);
+    const payment: SupplierPayment = { id: uid(), supplierId: paymentSupplier.id, amount: paymentAmount, createdAt: new Date().toISOString() };
+    if (paymentNote.trim()) payment.note = paymentNote.trim();
+    saveSupplierPayments([...getSupplierPayments(), payment]);
     setPaymentSupplier(null); setPaymentAmount(0); setPaymentNote(""); load(); toast.success("تم تسجيل الدفعة");
   };
 
