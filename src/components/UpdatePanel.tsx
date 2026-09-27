@@ -19,7 +19,7 @@ export function UpdatePanel() {
     if (!n?.checkUpdate) return;
     setChecking(true); setStatus(null);
     const r = await n.checkUpdate();
-    if (!r.ok) { setChecking(false); setStatus({ state: "error", error: r.error }); }
+    if (!r.ok) { setChecking(false); setStatus({ state: "error" }); }
   };
 
   let msg = "";
