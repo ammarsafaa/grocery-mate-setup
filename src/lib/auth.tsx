@@ -10,18 +10,21 @@ import { getUsers, getSessionUserId, setSessionUserId } from "./db";
 
 interface AuthCtx {
   user: PosUser | null;
+  ready: boolean;
   login: (pin: string) => boolean;
   logout: () => void;
 }
 
 const Ctx = createContext<AuthCtx>({
   user: null,
+  ready: false,
   login: () => false,
   logout: () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<PosUser | null>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const id = getSessionUserId();
@@ -29,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const u = getUsers().find((x) => x.id === id && x.active);
       if (u) setUser(u);
     }
+    setReady(true);
   }, []);
 
   const login = (pin: string) => {
