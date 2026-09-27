@@ -215,6 +215,52 @@ function SettingsPage() {
           </button>
         </section>
 
+        {/* Scale label barcode */}
+        <section className="rounded-2xl border border-border bg-card p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
+            <Scale className="h-5 w-5 text-primary" /> البيع بملصق باركود الميزان
+          </h2>
+          <label className="flex items-center justify-between gap-4 rounded-lg bg-secondary p-4">
+            <div>
+              <div className="font-bold">تفعيل قراءة ملصقات الميزان</div>
+              <div className="text-sm text-muted-foreground">الميزان يطبع ملصقاً، والكاشير يمسحه فيظهر المنتج والوزن والسعر</div>
+            </div>
+            <input type="checkbox" checked={settings.labelBarcodeEnabled} onChange={(e) => setSettings({ ...settings, labelBarcodeEnabled: e.target.checked })} className="h-5 w-5 accent-primary" />
+          </label>
+          {settings.labelBarcodeEnabled && (
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm text-muted-foreground">بداية الباركود (افصل بفاصلة)</label>
+                <input dir="ltr" value={settings.labelPrefixes} onChange={(e) => setSettings({ ...settings, labelPrefixes: e.target.value })} className="h-12 w-full rounded-xl border border-border bg-secondary px-4" />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-muted-foreground">عدد أرقام رقم المنتج</label>
+                <select value={settings.labelPluLength} onChange={(e) => setSettings({ ...settings, labelPluLength: Number(e.target.value) })} className="h-12 w-full rounded-xl border border-border bg-secondary px-4">
+                  {[4, 5, 6].map((n) => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-muted-foreground">الملصق يحمل</label>
+                <select value={settings.labelValueType} onChange={(e) => setSettings({ ...settings, labelValueType: e.target.value as "weight" | "price" })} className="h-12 w-full rounded-xl border border-border bg-secondary px-4">
+                  <option value="weight">الوزن (مستحسن)</option>
+                  <option value="price">السعر</option>
+                </select>
+              </div>
+              {settings.labelValueType === "weight" && (
+                <div>
+                  <label className="mb-1 block text-sm text-muted-foreground">دقة الوزن</label>
+                  <select value={settings.labelWeightDecimals} onChange={(e) => setSettings({ ...settings, labelWeightDecimals: Number(e.target.value) })} className="h-12 w-full rounded-xl border border-border bg-secondary px-4">
+                    <option value={3}>غرام (01175 = 1.175 كغم)</option>
+                    <option value={2}>10 غرام (00117 = 1.17 كغم)</option>
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
+          <p className="mt-3 text-xs text-muted-foreground">مثال: 21 00015 01175 8 ← منتج رقم 15 في الميزان، وزن 1.175 كغم. أضف «رقم المنتج في الميزان» لكل منتج بالوزن من صفحة المنتجات.</p>
+          <button onClick={() => save(settings)} className="mt-4 rounded-xl bg-primary px-6 py-3 font-bold text-primary-foreground">حفظ</button>
+        </section>
+
         {/* Backup */}
         <section className="rounded-2xl border border-border bg-card p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
