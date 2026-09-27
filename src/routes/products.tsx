@@ -65,6 +65,21 @@ function ProductsPage() {
   const [editing, setEditing] = useState<Product | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [groups, setGroups] = useState<ProductGroup[]>([]);
+  const [priceEditId, setPriceEditId] = useState<string | null>(null);
+  const [priceDraft, setPriceDraft] = useState("");
+
+  const saveQuickPrice = (id: string) => {
+    const value = Number(priceDraft);
+    if (!value || value <= 0) {
+      toast.error("أدخل سعراً صحيحاً");
+      return;
+    }
+    const next = products.map((p) => (p.id === id ? { ...p, price: value } : p));
+    saveProducts(next);
+    setProducts(next);
+    setPriceEditId(null);
+    toast.success("تم تحديث السعر");
+  };
 
   useEffect(() => {
     if (ready && !user) navigate({ to: "/login" });
