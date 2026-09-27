@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ShiftsRouteImport } from './routes/shifts'
 
 const IndexRoute = IndexRouteImport.update({
@@ -35,6 +36,11 @@ const ReportsRoute = ReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShiftsRoute = ShiftsRouteImport.update({
   id: '/shifts',
   path: '/shifts',
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/products': typeof ProductsRoute
   '/reports': typeof ReportsRoute
+  '/settings': typeof SettingsRoute
   '/shifts': typeof ShiftsRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/products': typeof ProductsRoute
   '/reports': typeof ReportsRoute
+  '/settings': typeof SettingsRoute
   '/shifts': typeof ShiftsRoute
 }
 export interface FileRoutesById {
@@ -61,14 +69,22 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/products': typeof ProductsRoute
   '/reports': typeof ReportsRoute
+  '/settings': typeof SettingsRoute
   '/shifts': typeof ShiftsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/products' | '/reports' | '/shifts'
+  fullPaths: '/' | '/login' | '/products' | '/reports' | '/settings' | '/shifts'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/products' | '/reports' | '/shifts'
-  id: '__root__' | '/' | '/login' | '/products' | '/reports' | '/shifts'
+  to: '/' | '/login' | '/products' | '/reports' | '/settings' | '/shifts'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/products'
+    | '/reports'
+    | '/settings'
+    | '/shifts'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,6 +92,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ProductsRoute: typeof ProductsRoute
   ReportsRoute: typeof ReportsRoute
+  SettingsRoute: typeof SettingsRoute
   ShiftsRoute: typeof ShiftsRoute
 }
 
@@ -109,6 +126,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/shifts': {
       id: '/shifts'
       path: '/shifts'
@@ -124,6 +148,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ProductsRoute: ProductsRoute,
   ReportsRoute: ReportsRoute,
+  SettingsRoute: SettingsRoute,
   ShiftsRoute: ShiftsRoute,
 }
 export const routeTree = rootRouteImport
