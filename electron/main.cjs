@@ -109,6 +109,57 @@ ipcMain.handle("save-backup", async (_e, folder, name, content) => {
   return true;
 });
 
+// Extracts the weight in kg from raw scale data (shared by LAN and serial).
+function parseWeight(buf) {
+  const txt = String(buf).replace(/[^\x20-\x7E\r\n]/g, " ");
+  let m = txt.match(/(-?\d+[.,]\d+)\s*(kg|g)?/i);
+  if (m) {
+    let w = parseFloat(m[1].replace(",", "."));
+    if (m[2] && m[2].toLowerCase() === "g") w = w / 1000;
+    return Math.abs(w);
+  }
+  m = txt.match(/(\d{4,7})\s*(kg|g)?/i); // integer grams e.g. 001175
+  if (m) return parseInt(m[1], 10) / 1000;
+  return null;
+}
+
+// Lists available serial (COM) ports via PowerShell — no extra packages needed.
+ipcMain.handle("list-serial-ports", () => new Promise((resolve) => {
+  const { execFile } = require("child_process");
+  execFile("powershell", ["-NoProfile", "-Command", "[System.IO.Ports.SerialPort]::GetPortNames() -join ','"],
+    { timeout: 8000 }, (err, stdout) => {
+      if (err) return resolve([]);
+      resolve(String(stdout).trim().split(",").map((s) => s.trim()).filter(Boolean));
+    });
+}));
+
+// Reads the weight from a serial (RS232) port via PowerShell.
+ipcMain.handle("read-weight-serial", (_e, com, baud) => new Promise((resolve) => {
+  if (!/^COM\d{1,2}$/i.test(String(com || ""))) return resolve({ ok: false, error: "no-com" });
+  const b = [1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200].includes(Number(baud)) ? Number(baud) : 9600;
+  const ps = `
+$p = New-Object System.IO.Ports.SerialPort '${String(com).toUpperCase()}',${b},'None',8,'One'
+$p.ReadTimeout = 400
+$p.Open()
+$sw = [Diagnostics.Stopwatch]::StartNew()
+$sb = New-Object Text.StringBuilder
+while ($sw.ElapsedMilliseconds -lt 4000) {
+  try { $s = $p.ReadExisting(); if ($s) { [void]$sb.Append($s) } } catch {}
+  Start-Sleep -Milliseconds 80
+}
+$p.Close()
+[Console]::Out.Write($sb.ToString())
+`;
+  const { execFile } = require("child_process");
+  execFile("powershell", ["-NoProfile", "-Command", ps], { timeout: 12000, encoding: "latin1" }, (err, stdout) => {
+    if (err) return resolve({ ok: false, error: String(err.message || err) });
+    const buf = String(stdout || "");
+    const w = parseWeight(buf);
+    if (w != null) resolve({ ok: true, weight: w, raw: buf });
+    else resolve({ ok: false, error: buf.trim() ? "unparsed" : "no-data", raw: buf });
+  });
+}));
+
 // Reads whatever the scale sends over TCP and extracts the weight in kg.
 ipcMain.handle("read-weight", (_e, host, port) => new Promise((resolve) => {
   let buf = "";
