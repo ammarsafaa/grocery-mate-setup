@@ -43,6 +43,12 @@ function SettingsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [printers, setPrinters] = useState<Array<{ name: string; displayName?: string; isDefault?: boolean }>>([]);
   const [scaleTest, setScaleTest] = useState("");
+  const [comPorts, setComPorts] = useState<string[]>([]);
+
+  useEffect(() => {
+    const n = native();
+    if (n) n.listSerialPorts().then(setComPorts).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!ready) return;
@@ -186,27 +192,96 @@ function SettingsPage() {
           <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
             <Scale className="h-5 w-5 text-primary" /> الميزان (رونكتا RLS1100)
           </h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm text-muted-foreground">عنوان الميزان (IP)</label>
-              <input
-                dir="ltr"
-                value={settings.scaleIp}
-                onChange={(e) => setSettings({ ...settings, scaleIp: e.target.value })}
-                className="h-12 w-full rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm text-muted-foreground">المنفذ</label>
-              <input
-                dir="ltr"
-                type="number"
-                value={settings.scalePort}
-                onChange={(e) => setSettings({ ...settings, scalePort: Number(e.target.value) })}
-                className="h-12 w-full rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary"
-              />
+          <div className="mb-4">
+            <label className="mb-1 block text-sm text-muted-foreground">طريقة ربط الميزان</label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setSettings({ ...settings, scaleMode: "serial" })}
+                className={`flex-1 rounded-xl border px-4 py-3 font-bold ${settings.scaleMode !== "lan" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-secondary"}`}
+              >
+                كيبل RS232 (تسلسلي)
+              </button>
+              <button
+                type="button"
+                onClick={() => setSettings({ ...settings, scaleMode: "lan" })}
+                className={`flex-1 rounded-xl border px-4 py-3 font-bold ${settings.scaleMode === "lan" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-secondary"}`}
+              >
+                كيبل شبكة (LAN)
+              </button>
             </div>
           </div>
+          {settings.scaleMode === "lan" ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm text-muted-foreground">عنوان الميزان (IP)</label>
+                <input
+                  dir="ltr"
+                  value={settings.scaleIp}
+                  onChange={(e) => setSettings({ ...settings, scaleIp: e.target.value })}
+                  className="h-12 w-full rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-muted-foreground">المنفذ</label>
+                <input
+                  dir="ltr"
+                  type="number"
+                  value={settings.scalePort}
+                  onChange={(e) => setSettings({ ...settings, scalePort: Number(e.target.value) })}
+                  className="h-12 w-full rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm text-muted-foreground">منفذ الكيبل (COM)</label>
+                <div className="flex gap-2">
+                  <select
+                    dir="ltr"
+                    value={settings.scaleCom}
+                    onChange={(e) => setSettings({ ...settings, scaleCom: e.target.value })}
+                    className="h-12 w-full rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary"
+                  >
+                    <option value="">اختر المنفذ...</option>
+                    {comPorts.map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                    {settings.scaleCom && !comPorts.includes(settings.scaleCom) && (
+                      <option value={settings.scaleCom}>{settings.scaleCom}</option>
+                    )}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const n = native();
+                      if (!n) return;
+                      const ports = await n.listSerialPorts().catch(() => [] as string[]);
+                      setComPorts(ports);
+                      if (!ports.length) setScaleTest("لم أجد أي منفذ COM — تأكد أن كيبل الميزان موصول بالكاشير");
+                    }}
+                    className="shrink-0 rounded-xl bg-secondary px-4 font-bold"
+                  >
+                    تحديث
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-muted-foreground">سرعة الاتصال (Baud)</label>
+                <select
+                  dir="ltr"
+                  value={settings.scaleBaud}
+                  onChange={(e) => setSettings({ ...settings, scaleBaud: Number(e.target.value) })}
+                  className="h-12 w-full rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary"
+                >
+                  {[1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200].map((b) => (
+                    <option key={b} value={b}>{b}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
           <p className="mt-3 text-xs text-muted-foreground">
             ضع شيئاً على الميزان ثم اضغط «اختبار الميزان» لمعرفة ما يرسله.
           </p>
@@ -215,13 +290,16 @@ function SettingsPage() {
             onClick={async () => {
               const n = native();
               if (!n) { setScaleTest("الاختبار يعمل في برنامج Windows فقط"); return; }
-              setScaleTest("جارٍ الاختبار...");
-              const r = await n.readWeight(settings.scaleIp, settings.scalePort).catch((e) => ({ ok: false, error: String(e), raw: "" } as { ok: boolean; weight?: number; error?: string; raw?: string }));
+              setScaleTest("جارٍ الاختبار... ضع شيئاً على الميزان الآن");
+              const r = settings.scaleMode === "lan"
+                ? await n.readWeight(settings.scaleIp, settings.scalePort).catch((e) => ({ ok: false, error: String(e), raw: "" } as { ok: boolean; weight?: number; error?: string; raw?: string }))
+                : await n.readWeightSerial(settings.scaleCom, settings.scaleBaud).catch((e) => ({ ok: false, error: String(e), raw: "" } as { ok: boolean; weight?: number; error?: string; raw?: string }));
               const raw = r.raw ? JSON.stringify(r.raw).slice(0, 300) : "لا شيء";
               if (r.ok) setScaleTest(`نجح ✓ الوزن: ${r.weight} كغم | البيانات المستلمة: ${raw}`);
-              else if (r.error === "no-data") setScaleTest(`الاتصال تم لكن الميزان لم يرسل أي بيانات على هذا المنفذ. جرّب منفذاً آخر (4001 أو 5001 أو 9100).`);
+              else if (r.error === "no-data") setScaleTest(settings.scaleMode === "lan" ? `الاتصال تم لكن الميزان لم يرسل أي بيانات على هذا المنفذ.` : `المنفذ انفتح لكن الميزان لم يرسل أي بيانات. جرّب سرعة اتصال أخرى (مثلاً 4800 أو 2400) وتأكد أن الكيبل من نوع Null Modem.`);
               else if (r.error === "unparsed") setScaleTest(`وصلت بيانات لكن لم أفهم الوزن منها: ${raw}`);
-              else setScaleTest(`فشل الاتصال: ${r.error} — تأكد من IP والمنفذ.`);
+              else if (r.error === "no-com") setScaleTest(`اختر منفذ COM أولاً من القائمة ثم اضغط حفظ.`);
+              else setScaleTest(`فشل الاتصال: ${r.error}`);
             }}
             className="mt-3 rounded-xl bg-secondary px-4 py-2 font-bold"
           >
