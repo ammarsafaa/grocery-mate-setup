@@ -111,19 +111,34 @@ ipcMain.handle("save-backup", async (_e, folder, name, content) => {
 
 // Reads whatever the scale sends over TCP and extracts the weight in kg.
 ipcMain.handle("read-weight", (_e, host, port) => new Promise((resolve) => {
-  const s = net.createConnection({ host, port }, () => s.write("W\r\n"));
   let buf = "";
-  const done = (v) => { s.destroy(); resolve(v); };
-  s.setTimeout(2500, () => done({ ok: false, error: "timeout" }));
+  let finished = false;
+  const s = net.createConnection({ host, port: Number(port) }, () => {
+    // Some scales stream continuously; others answer a request. Try common ones.
+    try { s.write("W\r\n"); s.write("P\r\n"); s.write(Buffer.from([0x05])); } catch {}
+  });
+  const done = (v) => { if (finished) return; finished = true; s.destroy(); resolve({ raw: buf, ...v }); };
+  const parse = () => {
+    const txt = buf.replace(/[^\x20-\x7E\r\n]/g, " ");
+    let m = txt.match(/(-?\d+[.,]\d+)\s*(kg|g)?/i);
+    if (m) {
+      let w = parseFloat(m[1].replace(",", "."));
+      if (m[2] && m[2].toLowerCase() === "g") w = w / 1000;
+      return Math.abs(w);
+    }
+    m = txt.match(/(\d{4,7})\s*(kg|g)?/i); // integer grams e.g. 001175
+    if (m) return parseInt(m[1], 10) / 1000;
+    return null;
+  };
+  s.setTimeout(4000, () => {
+    const w = parse();
+    done(w != null ? { ok: true, weight: w } : { ok: false, error: buf ? "unparsed" : "no-data" });
+  });
   s.on("error", (err) => done({ ok: false, error: err.message }));
   s.on("data", (d) => {
     buf += d.toString("latin1");
-    const m = buf.match(/(\d+\.\d+)\s*(kg|g)?/i);
-    if (m) {
-      let w = parseFloat(m[1]);
-      if (m[2] && m[2].toLowerCase() === "g") w = w / 1000;
-      done({ ok: true, weight: w, raw: buf });
-    }
+    const w = parse();
+    if (w != null && /[\r\n]/.test(buf)) done({ ok: true, weight: w });
   });
 }));
 

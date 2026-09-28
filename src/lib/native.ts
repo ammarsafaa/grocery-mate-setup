@@ -3,7 +3,7 @@ export interface PosNative {
   machineId: () => string;
   pickFolder: () => Promise<string | null>;
   saveBackup: (folder: string, name: string, content: string) => Promise<boolean>;
-  readWeight: (host: string, port: number) => Promise<{ ok: boolean; weight?: number; error?: string }>;
+  readWeight: (host: string, port: number) => Promise<{ ok: boolean; weight?: number; error?: string; raw?: string }>;
   dbGetAll: () => Record<string, string>;
   dbSet: (key: string, value: string) => boolean;
   backupDb: (folder: string) => Promise<{ ok: boolean; path?: string; error?: string }>;
