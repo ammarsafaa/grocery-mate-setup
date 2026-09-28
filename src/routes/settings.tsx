@@ -42,6 +42,7 @@ function SettingsPage() {
   const [newUser, setNewUser] = useState({ name: "", pin: "", role: "cashier" as const });
   const fileRef = useRef<HTMLInputElement>(null);
   const [printers, setPrinters] = useState<Array<{ name: string; displayName?: string; isDefault?: boolean }>>([]);
+  const [scaleTest, setScaleTest] = useState("");
 
   useEffect(() => {
     if (!ready) return;
@@ -207,8 +208,26 @@ function SettingsPage() {
             </div>
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            عنوان RLS1100 محفوظ، والمنفذ قابل للتغيير بعد تجربته على الميزان الحقيقي.
+            ضع شيئاً على الميزان ثم اضغط «اختبار الميزان» لمعرفة ما يرسله.
           </p>
+          <button
+            type="button"
+            onClick={async () => {
+              const n = native();
+              if (!n) { setScaleTest("الاختبار يعمل في برنامج Windows فقط"); return; }
+              setScaleTest("جارٍ الاختبار...");
+              const r = await n.readWeight(settings.scaleIp, settings.scalePort).catch((e) => ({ ok: false, error: String(e), raw: "" }));
+              const raw = r.raw ? JSON.stringify(r.raw).slice(0, 300) : "لا شيء";
+              if (r.ok) setScaleTest(`نجح ✓ الوزن: ${r.weight} كغم | البيانات المستلمة: ${raw}`);
+              else if (r.error === "no-data") setScaleTest(`الاتصال تم لكن الميزان لم يرسل أي بيانات على هذا المنفذ. جرّب منفذاً آخر (4001 أو 5001 أو 9100).`);
+              else if (r.error === "unparsed") setScaleTest(`وصلت بيانات لكن لم أفهم الوزن منها: ${raw}`);
+              else setScaleTest(`فشل الاتصال: ${r.error} — تأكد من IP والمنفذ.`);
+            }}
+            className="mt-3 rounded-xl bg-secondary px-4 py-2 font-bold"
+          >
+            اختبار الميزان
+          </button>
+          {scaleTest && <p dir="auto" className="mt-2 break-all rounded-lg bg-secondary p-3 text-sm">{scaleTest}</p>}
           <button
             onClick={() => save(settings)}
             className="mt-4 rounded-xl bg-primary px-6 py-3 font-bold text-primary-foreground"
