@@ -216,7 +216,7 @@ function SettingsPage() {
               const n = native();
               if (!n) { setScaleTest("الاختبار يعمل في برنامج Windows فقط"); return; }
               setScaleTest("جارٍ الاختبار...");
-              const r = await n.readWeight(settings.scaleIp, settings.scalePort).catch((e) => ({ ok: false, error: String(e), raw: "" }));
+              const r = await n.readWeight(settings.scaleIp, settings.scalePort).catch((e) => ({ ok: false, error: String(e), raw: "" } as { ok: boolean; weight?: number; error?: string; raw?: string }));
               const raw = r.raw ? JSON.stringify(r.raw).slice(0, 300) : "لا شيء";
               if (r.ok) setScaleTest(`نجح ✓ الوزن: ${r.weight} كغم | البيانات المستلمة: ${raw}`);
               else if (r.error === "no-data") setScaleTest(`الاتصال تم لكن الميزان لم يرسل أي بيانات على هذا المنفذ. جرّب منفذاً آخر (4001 أو 5001 أو 9100).`);
