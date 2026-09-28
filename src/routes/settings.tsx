@@ -222,6 +222,13 @@ function SettingsPage() {
           <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
             <Scale className="h-5 w-5 text-primary" /> البيع بملصق باركود الميزان
           </h2>
+          <label className="mb-3 flex items-center justify-between gap-4 rounded-lg bg-secondary p-4">
+            <div>
+              <div className="font-bold">البيع باستخدام الميزان</div>
+              <div className="text-sm text-muted-foreground">عند الإيقاف يكتب الكاشير الوزن بيده عند بيع المنتجات الموزونة</div>
+            </div>
+            <input type="checkbox" checked={settings.useScale !== false} onChange={(e) => setSettings({ ...settings, useScale: e.target.checked })} className="h-5 w-5 accent-primary" />
+          </label>
           <label className="flex items-center justify-between gap-4 rounded-lg bg-secondary p-4">
             <div>
               <div className="font-bold">تفعيل قراءة ملصقات الميزان</div>

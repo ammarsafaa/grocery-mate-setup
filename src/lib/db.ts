@@ -273,6 +273,7 @@ const DEFAULT_SETTINGS: Settings = {
   autoCut: true,
   openDrawer: false,
   labelBarcodeEnabled: false,
+  useScale: true,
   labelPrefixes: "20,21,22",
   labelPluLength: 5,
   labelValueType: "weight",
@@ -392,8 +393,8 @@ export function maybeAutoBackup() {
 }
 
 export function formatMoney(n: number, currency?: string): string {
-  const c = currency ?? getSettings().currency;
-  return `${n.toLocaleString("en-GB")} ${c}`;
+  void currency;
+  return n.toLocaleString("en-GB");
 }
 
 /** Cash denominations start at 250 IQD, so sale amounts settle to the nearest 250. */
