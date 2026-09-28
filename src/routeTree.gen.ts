@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ActivateRouteImport } from './routes/activate'
+import { Route as CashboxRouteImport } from './routes/cashbox'
 import { Route as GroupsRouteImport } from './routes/groups'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as LicenseGeneratorRouteImport } from './routes/license-generator'
@@ -30,6 +31,11 @@ const IndexRoute = IndexRouteImport.update({
 const ActivateRoute = ActivateRouteImport.update({
   id: '/activate',
   path: '/activate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CashboxRoute = CashboxRouteImport.update({
+  id: '/cashbox',
+  path: '/cashbox',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GroupsRoute = GroupsRouteImport.update({
@@ -86,6 +92,7 @@ const ShiftsRoute = ShiftsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/activate': typeof ActivateRoute
+  '/cashbox': typeof CashboxRoute
   '/groups': typeof GroupsRoute
   '/inventory': typeof InventoryRoute
   '/license-generator': typeof LicenseGeneratorRoute
@@ -100,6 +107,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/activate': typeof ActivateRoute
+  '/cashbox': typeof CashboxRoute
   '/groups': typeof GroupsRoute
   '/inventory': typeof InventoryRoute
   '/license-generator': typeof LicenseGeneratorRoute
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/activate': typeof ActivateRoute
+  '/cashbox': typeof CashboxRoute
   '/groups': typeof GroupsRoute
   '/inventory': typeof InventoryRoute
   '/license-generator': typeof LicenseGeneratorRoute
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/activate'
+    | '/cashbox'
     | '/groups'
     | '/inventory'
     | '/license-generator'
@@ -145,6 +155,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/activate'
+    | '/cashbox'
     | '/groups'
     | '/inventory'
     | '/license-generator'
@@ -159,6 +170,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/activate'
+    | '/cashbox'
     | '/groups'
     | '/inventory'
     | '/license-generator'
@@ -174,6 +186,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActivateRoute: typeof ActivateRoute
+  CashboxRoute: typeof CashboxRoute
   GroupsRoute: typeof GroupsRoute
   InventoryRoute: typeof InventoryRoute
   LicenseGeneratorRoute: typeof LicenseGeneratorRoute
@@ -200,6 +213,13 @@ declare module '@tanstack/react-router' {
       path: '/activate'
       fullPath: '/activate'
       preLoaderRoute: typeof ActivateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cashbox': {
+      id: '/cashbox'
+      path: '/cashbox'
+      fullPath: '/cashbox'
+      preLoaderRoute: typeof CashboxRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/groups': {
@@ -278,6 +298,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActivateRoute: ActivateRoute,
+  CashboxRoute: CashboxRoute,
   GroupsRoute: GroupsRoute,
   InventoryRoute: InventoryRoute,
   LicenseGeneratorRoute: LicenseGeneratorRoute,
