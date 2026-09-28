@@ -187,13 +187,16 @@ app.whenReady().then(async () => {
   initDb();
   const url = await startServer();
   const win = new BrowserWindow({
-    width: 1366, height: 800, autoHideMenuBar: true,
+    width: 1366, height: 800, autoHideMenuBar: true, show: false,
     title: "زيروس",
     icon: path.join(__dirname, "build", "icon.ico"),
     webPreferences: { preload: path.join(__dirname, "preload.cjs"), contextIsolation: true },
   });
   updWin = win;
-  win.maximize();
+  // Show and focus only after the page is ready; otherwise Windows can leave the
+  // window unfocused (e.g. when launched from the installer) and typing stops working.
+  win.once("ready-to-show", () => { win.maximize(); win.show(); win.focus(); });
+  win.on("closed", () => { updWin = null; });
   win.loadURL(url + "/login");
   // Ask the app to force closing the shift + printing the day report before quitting
   let allowQuit = false;
