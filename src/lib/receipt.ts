@@ -7,10 +7,10 @@ export function buildReceiptHtml(sale: Sale) {
   const settings = getSettings();
   const design = getReceiptDesign(settings.paperWidth);
   const block = (element: ReceiptElement) => {
-    const offsetX = Math.max(-20, Math.min(20, element.offsetX ?? 0));
-    const offsetY = Math.max(-20, Math.min(20, element.offsetY ?? 0));
+    const offsetX = Math.max(-12, Math.min(12, element.offsetX ?? 0));
+    const offsetY = Math.max(-12, Math.min(12, element.offsetY ?? 0));
     const style = `font-family:${element.fontFamily},sans-serif;font-size:${element.fontSize}px;font-weight:${element.bold ? 700 : 400};text-align:${element.align};margin-bottom:${element.spacing}px;${element.divider ? "border-bottom:1px dashed #111;padding-bottom:5px;" : ""}`;
-    const positionStyle = `position:relative;left:${offsetX}px;top:${offsetY}px;width:calc(100% - ${Math.abs(offsetX)}px);margin-${offsetX >= 0 ? "left" : "right"}:${Math.abs(offsetX)}px;`;
+    const positionStyle = `position:relative;left:${offsetX}px;top:${offsetY}px;`;
     let content = "";
     if (element.id === "logo") content = design.logo ? `<img src="${design.logo}" style="display:block;max-width:55%;max-height:80px;margin:auto" />` : "";
     if (element.id === "store") content = escapeHtml(settings.storeName);
