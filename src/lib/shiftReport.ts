@@ -3,8 +3,6 @@ import { getSales, getSettings, getShifts, saveShifts } from "./db";
 import { native } from "./native";
 import type { Sale, Shift } from "./types";
 
-const esc = (v: string) => v.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] ?? c);
-const n = (v: number) => v.toLocaleString("en-GB");
 
 export interface ProductLine { name: string; unit: "piece" | "kg"; qty: number; total: number; }
 
