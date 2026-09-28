@@ -1,44 +1,162 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, GripVertical, ImageIcon, RotateCcw, Save } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowDown, ArrowUp, Eye, EyeOff, ImageIcon, Printer, RotateCcw, Save, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { getReceiptDesign, getSettings, saveReceiptDesign } from "@/lib/db";
-import type { ReceiptDesign, ReceiptElement } from "@/lib/types";
+import { FONTS, buildLayoutHtml, clamp, elementStyle, getLayout, layoutCss, normalize, printableWidth, receiptContent, resetLayout, saveLayout, shiftContent, snap, type LayoutElement, type LayoutKind, type PrintLayout } from "@/lib/printLayout";
+import { printHtml } from "@/lib/shiftReport";
+import type { ReceiptDesign, Sale, Shift } from "@/lib/types";
 
 export const Route = createFileRoute("/receipt-designer")({
   head: () => ({ meta: [
-    { title: "تصميم الفاتورة — نظام البقالة" }, { name: "description", content: "تصميم فاتورة الطابعة الحرارية بالسحب والترتيب" },
-    { property: "og:title", content: "تصميم الفاتورة — نظام البقالة" }, { property: "og:description", content: "تصميم فاتورة الطابعة الحرارية بالسحب والترتيب" },
+    { title: "مصمم الفاتورة والتقرير — نظام البقالة" }, { name: "description", content: "تصميم فاتورة البيع وتقرير الوردية بالسحب والقياسات بالملم" },
+    { property: "og:title", content: "مصمم الفاتورة والتقرير — نظام البقالة" }, { property: "og:description", content: "تصميم فاتورة البيع وتقرير الوردية بالسحب والقياسات بالملم" },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
-  ] }), component: ReceiptDesigner,
+  ] }), component: Designer,
 });
 
-function ReceiptDesigner() {
+const PX_MM = 3.78; const ZOOM = 1.6;
+const now = new Date().toISOString();
+const SAMPLE_SALE: Sale = { id: "s", number: 125, shiftId: "x", userId: "u", userName: "المدير", items: [{ productId: "a", name: "طماطة", unit: "kg", price: 1500, qty: 1.175, total: 1750 }, { productId: "b", name: "حليب", unit: "piece", price: 1500, qty: 2, total: 3000 }], total: 4750, paid: 5000, change: 250, createdAt: now };
+const SAMPLE_SHIFT = { id: "x", userId: "u", userName: "المدير", openedAt: now, closedAt: now, openingCash: 10000, closingCash: 14750 } as Shift;
+
+function Designer() {
   const { user, ready } = useAuth(); const navigate = useNavigate(); const settings = getSettings();
-  const [width, setWidth] = useState<58 | 80>(settings.paperWidth); const [design, setDesign] = useState<ReceiptDesign>(() => getReceiptDesign(settings.paperWidth)); const [selected, setSelected] = useState<ReceiptElement["id"]>("store"); const [dragged, setDragged] = useState<number | null>(null); const pointerDrag = useRef<number | null>(null);
+  const [kind, setKind] = useState<LayoutKind>("receipt"); const [slot, setSlot] = useState<58 | 80>(settings.paperWidth);
+  const [layout, setLayoutState] = useState<PrintLayout>(() => getLayout("receipt", settings.paperWidth));
+  const [info, setInfo] = useState<ReceiptDesign>(() => getReceiptDesign(settings.paperWidth));
+  const [selected, setSelected] = useState("store"); const history = useRef<PrintLayout[]>([]);
+  const drag = useRef<{ mode: "move" | "resize"; id: string; sx: number; sy: number; start: LayoutElement; pushed: boolean } | null>(null);
   useEffect(() => { if (ready && (!user || user.role !== "admin")) navigate({ to: user ? "/" : "/login" }); }, [ready, user, navigate]);
+
+  const setLayout = (next: PrintLayout, record = true) => { if (record) history.current = [...history.current.slice(-49), layout]; setLayoutState(normalize(next)); };
+  const load = (k: LayoutKind, s: 58 | 80) => { setKind(k); setSlot(s); history.current = []; setLayoutState(getLayout(k, s)); setInfo(getReceiptDesign(s)); };
+  const content = useMemo(() => kind === "receipt" ? receiptContent(SAMPLE_SALE, info) : shiftContent(SAMPLE_SHIFT, [SAMPLE_SALE]), [kind, info]);
   if (!ready || !user || user.role !== "admin") return null;
-  const changeWidth = (next: 58 | 80) => { setWidth(next); setDesign(getReceiptDesign(next)); };
-  const update = (patch: Partial<ReceiptElement>) => setDesign({ ...design, elements: design.elements.map((e) => e.id === selected ? { ...e, ...patch } : e) });
-  const active = design.elements.find((e) => e.id === selected);
-  const moveItem = (from: number, to: number) => { if (from === to) return; setDesign((current) => { const next = [...current.elements]; const item = next[from]; if (!item) return current; next.splice(from, 1); next.splice(to, 0, item); return { ...current, elements: next }; }); };
-  const moveDrop = (to: number) => { if (dragged === null) return; moveItem(dragged, to); setDragged(null); };
-   const movePointer = (clientX: number, clientY: number) => { const from = pointerDrag.current; if (from === null) return; const target = document.elementFromPoint(clientX, clientY)?.closest<HTMLElement>("[data-preview-index]"); const to = Number(target?.dataset["previewIndex"]); if (!Number.isInteger(to) || from === to) return; moveItem(from, to); pointerDrag.current = to; setDragged(to); };
-  const stopPointer = () => { pointerDrag.current = null; setDragged(null); };
-  const moveSelected = (axis: "offsetX" | "offsetY", amount: number) => {
-    if (!active) return;
-    const current = active[axis] ?? 0;
-    update({ [axis]: Math.max(-12, Math.min(12, current + amount)) });
+
+  const W = printableWidth(layout); const active = layout.elements.find((e) => e.id === selected);
+  const update = (patch: Partial<LayoutElement>, id = selected) => setLayout({ ...layout, elements: layout.elements.map((e) => e.id === id ? { ...e, ...patch } : e) });
+  const move = (dir: -1 | 1) => { const i = layout.elements.findIndex((e) => e.id === selected); const j = i + dir; if (j < 0 || j >= layout.elements.length) return; const els = [...layout.elements]; [els[i], els[j]] = [els[j]!, els[i]!]; setLayout({ ...layout, elements: els }); };
+  const undo = () => { const prev = history.current.pop(); if (prev) setLayoutState(prev); else toast.info("لا يوجد شيء للتراجع عنه"); };
+  const save = () => { saveLayout(layout); if (kind === "receipt") saveReceiptDesign({ ...info, paperWidth: slot }); toast.success("تم حفظ التصميم"); };
+  const testPrint = async () => { const html = buildLayoutHtml(layout, content); if (await printHtml(html)) toast.success("تم إرسال الطباعة التجريبية"); else toast.error("تعذرت الطباعة"); };
+
+  const onPointerDown = (e: React.PointerEvent, id: string, mode: "move" | "resize") => {
+    const start = layout.elements.find((x) => x.id === id); if (!start) return;
+    e.stopPropagation(); e.preventDefault(); setSelected(id);
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    drag.current = { mode, id, sx: e.clientX, sy: e.clientY, start, pushed: false };
   };
-  return <AppLayout><div className="p-6"><div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-bold">تصميم الفاتورة</h1><p className="text-sm text-muted-foreground">اسحب العناصر من داخل ورقة الفاتورة لتغيير ترتيبها</p></div><div className="flex gap-2"><button onClick={() => { setDesign(getReceiptDesign(width)); toast.info("تم استرجاع آخر تصميم محفوظ"); }} className="rounded-lg bg-secondary px-4 py-2"><RotateCcw className="ml-2 inline h-4 w-4"/>تراجع</button><button onClick={() => { saveReceiptDesign(design); toast.success("تم حفظ تصميم الفاتورة"); }} className="rounded-lg bg-primary px-4 py-2 font-bold text-primary-foreground"><Save className="ml-2 inline h-4 w-4"/>حفظ</button></div></div>
-    <div className="grid gap-5 xl:grid-cols-[280px_1fr_320px]"><aside className="rounded-lg border border-border bg-card p-4"><h2 className="mb-3 font-bold">مقاس الورق</h2><div className="mb-5 grid grid-cols-2 gap-2"><button onClick={() => changeWidth(58)} className={`rounded-lg py-2 font-bold ${width === 58 ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>58 ملم</button><button onClick={() => changeWidth(80)} className={`rounded-lg py-2 font-bold ${width === 80 ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>80 ملم</button></div><h2 className="mb-3 font-bold">عناصر الفاتورة</h2><div className="space-y-2">{design.elements.map((element) => <button onClick={() => setSelected(element.id)} key={element.id} className={`flex w-full items-center gap-2 rounded-lg border p-3 text-right ${selected === element.id ? "border-primary bg-primary/10" : "border-border bg-secondary"}`}><span className="flex-1">{element.label}</span><span className="text-xs text-muted-foreground">{element.visible ? "ظاهر" : "مخفي"}</span></button>)}</div></aside>
-      <main className="overflow-auto rounded-lg border border-border bg-secondary p-6"><div className="mx-auto min-h-[650px] bg-receipt p-4 text-receipt-foreground shadow-lg" style={{ width: `${width * 3.78}px` }} dir="rtl" onPointerMove={(e) => movePointer(e.clientX, e.clientY)} onPointerUp={stopPointer} onPointerCancel={stopPointer}>{design.elements.map((element, index) => element.visible ? <Preview key={element.id} element={element} design={design} store={settings.storeName} index={index} selected={selected === element.id} dragging={dragged === index} onSelect={() => setSelected(element.id)} onDragStart={(event) => { pointerDrag.current = index; setDragged(index); setSelected(element.id); event.currentTarget.setPointerCapture(event.pointerId); event.preventDefault(); }} onHtmlDragStart={() => { setDragged(index); setSelected(element.id); }} onHtmlDrop={() => moveDrop(index)}/> : null)}</div></main>
-      <aside className="rounded-lg border border-border bg-card p-4"><h2 className="mb-4 font-bold">خصائص العنصر</h2>{active && <div className="space-y-4"><label className="flex items-center gap-3"><input type="checkbox" checked={active.visible} onChange={(e) => update({ visible: e.target.checked })}/><span>إظهار العنصر</span></label>{active.id === "items" && <label className="flex items-center gap-3 rounded-lg border border-border bg-secondary p-3"><input type="checkbox" checked={design.tableBorders ?? true} onChange={(e) => setDesign({ ...design, tableBorders: e.target.checked })}/><span className="font-bold">إظهار خطوط الجدول</span></label>}<Field label="حجم الخط"><input type="range" min="8" max="32" value={active.fontSize} onChange={(e) => update({ fontSize: Number(e.target.value) })} className="w-full"/><span>{active.fontSize}px</span></Field><Field label="المسافة بعد العنصر"><input type="range" min="0" max="24" value={active.spacing} onChange={(e) => update({ spacing: Number(e.target.value) })} className="w-full"/><span>{active.spacing}px</span></Field><Field label="نوع الخط"><select value={active.fontFamily} onChange={(e) => update({ fontFamily: e.target.value })} className="h-10 w-full rounded-lg bg-secondary px-3"><option>Cairo</option><option>Tajawal</option><option>Noto Kufi Arabic</option><option>Arial</option></select></Field><Field label="المحاذاة"><select value={active.align} onChange={(e) => update({ align: e.target.value as ReceiptElement["align"] })} className="h-10 w-full rounded-lg bg-secondary px-3"><option value="right">يمين</option><option value="center">وسط</option><option value="left">يسار</option></select></Field><Field label="تحريك العنصر"><div className="mx-auto grid w-fit grid-cols-3 gap-2" dir="ltr"><span/><Button type="button" variant="secondary" size="icon" title="تحريك إلى الأعلى" aria-label="تحريك إلى الأعلى" onClick={() => moveSelected("offsetY", -2)}><ArrowUp/></Button><span/><Button type="button" variant="secondary" size="icon" title="تحريك إلى اليسار" aria-label="تحريك إلى اليسار" onClick={() => moveSelected("offsetX", -2)}><ArrowLeft/></Button><Button type="button" variant="outline" size="icon" title="إعادة الموضع" aria-label="إعادة الموضع" onClick={() => update({ offsetX: 0, offsetY: 0 })}><RotateCcw/></Button><Button type="button" variant="secondary" size="icon" title="تحريك إلى اليمين" aria-label="تحريك إلى اليمين" onClick={() => moveSelected("offsetX", 2)}><ArrowRight/></Button><span/><Button type="button" variant="secondary" size="icon" title="تحريك إلى الأسفل" aria-label="تحريك إلى الأسفل" onClick={() => moveSelected("offsetY", 2)}><ArrowDown/></Button><span/></div><div className="mt-2 text-center text-xs text-muted-foreground">أفقي: {active.offsetX ?? 0}px — عمودي: {active.offsetY ?? 0}px</div></Field><label className="flex items-center gap-3"><input type="checkbox" checked={active.bold} onChange={(e) => update({ bold: e.target.checked })}/><span>خط عريض</span></label><label className="flex items-center gap-3"><input type="checkbox" checked={active.divider} onChange={(e) => update({ divider: e.target.checked })}/><span>خط فاصل</span></label>{active.id === "logo" && <label className="block cursor-pointer rounded-lg bg-secondary p-4 text-center"><ImageIcon className="mx-auto mb-2 h-6 w-6"/>رفع الشعار<input type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => setDesign({ ...design, logo: String(reader.result) }); reader.readAsDataURL(file); }}/></label>}</div>}<hr className="my-5 border-border"/><Field label="عنوان المتجر"><input value={design.address} onChange={(e) => setDesign({ ...design, address: e.target.value })} className="h-10 w-full rounded-lg bg-secondary px-3"/></Field><Field label="الهاتف"><input value={design.phone} onChange={(e) => setDesign({ ...design, phone: e.target.value })} className="h-10 w-full rounded-lg bg-secondary px-3"/></Field><Field label="الرسالة الختامية"><textarea value={design.footer} onChange={(e) => setDesign({ ...design, footer: e.target.value })} className="w-full rounded-lg bg-secondary p-3"/></Field></aside></div>
+  const onPointerMove = (e: React.PointerEvent) => {
+    const d = drag.current; if (!d) return;
+    const dx = (e.clientX - d.sx) / (PX_MM * ZOOM); const dy = (e.clientY - d.sy) / (PX_MM * ZOOM);
+    if (!d.pushed) { if (Math.abs(dx) + Math.abs(dy) < 0.5) return; history.current = [...history.current.slice(-49), layout]; d.pushed = true; }
+    const s = d.start;
+    const patch = d.mode === "move" ? { x: clamp(snap(s.x - dx), 0, W - s.width), gapTop: snap(s.gapTop + dy) } : { width: clamp(snap(s.width - dx), 8, W - s.x) };
+    setLayoutState((cur) => normalize({ ...cur, elements: cur.elements.map((x) => x.id === d.id ? { ...x, ...patch } : x) }));
+  };
+  const onPointerUp = () => { drag.current = null; };
+  const m = layout.margins;
+
+  return <AppLayout><div className="p-4 lg:p-6">
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div><h1 className="text-2xl font-bold">مصمم الفاتورة والتقرير</h1><p className="text-sm text-muted-foreground">اسحب العنصر لتحريكه، واسحب المقبض الأيسر لتغيير عرضه. ما تراه هنا هو ما يُطبع.</p></div>
+      <div className="flex flex-wrap gap-2">
+        <Btn onClick={undo}><Undo2 className="h-4 w-4"/>تراجع</Btn>
+        <Btn onClick={() => { if (!confirm("إرجاع التصميم الافتراضي؟")) return; setLayout(resetLayout(kind, slot)); toast.info("تم إرجاع الوضع الافتراضي"); }}><RotateCcw className="h-4 w-4"/>افتراضي</Btn>
+        <Btn onClick={testPrint}><Printer className="h-4 w-4"/>طباعة تجريبية</Btn>
+        <button onClick={save} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-bold text-primary-foreground"><Save className="h-4 w-4"/>حفظ</button>
+      </div>
+    </div>
+
+    <div className="mb-4 flex flex-wrap gap-2">
+      {([["receipt", "فاتورة البيع"], ["shift", "تقرير إغلاق الوردية"]] as const).map(([k, l]) => <button key={k} onClick={() => load(k, slot)} className={`rounded-lg px-4 py-2 font-bold ${kind === k ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>{l}</button>)}
+      <span className="mx-2 self-center text-sm text-muted-foreground">تصميم لطابعة:</span>
+      {([58, 80] as const).map((w) => <button key={w} onClick={() => load(kind, w)} className={`rounded-lg px-4 py-2 font-bold ${slot === w ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>{w} ملم</button>)}
+    </div>
+
+    <div className="grid gap-4 xl:grid-cols-[240px_1fr_300px]">
+      <aside className="rounded-lg border border-border bg-card p-3">
+        <h2 className="mb-2 font-bold">العناصر</h2>
+        <div className="space-y-1.5">{layout.elements.map((e) => <div key={e.id} className={`flex items-center gap-1 rounded-lg border p-2 ${selected === e.id ? "border-primary bg-primary/10" : "border-border bg-secondary"}`}>
+          <button className="flex-1 text-right text-sm" onClick={() => setSelected(e.id)}>{e.label}</button>
+          <button title={e.visible ? "إخفاء" : "إظهار"} onClick={() => update({ visible: !e.visible }, e.id)} className="rounded p-1 hover:bg-accent">{e.visible ? <Eye className="h-4 w-4"/> : <EyeOff className="h-4 w-4 text-muted-foreground"/>}</button>
+        </div>)}</div>
+        <div className="mt-3 grid grid-cols-2 gap-2"><Btn onClick={() => move(-1)}><ArrowUp className="h-4 w-4"/>للأعلى</Btn><Btn onClick={() => move(1)}><ArrowDown className="h-4 w-4"/>للأسفل</Btn></div>
+      </aside>
+
+      <main className="overflow-auto rounded-lg border border-border bg-secondary p-6" onPointerDown={() => setSelected("")}>
+        <style>{layoutCss(".pl-sheet")}</style>
+        <div className="mx-auto w-fit" style={{ zoom: ZOOM }}>
+          <Ruler widthMm={layout.paperWidthMm}/>
+          <div className="pl-sheet relative shadow-lg" style={{ width: `${layout.paperWidthMm}mm`, minHeight: "90mm", padding: `${m.top}mm ${m.right}mm ${m.bottom}mm ${m.left}mm` }} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
+            <div className="pointer-events-none absolute inset-y-0 border-x border-dashed border-destructive/40" style={{ right: `${m.right}mm`, left: `${m.left}mm` }}/>
+            {layout.elements.filter((e) => e.visible).map((e) => {
+              const html = content(e.id, layout) || `<span style="color:#999">${e.label}</span>`;
+              const sel = selected === e.id;
+              return <section key={e.id} className={`pl-el relative touch-none cursor-move outline-dashed outline-1 ${sel ? "outline-primary" : "outline-transparent hover:outline-primary/40"}${e.divider ? " pl-div" : ""}`} style={cssText(elementStyle(e))} onPointerDown={(ev) => onPointerDown(ev, e.id, "move")}>
+                <div dangerouslySetInnerHTML={{ __html: html }}/>
+                {sel && <span title="اسحب لتغيير العرض" onPointerDown={(ev) => onPointerDown(ev, e.id, "resize")} className="absolute -left-1 top-1/2 h-4 w-2 -translate-y-1/2 cursor-ew-resize rounded-sm bg-primary"/>}
+              </section>;
+            })}
+          </div>
+        </div>
+      </main>
+
+      <aside className="space-y-4 rounded-lg border border-border bg-card p-3">
+        <div><h2 className="mb-2 font-bold">الورقة (ملم)</h2>
+          <div className="grid grid-cols-2 gap-2">
+            <Num label="عرض الورقة" value={layout.paperWidthMm} onChange={(v) => setLayout({ ...layout, paperWidthMm: v })}/>
+            <Num label="الهامش العلوي" value={m.top} onChange={(v) => setLayout({ ...layout, margins: { ...m, top: v } })}/>
+            <Num label="الهامش الأيمن" value={m.right} onChange={(v) => setLayout({ ...layout, margins: { ...m, right: v } })}/>
+            <Num label="الهامش الأيسر" value={m.left} onChange={(v) => setLayout({ ...layout, margins: { ...m, left: v } })}/>
+            <Num label="الهامش السفلي" value={m.bottom} onChange={(v) => setLayout({ ...layout, margins: { ...m, bottom: v } })}/>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">أقل هامش يمين/يسار 4 ملم حتى لا ينقص الكلام. مساحة الطباعة: {W} ملم</p>
+          <label className="mt-2 flex items-center gap-2 text-sm"><input type="checkbox" checked={layout.tableBorders} onChange={(e) => setLayout({ ...layout, tableBorders: e.target.checked })}/>خطوط الجدول</label>
+        </div>
+        {active && <div className="border-t border-border pt-3"><h2 className="mb-2 font-bold">{active.label}</h2>
+          <div className="grid grid-cols-2 gap-2">
+            <Num label="من اليمين" value={active.x} onChange={(v) => update({ x: v })}/>
+            <Num label="المسافة من الأعلى" value={active.gapTop} onChange={(v) => update({ gapTop: v })}/>
+            <Num label="العرض" value={active.width} onChange={(v) => update({ width: v })}/>
+            <Num label="حجم الخط" value={active.fontSize} step={1} onChange={(v) => update({ fontSize: v })}/>
+          </div>
+          <button onClick={() => update({ x: 0, width: W })} className="mt-2 w-full rounded-lg bg-secondary py-1.5 text-sm">ملء كامل العرض</button>
+          <label className="mt-3 block text-sm"><span className="text-muted-foreground">نوع الخط</span><select value={active.fontFamily} onChange={(e) => update({ fontFamily: e.target.value })} className="mt-1 h-9 w-full rounded-lg bg-secondary px-2">{FONTS.map((f) => <option key={f}>{f}</option>)}</select></label>
+          <div className="mt-3 grid grid-cols-3 gap-1">{([["right", "يمين"], ["center", "وسط"], ["left", "يسار"]] as const).map(([a, l]) => <button key={a} onClick={() => update({ align: a })} className={`rounded-lg py-1.5 text-sm ${active.align === a ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>{l}</button>)}</div>
+          <div className="mt-3 flex flex-wrap gap-4 text-sm">
+            <label className="flex items-center gap-2"><input type="checkbox" checked={active.bold} onChange={(e) => update({ bold: e.target.checked })}/>عريض</label>
+            <label className="flex items-center gap-2"><input type="checkbox" checked={active.divider} onChange={(e) => update({ divider: e.target.checked })}/>خط فاصل</label>
+            <label className="flex items-center gap-2"><input type="checkbox" checked={active.visible} onChange={(e) => update({ visible: e.target.checked })}/>ظاهر</label>
+          </div>
+        </div>}
+        {kind === "receipt" && <div className="space-y-2 border-t border-border pt-3"><h2 className="font-bold">معلومات الفاتورة</h2>
+          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-secondary p-2 text-sm"><ImageIcon className="h-4 w-4"/>رفع الشعار<input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = () => setInfo({ ...info, logo: String(r.result) }); r.readAsDataURL(f); }}/></label>
+          <Text label="العنوان" value={info.address} onChange={(v) => setInfo({ ...info, address: v })}/>
+          <Text label="الهاتف" value={info.phone} onChange={(v) => setInfo({ ...info, phone: v })}/>
+          <Text label="الرسالة الختامية" value={info.footer} onChange={(v) => setInfo({ ...info, footer: v })}/>
+        </div>}
+      </aside>
+    </div>
   </div></AppLayout>;
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block"><span className="mb-1 block text-sm text-muted-foreground">{label}</span>{children}</label>; }
- function Preview({ element, design, store, index, selected, dragging, onSelect, onDragStart, onHtmlDragStart, onHtmlDrop }: { element: ReceiptElement; design: ReceiptDesign; store: string; index: number; selected: boolean; dragging: boolean; onSelect: () => void; onDragStart: (event: React.PointerEvent<HTMLSpanElement>) => void; onHtmlDragStart: () => void; onHtmlDrop: () => void }) { let content: React.ReactNode = element.label; if (element.id === "logo") content = design.logo ? <img src={design.logo} alt="الشعار" className="mx-auto max-h-20 max-w-[55%]"/> : <div className="text-muted-receipt">الشعار</div>; if (element.id === "store") content = store; if (element.id === "contact") content = <>{design.address || "عنوان المتجر"}<br/>{design.phone || "رقم الهاتف"}</>; if (element.id === "invoice") content = "فاتورة رقم: 125"; if (element.id === "date") content = new Date().toLocaleString("en-GB"); if (element.id === "cashier") content = "الكاشير: المدير"; if (element.id === "items") { const borders = design.tableBorders ?? true; const edge = borders ? "border-e border-receipt-foreground last:border-e-0" : ""; content = <table className="w-full table-fixed border-collapse text-[9px]"><thead><tr className={borders ? "border-b-2 border-receipt-foreground" : ""}><th className={`p-1 text-right ${edge}`}>المنتج</th><th className={`p-1 text-right ${edge}`}>الكمية/الوزن</th><th className={`p-1 text-right ${edge}`}>سعر الوحدة</th><th className={`p-1 text-right ${edge}`}>المبلغ</th></tr></thead><tbody><tr className={borders ? "border-b border-receipt-foreground/60" : ""}><td className={`p-1 ${edge}`}>طماطة</td><td className={`p-1 ${edge}`}>1.175 كغم</td><td className={`p-1 ${edge}`}>1,500/كغم</td><td className={`p-1 ${edge}`}>1,750</td></tr><tr className={borders ? "border-b border-receipt-foreground/60" : ""}><td className={`p-1 ${edge}`}>حليب</td><td className={`p-1 ${edge}`}>2 قطعة</td><td className={`p-1 ${edge}`}>1,500</td><td className={`p-1 ${edge}`}>3,000</td></tr></tbody></table>; } if (element.id === "totals") content = <><div className="flex justify-between"><b>الإجمالي</b><b>4,750 د.ع</b></div><div className="flex justify-between"><span>المدفوع</span><span>4,750 د.ع</span></div><div className="flex justify-between"><span>الباقي</span><span>0 د.ع</span></div></>; if (element.id === "footer") content = design.footer; const offsetX = Math.max(-12, Math.min(12, element.offsetX ?? 0)); const offsetY = Math.max(-12, Math.min(12, element.offsetY ?? 0)); return <section data-preview-index={index} draggable onDragStart={onHtmlDragStart} onDragOver={(event) => event.preventDefault()} onDrop={onHtmlDrop} onClick={onSelect} className={`group relative cursor-pointer border border-dashed px-1 pt-5 transition ${selected ? "border-primary bg-primary/10" : "border-transparent hover:border-primary/50"} ${dragging ? "opacity-50" : "opacity-100"}`} style={{ fontFamily: element.fontFamily, fontSize: element.fontSize, fontWeight: element.bold ? 700 : 400, textAlign: element.align, marginBottom: element.spacing, paddingBottom: element.divider ? 5 : 0, borderBottomColor: element.divider ? "currentColor" : undefined, borderBottomStyle: element.divider ? "dashed" : undefined }}><span aria-label={`اسحب ${element.label}`} title={`اسحب ${element.label}`} onPointerDown={onDragStart} className="absolute right-1 top-0 z-10 flex h-5 w-7 touch-none cursor-grab items-center justify-center rounded-sm bg-secondary text-muted-foreground shadow-sm active:cursor-grabbing"><GripVertical className="h-4 w-4"/></span><div style={{ position: "relative", left: offsetX, top: offsetY }}>{content}</div></section>; }
+function cssText(s: string): React.CSSProperties {
+  const o: Record<string, string> = {};
+  for (const part of s.split(";")) { const i = part.indexOf(":"); if (i < 0) continue; const k = part.slice(0, i).trim().replace(/-([a-z])/g, (_, c: string) => c.toUpperCase()); o[k] = part.slice(i + 1).trim(); }
+  return o as React.CSSProperties;
+}
+function Ruler({ widthMm }: { widthMm: number }) {
+  const ticks = Array.from({ length: Math.floor(widthMm) + 1 }, (_, i) => i);
+  return <div className="relative h-4 bg-card text-[5px] text-muted-foreground" style={{ width: `${widthMm}mm` }} dir="ltr">{ticks.map((i) => <span key={i} className="absolute bottom-0 border-l border-muted-foreground" style={{ left: `${i}mm`, height: i % 10 === 0 ? 8 : i % 5 === 0 ? 5 : 3 }}>{i % 10 === 0 && <span className="absolute -top-2 left-0.5">{i}</span>}</span>)}</div>;
+}
+function Btn({ onClick, children }: { onClick: () => void; children: React.ReactNode }) { return <button onClick={onClick} className="flex items-center justify-center gap-1.5 rounded-lg bg-secondary px-3 py-2 text-sm">{children}</button>; }
+function Num({ label, value, onChange, step = 0.5 }: { label: string; value: number; onChange: (v: number) => void; step?: number }) {
+  return <label className="block text-xs"><span className="text-muted-foreground">{label}</span><input type="number" step={step} value={value} onChange={(e) => { const v = Number(e.target.value); if (Number.isFinite(v)) onChange(v); }} className="mt-0.5 h-9 w-full rounded-lg bg-secondary px-2 text-sm" dir="ltr"/></label>;
+}
+function Text({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return <label className="block text-xs"><span className="text-muted-foreground">{label}</span><input value={value} onChange={(e) => onChange(e.target.value)} className="mt-0.5 h-9 w-full rounded-lg bg-secondary px-2 text-sm"/></label>;
+}
