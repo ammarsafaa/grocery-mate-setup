@@ -344,6 +344,20 @@ function SettingsPage() {
             >
               <Upload className="h-4 w-4" /> استرجاع نسخة
             </button>
+            {native()?.restoreDb && (
+              <button
+                onClick={async () => {
+                  const n = native();
+                  if (!n?.restoreDb) return;
+                  const r = await n.restoreDb();
+                  if (!r.ok && r.error !== "canceled") toast.error("تعذر استرجاع النسخة");
+                  // عند النجاح يعيد البرنامج تشغيل نفسه تلقائياً بالبيانات المسترجعة
+                }}
+                className="flex items-center gap-2 rounded-xl bg-secondary px-6 py-3 font-bold"
+              >
+                <HardDrive className="h-4 w-4" /> استرجاع نسخة البرنامج (.db)
+              </button>
+            )}
             <input
               ref={fileRef}
               type="file"

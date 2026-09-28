@@ -75,6 +75,27 @@ ipcMain.handle("backup-db", async (_e, folder) => {
   return { ok: true, path: dest };
 });
 
+// Restores a .db backup: replaces the live database file, then relaunches so the app loads it.
+ipcMain.handle("restore-db", async () => {
+  if (!db || !dbPath) return { ok: false, error: "no-db" };
+  const r = await dialog.showOpenDialog({
+    properties: ["openFile"],
+    filters: [{ name: "نسخة احتياطية", extensions: ["db"] }],
+  });
+  if (r.canceled || !r.filePaths[0]) return { ok: false, error: "canceled" };
+  try {
+    db.close();
+    fs.copyFileSync(r.filePaths[0], dbPath);
+    // remove stale WAL/SHM so the restored file opens cleanly
+    for (const ext of ["-wal", "-shm"]) { try { fs.unlinkSync(dbPath + ext); } catch {} }
+    app.relaunch();
+    app.exit(0);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err && err.message ? err.message : err) };
+  }
+});
+
 ipcMain.on("machine-id", (e) => { e.returnValue = MID; });
 
 ipcMain.handle("pick-folder", async () => {
