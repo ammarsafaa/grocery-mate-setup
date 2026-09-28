@@ -11,6 +11,7 @@ import type {
   SupplierPayment,
   StockMovement,
   ReceiptDesign,
+  Expense,
 } from "./types";
 
 /**
@@ -108,22 +109,8 @@ export function getProducts(): Product[] {
 }
 
 function seedProducts(): Product[] {
-  const seeds: Product[] = [
-    { id: uid(), name: "طماطة", price: 1500, unit: "kg", category: "خضروات", stock: 50, active: true },
-    { id: uid(), name: "خيار", price: 1250, unit: "kg", category: "خضروات", stock: 40, active: true },
-    { id: uid(), name: "بطاطة", price: 1000, unit: "kg", category: "خضروات", stock: 80, active: true },
-    { id: uid(), name: "بصل", price: 900, unit: "kg", category: "خضروات", stock: 60, active: true },
-    { id: uid(), name: "موز", price: 2000, unit: "kg", category: "فواكه", stock: 30, active: true },
-    { id: uid(), name: "تفاح", price: 2500, unit: "kg", category: "فواكه", stock: 25, active: true },
-    { id: uid(), name: "برتقال", price: 1750, unit: "kg", category: "فواكه", stock: 35, active: true },
-    { id: uid(), name: "حليب", price: 1500, unit: "piece", category: "ألبان", stock: 48, active: true, barcode: "1001" },
-    { id: uid(), name: "خبز", price: 500, unit: "piece", category: "مخبوزات", stock: 100, active: true, barcode: "1002" },
-    { id: uid(), name: "أرز 5 كغم", price: 12000, unit: "piece", category: "مواد غذائية", stock: 20, active: true, barcode: "1003" },
-    { id: uid(), name: "سكر 1 كغم", price: 1500, unit: "piece", category: "مواد غذائية", stock: 40, active: true, barcode: "1004" },
-    { id: uid(), name: "شاي", price: 4000, unit: "piece", category: "مشروبات", stock: 30, active: true, barcode: "1005" },
-  ];
-  write("products", seeds);
-  return seeds;
+  // Fresh installs start empty so each customer enters their own products.
+  return [];
 }
 
 export function saveProducts(products: Product[]) {
@@ -238,6 +225,20 @@ export function nextSaleNumber(): number {
   return sales.length ? Math.max(...sales.map((s) => s.number)) + 1 : 1;
 }
 
+// ---------- Expenses ----------
+export function getExpenses(): Expense[] { return read<Expense[]>("expenses", []); }
+export function saveExpenses(items: Expense[]) { write("expenses", items); }
+
+// ---------- Factory reset ----------
+/** Clears all business data and settings; keeps the license so the device stays activated. */
+export function resetAllData() {
+  for (const k of ["users","products","groups","sales","shifts","suppliers","purchases","supplierPayments","stockMovements","expenses"]) write(k, []);
+  write("settings", {});
+  write("receiptDesign:58", null);
+  write("receiptDesign:80", null);
+  write("session", null);
+}
+
 // ---------- Shifts ----------
 export function getShifts(): Shift[] {
   return read<Shift[]>("shifts", []);
@@ -253,7 +254,7 @@ export function getOpenShift(): Shift | undefined {
 
 // ---------- Settings ----------
 const DEFAULT_SETTINGS: Settings = {
-  storeName: "بقالة النور",
+  storeName: "متجري",
   currency: "د.ع",
   backupFolder: "",
   autoBackup: true,
@@ -340,6 +341,7 @@ export function exportBackup(): string {
     stockMovements: getStockMovements(),
     receipt58: getReceiptDesign(58),
     receipt80: getReceiptDesign(80),
+    expenses: getExpenses(),
   };
   return JSON.stringify(data, null, 2);
 }
@@ -358,6 +360,7 @@ export function importBackup(json: string): boolean {
     if (data.supplierPayments) write("supplierPayments", data.supplierPayments);
     if (data.stockMovements) write("stockMovements", data.stockMovements);
     if (data.receipt58) write("receiptDesign:58", data.receipt58);
+    if (data.expenses) write("expenses", data.expenses);
     if (data.receipt80) write("receiptDesign:80", data.receipt80);
     return true;
   } catch {

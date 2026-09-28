@@ -12,6 +12,7 @@ import {
   Truck,
   Boxes,
   ReceiptText,
+  Wallet,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useAuth } from "@/lib/auth";
@@ -26,6 +27,7 @@ const NAV = [
   { to: "/purchases", label: "المشتريات", icon: Truck, admin: true },
   { to: "/inventory", label: "المخزون", icon: Boxes, admin: true },
   { to: "/shifts", label: "الورديات", icon: Clock },
+  { to: "/cashbox", label: "الصندوق والمصاريف", icon: Wallet, admin: true },
   { to: "/reports", label: "التقارير", icon: BarChart3 },
   { to: "/receipt-designer", label: "تصميم الفاتورة", icon: ReceiptText, admin: true },
   { to: "/settings", label: "الإعدادات", icon: SettingsIcon },

@@ -178,3 +178,13 @@ export interface LicenseState {
   machineId?: string;
   activatedAt?: string;
 }
+
+export interface Expense {
+  id: string;
+  title: string;
+  category: string;
+  amount: number;
+  note?: string;
+  userName?: string;
+  createdAt: string;
+}

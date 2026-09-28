@@ -12,6 +12,7 @@ import {
   getUsers,
   saveUsers,
   exportBackup,
+  resetAllData,
   importBackup,
   uid,
 } from "@/lib/db";
@@ -34,7 +35,7 @@ export const Route = createFileRoute("/settings")({
 });
 
 function SettingsPage() {
-  const { user, ready } = useAuth();
+  const { user, ready, logout } = useAuth();
   const navigate = useNavigate();
   const [settings, setSettings] = useState<Settings>(getSettings());
   const [users, setUsers] = useState<PosUser[]>([]);
@@ -263,6 +264,22 @@ function SettingsPage() {
         </section>
 
         <UpdatePanel />
+
+        <section className="rounded-2xl border border-destructive/50 bg-card p-6">
+          <h2 className="mb-2 flex items-center gap-2 text-lg font-bold text-destructive"><Trash2 className="h-5 w-5" /> تصفير كل شيء</h2>
+          <p className="mb-4 text-sm text-muted-foreground">يحذف كل المنتجات والمبيعات والورديات والمشتريات والمصاريف والمستخدمين والإعدادات، ويبقى التفعيل. يعود رقم الدخول إلى 1234. ننصح بتنزيل نسخة احتياطية قبل ذلك.</p>
+          <button
+            onClick={() => {
+              if (!window.confirm("هل أنت متأكد؟ سيتم حذف كل البيانات نهائياً.")) return;
+              if (window.prompt("اكتب كلمة: تصفير للتأكيد") !== "تصفير") { toast.error("لم يتم التصفير"); return; }
+              resetAllData();
+              toast.success("تم تصفير النظام");
+              logout();
+              navigate({ to: "/login" });
+            }}
+            className="rounded-xl bg-destructive px-6 py-3 font-bold text-destructive-foreground"
+          >تصفير النظام بالكامل</button>
+        </section>
 
         {/* Backup */}
         <section className="rounded-2xl border border-border bg-card p-6">
