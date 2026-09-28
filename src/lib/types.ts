@@ -121,6 +121,8 @@ export interface ReceiptElement {
   align: "right" | "center" | "left";
   spacing: number;
   divider: boolean;
+  offsetX?: number;
+  offsetY?: number;
 }
 
 export interface ReceiptDesign {
