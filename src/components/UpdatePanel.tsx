@@ -28,7 +28,7 @@ export function UpdatePanel() {
   else if (status?.state === "available") msg = `يوجد تحديث جديد (النسخة ${status.version}).`;
   else if (status?.state === "downloading") msg = `جارِ التحميل... ${status.percent ?? 0}%`;
   else if (status?.state === "ready") msg = "تم تحميل التحديث. اضغط «تثبيت الآن» وسيُعاد تشغيل البرنامج.";
-  else if (status?.state === "error") msg = "تعذّر التحديث. تأكد من اتصال الإنترنت ثم حاول مرة أخرى.";
+  else if (status?.state === "error") msg = "تعذّر التحديث. تأكد من اتصال الإنترنت ثم حاول مرة أخرى." + (status.error ? " (" + status.error + ")" : "");
 
   return (
     <section className="rounded-2xl border border-border bg-card p-6">

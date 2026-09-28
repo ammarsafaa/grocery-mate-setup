@@ -29,7 +29,8 @@
             "x64"
           ]
         }
-      ]
+      ],
+      "artifactName": "Zeros-Setup-${version}.${ext}"
     },
     "nsis": {
       "installerIcon": "electron/build/icon.ico",
