@@ -307,6 +307,8 @@ export function getReceiptDesign(width: 58 | 80): ReceiptDesign {
   return { paperWidth: width, elements: DEFAULT_RECEIPT_ELEMENTS.map((e) => ({ ...e })), tableBorders: true, address: "", phone: "", footer: "شكراً لتسوقكم معنا" };
 }
 export function saveReceiptDesign(design: ReceiptDesign) { write(`receiptDesign:${design.paperWidth}`, design); }
+export function readLayoutRaw<T>(key: string): T | null { return read<T | null>(`layout:${key}`, null); }
+export function writeLayoutRaw<T>(key: string, value: T) { write(`layout:${key}`, value); }
 
 // ---------- License ----------
 export function getLicense(): LicenseState {
@@ -343,6 +345,7 @@ export function exportBackup(): string {
     receipt58: getReceiptDesign(58),
     receipt80: getReceiptDesign(80),
     expenses: getExpenses(),
+    layouts: Object.fromEntries(["receipt:58", "receipt:80", "shift:58", "shift:80"].map((k) => [k, readLayoutRaw(k)]).filter(([, v]) => v)),
   };
   return JSON.stringify(data, null, 2);
 }
@@ -363,6 +366,7 @@ export function importBackup(json: string): boolean {
     if (data.receipt58) write("receiptDesign:58", data.receipt58);
     if (data.expenses) write("expenses", data.expenses);
     if (data.receipt80) write("receiptDesign:80", data.receipt80);
+    if (data.layouts) for (const [k, v] of Object.entries(data.layouts as Record<string, unknown>)) write(`layout:${k}`, v);
     return true;
   } catch {
     return false;
