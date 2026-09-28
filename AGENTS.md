@@ -13,3 +13,4 @@
 - Branding: Zeros uses the supplied grocery-cart logo in the UI, favicon, Windows window, installer, uninstaller, and desktop shortcut so the identity remains consistent offline.
 - Business records use append-only stock movements; posted purchases are reversed on cancellation so inventory history remains auditable.
 - Receipt layouts are stored as structured element settings per paper width, not arbitrary HTML, to keep printing safe and portable.
+- Receipt element positioning uses bounded per-element offsets and a 4 mm print safe area on each edge to prevent thermal-printer clipping.

@@ -114,7 +114,7 @@ ipcMain.handle("print-receipt", async (_event, html, printerName, copies) => {
   // Thermal printers print blank with "size: Xmm auto" + data: URLs, so we load
   // from a temp file, wait for rendering, and pass an explicit page size.
   const widthMm = Number((String(html).match(/size:(\d+)mm/) || [])[1]) || 80;
-  const cleanHtml = String(html).replace(/@page\{[^}]*\}/, "@page{margin:0}");
+  const cleanHtml = String(html).replace(/@page\{[^}]*\}/, `@page{size:${widthMm}mm auto;margin:0}`);
   const tmp = path.join(app.getPath("temp"), `zeros-print-${Date.now()}.html`);
   fs.writeFileSync(tmp, cleanHtml, "utf8");
   const printWindow = new BrowserWindow({ show: false, width: 400, height: 800, webPreferences: { sandbox: true } });

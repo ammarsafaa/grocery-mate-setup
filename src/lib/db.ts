@@ -289,20 +289,20 @@ export function saveSettings(s: Settings) {
 }
 
 const DEFAULT_RECEIPT_ELEMENTS: ReceiptDesign["elements"] = [
-  { id: "logo", label: "الشعار", visible: true, fontSize: 12, fontFamily: "Cairo", bold: false, align: "center", spacing: 4, divider: false },
-  { id: "store", label: "اسم المتجر", visible: true, fontSize: 20, fontFamily: "Cairo", bold: true, align: "center", spacing: 4, divider: false },
-  { id: "contact", label: "العنوان والهاتف", visible: true, fontSize: 11, fontFamily: "Cairo", bold: false, align: "center", spacing: 5, divider: true },
-  { id: "invoice", label: "رقم الفاتورة", visible: true, fontSize: 12, fontFamily: "Cairo", bold: true, align: "right", spacing: 2, divider: false },
-  { id: "date", label: "التاريخ والوقت", visible: true, fontSize: 11, fontFamily: "Cairo", bold: false, align: "right", spacing: 2, divider: false },
-  { id: "cashier", label: "اسم الكاشير", visible: true, fontSize: 11, fontFamily: "Cairo", bold: false, align: "right", spacing: 5, divider: true },
-  { id: "items", label: "جدول المنتجات", visible: true, fontSize: 11, fontFamily: "Cairo", bold: false, align: "right", spacing: 5, divider: true },
-  { id: "totals", label: "الإجمالي والمدفوع والباقي", visible: true, fontSize: 14, fontFamily: "Cairo", bold: true, align: "right", spacing: 5, divider: true },
-  { id: "footer", label: "الرسالة الختامية", visible: true, fontSize: 11, fontFamily: "Cairo", bold: false, align: "center", spacing: 2, divider: false },
+  { id: "logo", label: "الشعار", visible: true, fontSize: 12, fontFamily: "Cairo", bold: false, align: "center", spacing: 4, divider: false, offsetX: 0, offsetY: 0 },
+  { id: "store", label: "اسم المتجر", visible: true, fontSize: 20, fontFamily: "Cairo", bold: true, align: "center", spacing: 4, divider: false, offsetX: 0, offsetY: 0 },
+  { id: "contact", label: "العنوان والهاتف", visible: true, fontSize: 11, fontFamily: "Cairo", bold: false, align: "center", spacing: 5, divider: true, offsetX: 0, offsetY: 0 },
+  { id: "invoice", label: "رقم الفاتورة", visible: true, fontSize: 12, fontFamily: "Cairo", bold: true, align: "right", spacing: 2, divider: false, offsetX: 0, offsetY: 0 },
+  { id: "date", label: "التاريخ والوقت", visible: true, fontSize: 11, fontFamily: "Cairo", bold: false, align: "right", spacing: 2, divider: false, offsetX: 0, offsetY: 0 },
+  { id: "cashier", label: "اسم الكاشير", visible: true, fontSize: 11, fontFamily: "Cairo", bold: false, align: "right", spacing: 5, divider: true, offsetX: 0, offsetY: 0 },
+  { id: "items", label: "جدول المنتجات", visible: true, fontSize: 11, fontFamily: "Cairo", bold: false, align: "right", spacing: 5, divider: true, offsetX: 0, offsetY: 0 },
+  { id: "totals", label: "الإجمالي والمدفوع والباقي", visible: true, fontSize: 14, fontFamily: "Cairo", bold: true, align: "right", spacing: 5, divider: true, offsetX: 0, offsetY: 0 },
+  { id: "footer", label: "الرسالة الختامية", visible: true, fontSize: 11, fontFamily: "Cairo", bold: false, align: "center", spacing: 2, divider: false, offsetX: 0, offsetY: 0 },
 ];
 
 export function getReceiptDesign(width: 58 | 80): ReceiptDesign {
   const saved = read<ReceiptDesign | null>(`receiptDesign:${width}`, null);
-  if (saved) return { ...saved, tableBorders: saved.tableBorders ?? true };
+  if (saved) return { ...saved, tableBorders: saved.tableBorders ?? true, elements: saved.elements.map((element) => ({ ...element, offsetX: element.offsetX ?? 0, offsetY: element.offsetY ?? 0 })) };
   return { paperWidth: width, elements: DEFAULT_RECEIPT_ELEMENTS.map((e) => ({ ...e })), tableBorders: true, address: "", phone: "", footer: "شكراً لتسوقكم معنا" };
 }
 export function saveReceiptDesign(design: ReceiptDesign) { write(`receiptDesign:${design.paperWidth}`, design); }
