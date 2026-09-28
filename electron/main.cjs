@@ -111,17 +111,32 @@ ipcMain.handle("list-printers", async (event) => {
 });
 
 ipcMain.handle("print-receipt", async (_event, html, printerName, copies) => {
-  const printWindow = new BrowserWindow({ show: false, webPreferences: { sandbox: true } });
+  // Thermal printers print blank with "size: Xmm auto" + data: URLs, so we load
+  // from a temp file, wait for rendering, and pass an explicit page size.
+  const widthMm = Number((String(html).match(/size:(\d+)mm/) || [])[1]) || 80;
+  const cleanHtml = String(html).replace(/@page\{[^}]*\}/, "@page{margin:0}");
+  const tmp = path.join(app.getPath("temp"), `zeros-print-${Date.now()}.html`);
+  fs.writeFileSync(tmp, cleanHtml, "utf8");
+  const printWindow = new BrowserWindow({ show: false, width: 400, height: 800, webPreferences: { sandbox: true } });
   try {
-    await printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+    await printWindow.loadFile(tmp);
+    await new Promise((r) => setTimeout(r, 400));
+    const heightPx = await printWindow.webContents.executeJavaScript("document.fonts.ready.then(() => Math.ceil(document.documentElement.scrollHeight))");
+    const heightMicrons = Math.max(50000, Math.ceil((heightPx / 96) * 25400) + 10000);
     return await new Promise((resolve) => {
-      printWindow.webContents.print({ silent: true, deviceName: printerName || undefined, copies: Math.max(1, Number(copies) || 1), printBackground: true, margins: { marginType: "none" } }, (success, failureReason) => {
+      printWindow.webContents.print({
+        silent: true, deviceName: printerName || undefined, copies: Math.max(1, Number(copies) || 1),
+        printBackground: true, margins: { marginType: "none" },
+        pageSize: { width: widthMm * 1000, height: heightMicrons },
+      }, (success, failureReason) => {
         printWindow.close();
+        fs.rm(tmp, () => {});
         resolve(success ? { ok: true } : { ok: false, error: failureReason });
       });
     });
   } catch (error) {
     if (!printWindow.isDestroyed()) printWindow.close();
+    fs.rm(tmp, () => {});
     return { ok: false, error: error instanceof Error ? error.message : "print-error" };
   }
 });
