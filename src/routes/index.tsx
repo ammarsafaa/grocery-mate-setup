@@ -106,6 +106,10 @@ function PosPage() {
   // Poll the scale continuously while the weight window is open
   useEffect(() => {
     if (!weightModal) return;
+    if (getSettings().useScale === false) {
+      setScaleStatus("اكتب الوزن يدوياً بالكيلوغرام");
+      return;
+    }
     const n = native();
     if (!n) {
       setScaleStatus("الميزان يعمل فقط في نسخة الويندوز المثبتة على الكاشير");
@@ -357,7 +361,7 @@ function PosPage() {
             <p className="mb-4 text-sm text-muted-foreground">
               السعر الحالي: {formatMoney(priceEdit.price)} {priceEdit.unit === "kg" ? "/ كغم" : "/ قطعة"}
             </p>
-            <label className="mb-2 block text-sm font-semibold">السعر الجديد (د.ع)</label>
+            <label className="mb-2 block text-sm font-semibold">السعر الجديد</label>
             <input
               autoFocus
               type="number"
@@ -382,10 +386,23 @@ function PosPage() {
             <p className="mb-4 text-sm text-muted-foreground">
               السعر: {formatMoney(weightModal.price)} / كغم
             </p>
-            <label className="mb-2 block text-sm font-semibold">الوزن من الميزان (كغم)</label>
-            <div className="mb-2 flex h-16 w-full items-center justify-center rounded-xl border border-border bg-secondary text-3xl font-bold">
-              {weight || "—"}
-            </div>
+            <label className="mb-2 block text-sm font-semibold">{settings.useScale === false ? "الوزن (كغم)" : "الوزن من الميزان (كغم)"}</label>
+            {settings.useScale === false ? (
+              <input
+                autoFocus
+                type="number"
+                step="0.001"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") confirmWeight(); }}
+                placeholder="0.000"
+                className="mb-2 h-16 w-full rounded-xl border border-border bg-secondary px-4 text-center text-3xl font-bold outline-none focus:border-primary"
+              />
+            ) : (
+              <div className="mb-2 flex h-16 w-full items-center justify-center rounded-xl border border-border bg-secondary text-3xl font-bold">
+                {weight || "—"}
+              </div>
+            )}
             <p className="mb-4 text-center text-xs text-muted-foreground">
               {scaleStatus}
             </p>

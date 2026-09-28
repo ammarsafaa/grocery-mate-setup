@@ -168,6 +168,7 @@ export interface Settings {
   autoCut: boolean;
   openDrawer: boolean;
   labelBarcodeEnabled: boolean;
+  useScale: boolean;
   labelPrefixes: string; // comma separated, e.g. "20,21,22"
   labelPluLength: number;
   labelValueType: "weight" | "price";
