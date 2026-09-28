@@ -3,7 +3,7 @@ import { native } from "./native";
 import type { Sale, Shift } from "./types";
 
 const esc = (v: string) => v.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] ?? c);
-const n = (v: number) => v.toLocaleString("ar-IQ");
+const n = (v: number) => v.toLocaleString("en-GB");
 
 export interface ProductLine { name: string; unit: "piece" | "kg"; qty: number; total: number; }
 
@@ -42,7 +42,7 @@ export function buildShiftReportHtml(shift: Shift, sales: Sale[]) {
   const expected = shift.openingCash + r.total;
   const diff = (shift.closingCash ?? 0) - expected;
   const line = (a: string, b: string) => `<div class="line"><span>${a}</span><b>${b}</b></div>`;
-  const t = (iso?: string) => (iso ? new Date(iso).toLocaleString("ar-IQ") : "—");
+  const t = (iso?: string) => (iso ? new Date(iso).toLocaleString("en-GB") : "—");
   const rows = r.products.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.name)}</td><td>${p.unit === "kg" ? `${p.qty.toFixed(3)} كغم` : `${n(p.qty)} قطعة`}</td><td>${n(p.total)}</td></tr>`).join("");
   return `<!doctype html><html dir="rtl"><head><meta charset="utf-8"><style>@page{size:${st.paperWidth}mm auto;margin:2mm}*{box-sizing:border-box}body{width:${st.paperWidth - 4}mm;margin:0;color:#111;background:#fff;font-family:Cairo,Arial,sans-serif;font-size:12px}h1{font-size:16px;text-align:center;margin:4px 0}h2{font-size:13px;margin:8px 0 4px;border-bottom:1px dashed #111;padding-bottom:3px}.line{display:flex;justify-content:space-between;margin:2px 0}table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{padding:2px;text-align:right;border-bottom:1px solid #999;overflow-wrap:anywhere}th:first-child,td:first-child{width:8%}.big{font-size:15px;border-top:2px solid #111;padding-top:4px;margin-top:6px}</style></head><body>
 <h1>${esc(st.storeName)}</h1><div style="text-align:center">تقرير نهاية الوردية / اليوم</div>
