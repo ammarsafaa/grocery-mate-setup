@@ -119,7 +119,9 @@ function PosPage() {
     const s = getSettings();
     const tick = async () => {
       if (!alive) return;
-      const r = await n.readWeight(s.scaleIp, s.scalePort).catch(() => ({ ok: false }) as any);
+      const r = s.scaleMode === "lan"
+        ? await n.readWeight(s.scaleIp, s.scalePort).catch(() => ({ ok: false }) as any)
+        : await n.readWeightSerial(s.scaleCom, s.scaleBaud).catch(() => ({ ok: false }) as any);
       if (!alive) return;
       if (r.ok && r.weight > 0) {
         setWeight(r.weight.toFixed(3));
