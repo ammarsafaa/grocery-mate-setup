@@ -35,7 +35,7 @@ export const Route = createFileRoute("/settings")({
 });
 
 function SettingsPage() {
-  const { user, ready } = useAuth();
+  const { user, ready, logout } = useAuth();
   const navigate = useNavigate();
   const [settings, setSettings] = useState<Settings>(getSettings());
   const [users, setUsers] = useState<PosUser[]>([]);
