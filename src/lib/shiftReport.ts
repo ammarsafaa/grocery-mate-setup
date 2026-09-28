@@ -37,7 +37,7 @@ export function closeShift(shiftId: string, closingCash: number): { shift: Shift
 
 export function buildShiftReportHtml(shift: Shift, sales: Sale[]) {
   const st = getSettings();
-  const cur = "";
+  
   const r = summarize(sales);
   const expected = shift.openingCash + r.total;
   const diff = (shift.closingCash ?? 0) - expected;
