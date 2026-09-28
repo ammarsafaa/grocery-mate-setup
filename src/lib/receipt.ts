@@ -1,4 +1,4 @@
-import { getReceiptDesign, getSettings } from "./db";
+import { formatMoney, getReceiptDesign, getSettings } from "./db";
 import type { ReceiptElement, Sale } from "./types";
 
 const escapeHtml = (value: string) => value.replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[char] ?? char);
@@ -19,7 +19,7 @@ export function buildReceiptHtml(sale: Sale) {
     if (element.id === "date") content = new Date(sale.createdAt).toLocaleString("en-GB");
     if (element.id === "cashier") content = `الكاشير: ${escapeHtml(sale.userName)}`;
     if (element.id === "items") content = `<table class="${design.tableBorders ?? true ? "item-table-bordered" : "item-table-plain"}"><thead><tr><th>المنتج</th><th>الكمية/الوزن</th><th>سعر الوحدة</th><th>المبلغ</th></tr></thead><tbody>${sale.items.map((item) => `<tr><td>${escapeHtml(item.name)}</td><td>${item.unit === "kg" ? `${item.qty.toFixed(3)} كغم` : `${item.qty} قطعة`}</td><td>${item.price.toLocaleString("en-GB")}${item.unit === "kg" ? "/كغم" : ""}</td><td>${item.total.toLocaleString("en-GB")}</td></tr>`).join("")}</tbody></table>`;
-    if (element.id === "totals") content = `<div class="line"><span>الإجمالي</span><span>${sale.total.toLocaleString("en-GB")}</span></div>${sale.paid !== undefined ? `<div class="line"><span>المدفوع</span><span>${sale.paid.toLocaleString("en-GB")}</span></div><div class="line"><span>الباقي</span><span>${(sale.change ?? 0).toLocaleString("en-GB")}</span></div>` : ""}`;
+    if (element.id === "totals") content = `<div class="line"><span>الإجمالي</span><span>${formatMoney(sale.total, settings.currency)}</span></div>${sale.paid !== undefined ? `<div class="line"><span>المدفوع</span><span>${formatMoney(sale.paid, settings.currency)}</span></div><div class="line"><span>الباقي</span><span>${formatMoney(sale.change ?? 0, settings.currency)}</span></div>` : ""}`;
     if (element.id === "footer") content = escapeHtml(design.footer);
     return content ? `<section style="${style}"><div style="${positionStyle}">${content}</div></section>` : "";
   };

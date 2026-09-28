@@ -393,8 +393,8 @@ export function maybeAutoBackup() {
 }
 
 export function formatMoney(n: number, currency?: string): string {
-  void currency;
-  return n.toLocaleString("en-GB");
+  const unit = currency ?? getSettings().currency;
+  return `${n.toLocaleString("en-GB")} ${unit}`.trim();
 }
 
 /** Cash denominations start at 250 IQD, so sale amounts settle to the nearest 250. */
