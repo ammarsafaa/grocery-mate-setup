@@ -83,7 +83,7 @@ function ShiftsPage() {
                 <span className="flex h-3 w-3 rounded-full bg-primary" />
                 <h2 className="text-lg font-bold">
                   وردية مفتوحة — {open.userName} منذ{" "}
-                  {new Date(open.openedAt).toLocaleTimeString("ar-IQ")}
+                  {new Date(open.openedAt).toLocaleTimeString("en-GB")}
                 </h2>
               </div>
               <div className="flex items-end gap-3">
@@ -146,9 +146,9 @@ function ShiftsPage() {
               {shifts.map((s) => (
                 <tr key={s.id} className="border-t border-border">
                   <td className="p-3 font-bold">{s.userName}</td>
-                  <td className="p-3">{new Date(s.openedAt).toLocaleString("ar-IQ")}</td>
+                  <td className="p-3">{new Date(s.openedAt).toLocaleString("en-GB")}</td>
                   <td className="p-3">
-                    {s.closedAt ? new Date(s.closedAt).toLocaleString("ar-IQ") : "—"}
+                    {s.closedAt ? new Date(s.closedAt).toLocaleString("en-GB") : "—"}
                   </td>
                   <td className="p-3">{formatMoney(s.openingCash)}</td>
                   <td className="p-3">{s.salesCount ?? "—"}</td>

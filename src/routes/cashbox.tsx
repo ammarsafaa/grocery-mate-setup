@@ -113,7 +113,7 @@ function CashboxPage() {
             <table className="w-full text-sm">
               <thead><tr className="border-b border-border text-muted-foreground"><th className="py-2 text-right">اليوم</th><th className="text-right">المبيعات</th><th className="text-right">المصاريف</th><th className="text-right">الصافي</th></tr></thead>
               <tbody>{days.map(([d, v]) => (
-                <tr key={d} className="border-b border-border/50"><td className="py-2">{new Date(d).toLocaleDateString("ar-IQ", { weekday: "long", day: "numeric", month: "numeric" })}</td><td>{formatMoney(v.sales)}</td><td className="text-destructive">{formatMoney(v.exp)}</td><td className="font-bold">{formatMoney(v.sales - v.exp)}</td></tr>
+                <tr key={d} className="border-b border-border/50"><td className="py-2">{new Date(d).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "numeric" })}</td><td>{formatMoney(v.sales)}</td><td className="text-destructive">{formatMoney(v.exp)}</td><td className="font-bold">{formatMoney(v.sales - v.exp)}</td></tr>
               ))}</tbody>
             </table>
           )}
@@ -124,7 +124,7 @@ function CashboxPage() {
           {pExp.length === 0 ? <p className="text-muted-foreground">لا توجد مصاريف</p> : (
             <div className="space-y-2">{pExp.map((e) => (
               <div key={e.id} className="flex items-center justify-between rounded-xl bg-secondary px-4 py-3">
-                <div><div className="font-bold">{e.title} <span className="text-xs text-muted-foreground">— {e.category}</span></div><div className="text-xs text-muted-foreground">{new Date(e.createdAt).toLocaleString("ar-IQ")} · {e.userName}</div></div>
+                <div><div className="font-bold">{e.title} <span className="text-xs text-muted-foreground">— {e.category}</span></div><div className="text-xs text-muted-foreground">{new Date(e.createdAt).toLocaleString("en-GB")} · {e.userName}</div></div>
                 <div className="flex items-center gap-3"><span className="font-bold text-destructive">{formatMoney(e.amount)}</span><button onClick={() => remove(e.id)} aria-label="حذف" className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button></div>
               </div>
             ))}</div>
