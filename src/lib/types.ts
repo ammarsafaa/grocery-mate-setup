@@ -155,6 +155,9 @@ export interface Settings {
   lastBackupAt?: string;
   scaleIp: string;
   scalePort: number;
+  scaleMode: "lan" | "serial"; // lan = كيبل شبكة، serial = كيبل RS232
+  scaleCom: string; // e.g. "COM3"
+  scaleBaud: number; // e.g. 9600
   useProductGroups: boolean;
   colorPreset: "emerald" | "blue" | "red" | "amber" | "custom";
   colorMode: "dark" | "light";
