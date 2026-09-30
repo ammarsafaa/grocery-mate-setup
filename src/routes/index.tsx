@@ -116,20 +116,23 @@ function PosPage() {
       return;
     }
     let alive = true;
-    const s = getSettings();
     const tick = async () => {
       if (!alive) return;
-      const r = s.scaleMode === "lan"
-        ? await n.readWeight(s.scaleIp, s.scalePort).catch(() => ({ ok: false }) as any)
-        : await n.readWeightSerial(s.scaleCom, s.scaleBaud).catch(() => ({ ok: false }) as any);
+      const s = getSettings();
+      const r: { ok: boolean; weight?: number; error?: string } = s.scaleMode === "lan"
+        ? await n.readWeight(s.scaleIp, s.scalePort).catch((e) => ({ ok: false, error: String(e) }))
+        : await n.readWeightSerial(s.scaleCom, s.scaleBaud).catch((e) => ({ ok: false, error: String(e) }));
       if (!alive) return;
-      if (r.ok && r.weight > 0) {
-        setWeight(r.weight.toFixed(3));
+      const where = s.scaleMode === "lan" ? `${s.scaleIp}` : `${s.scaleCom || "بدون منفذ"}`;
+      if (r.ok && (r.weight ?? 0) > 0) {
+        setWeight((r.weight as number).toFixed(3));
         setScaleStatus("تم جلب الوزن من الميزان");
+      } else if (r.ok) {
+        setScaleStatus("الميزان متصل — ضع المنتج على الميزان");
       } else {
-        setScaleStatus("بانتظار الوزن من الميزان... ضع المنتج على الميزان");
+        setScaleStatus(`تعذر جلب الوزن من الميزان (${where}): ${String(r.error || "").slice(0, 120)}`);
       }
-      setTimeout(tick, 500);
+      setTimeout(tick, 300);
     };
     setScaleStatus("جاري الاتصال بالميزان...");
     tick();

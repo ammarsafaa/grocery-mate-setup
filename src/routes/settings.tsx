@@ -295,7 +295,13 @@ function SettingsPage() {
                 ? await n.readWeight(settings.scaleIp, settings.scalePort).catch((e) => ({ ok: false, error: String(e), raw: "" } as { ok: boolean; weight?: number; error?: string; raw?: string }))
                 : await n.readWeightSerial(settings.scaleCom, settings.scaleBaud).catch((e) => ({ ok: false, error: String(e), raw: "" } as { ok: boolean; weight?: number; error?: string; raw?: string }));
               const raw = r.raw ? JSON.stringify(r.raw).slice(0, 300) : "لا شيء";
-              if (r.ok) setScaleTest(`نجح ✓ الوزن: ${r.weight} كغم | البيانات المستلمة: ${raw}`);
+              if (r.ok) {
+                // Save the working scale settings so the sale screen uses the same connection.
+                const next = { ...getSettings(), scaleMode: settings.scaleMode, scaleIp: settings.scaleIp, scalePort: settings.scalePort, scaleCom: settings.scaleCom, scaleBaud: settings.scaleBaud, useScale: true };
+                saveSettings(next);
+                setSettings({ ...settings, useScale: true });
+                setScaleTest(`نجح ✓ الوزن: ${r.weight} كغم — تم حفظ إعدادات الميزان تلقائياً | البيانات المستلمة: ${raw}`);
+              }
               else if (r.error === "no-data") setScaleTest(settings.scaleMode === "lan" ? `الاتصال تم لكن الميزان لم يرسل أي بيانات على هذا المنفذ.` : `المنفذ انفتح لكن الميزان لم يرسل أي بيانات. جرّب سرعة اتصال أخرى (مثلاً 4800 أو 2400) وتأكد أن الكيبل من نوع Null Modem.`);
               else if (r.error === "unparsed") setScaleTest(`وصلت بيانات لكن لم أفهم الوزن منها: ${raw}`);
               else if (r.error === "no-com") setScaleTest(`اختر منفذ COM أولاً من القائمة ثم اضغط حفظ.`);
