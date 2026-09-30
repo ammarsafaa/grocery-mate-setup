@@ -140,12 +140,20 @@ ipcMain.handle("read-weight-serial", (_e, com, baud) => new Promise((resolve) =>
   const ps = `
 $p = New-Object System.IO.Ports.SerialPort '${String(com).toUpperCase()}',${b},'None',8,'One'
 $p.ReadTimeout = 400
+$p.DtrEnable = $true
+$p.RtsEnable = $true
+$p.Encoding = [Text.Encoding]::GetEncoding(28591)
 $p.Open()
-$sw = [Diagnostics.Stopwatch]::StartNew()
 $sb = New-Object Text.StringBuilder
-while ($sw.ElapsedMilliseconds -lt 4000) {
-  try { $s = $p.ReadExisting(); if ($s) { [void]$sb.Append($s) } } catch {}
-  Start-Sleep -Milliseconds 80
+$reqs = @([byte[]](0x05), [byte[]](0x57,0x0D,0x0A), [byte[]](0x50,0x0D,0x0A), [byte[]](0x52,0x0D,0x0A))
+foreach ($q in $reqs) {
+  try { $p.Write($q, 0, $q.Length) } catch {}
+  $sw = [Diagnostics.Stopwatch]::StartNew()
+  while ($sw.ElapsedMilliseconds -lt 900) {
+    try { $s = $p.ReadExisting(); if ($s) { [void]$sb.Append($s) } } catch {}
+    Start-Sleep -Milliseconds 60
+  }
+  if ($sb.Length -gt 0) { break }
 }
 $p.Close()
 [Console]::Out.Write($sb.ToString())
