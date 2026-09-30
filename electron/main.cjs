@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const net = require("net");
 const crypto = require("crypto");
-const { execSync } = require("child_process");
+const { execSync, spawn } = require("child_process");
 
 // In an installed build, the UI is copied to resources/app so it cannot be
 // omitted from app.asar. Development still reads the normal Vite output.
