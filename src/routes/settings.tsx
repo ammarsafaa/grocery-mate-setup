@@ -291,9 +291,15 @@ function SettingsPage() {
               const n = native();
               if (!n) { setScaleTest("الاختبار يعمل في برنامج Windows فقط"); return; }
               setScaleTest("جارٍ الاختبار... ضع شيئاً على الميزان الآن");
-              const r = settings.scaleMode === "lan"
-                ? await n.readWeight(settings.scaleIp, settings.scalePort).catch((e) => ({ ok: false, error: String(e), raw: "" } as { ok: boolean; weight?: number; error?: string; raw?: string }))
-                : await n.readWeightSerial(settings.scaleCom, settings.scaleBaud).catch((e) => ({ ok: false, error: String(e), raw: "" } as { ok: boolean; weight?: number; error?: string; raw?: string }));
+              const call = () => settings.scaleMode === "lan"
+                ? n.readWeight(settings.scaleIp, settings.scalePort).catch((e) => ({ ok: false, error: String(e), raw: "" } as { ok: boolean; weight?: number; error?: string; raw?: string; waiting?: boolean }))
+                : n.readWeightSerial(settings.scaleCom, settings.scaleBaud).catch((e) => ({ ok: false, error: String(e), raw: "" } as { ok: boolean; weight?: number; error?: string; raw?: string; waiting?: boolean }));
+              let r = await call();
+              const started = Date.now();
+              while ((r as { waiting?: boolean }).waiting && Date.now() - started < 12000) {
+                await new Promise((res) => setTimeout(res, 400));
+                r = await call();
+              }
               const raw = r.raw ? JSON.stringify(r.raw).slice(0, 300) : "لا شيء";
               if (r.ok) {
                 // Save the working scale settings so the sale screen uses the same connection.
@@ -318,9 +324,15 @@ function SettingsPage() {
                 const n = native();
                 if (!n) { setScaleTest("الفحص يعمل في برنامج Windows فقط"); return; }
                 const speeds = [9600, 4800, 2400, 19200, 38400, 57600, 115200, 1200];
+                const call = (b: number) => n.readWeightSerial(settings.scaleCom, b).catch(() => ({ ok: false, raw: "" } as { ok: boolean; weight?: number; raw?: string; waiting?: boolean }));
                 for (const b of speeds) {
                   setScaleTest(`جارٍ فحص السرعة ${b}... اترك شيئاً على الميزان`);
-                  const r = await n.readWeightSerial(settings.scaleCom, b).catch(() => ({ ok: false, raw: "" } as { ok: boolean; weight?: number; raw?: string }));
+                  let r = await call(b);
+                  const started = Date.now();
+                  while ((r as { waiting?: boolean }).waiting && Date.now() - started < 8000) {
+                    await new Promise((res) => setTimeout(res, 400));
+                    r = await call(b);
+                  }
                   if (r.raw) {
                     const hex = Array.from(r.raw.slice(0, 40)).map((c) => c.charCodeAt(0).toString(16).padStart(2, "0")).join(" ");
                     if (r.ok) setSettings({ ...settings, scaleBaud: b });
