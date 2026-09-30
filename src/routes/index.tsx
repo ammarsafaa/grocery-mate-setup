@@ -48,6 +48,7 @@ function PosPage() {
   const [weightModal, setWeightModal] = useState<Product | null>(null);
   const [weight, setWeight] = useState("");
   const [scaleStatus, setScaleStatus] = useState("");
+  const [liveWeight, setLiveWeight] = useState(0);
   const [settings, setSettings] = useState(getSettings());
   const [groups, setGroups] = useState<ProductGroup[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
@@ -103,18 +104,11 @@ function PosPage() {
   const itemsTotal = cart.reduce((sum, item) => sum + item.total, 0);
   const total = roundToCash250(itemsTotal);
 
-  // Poll the scale continuously while the weight window is open
+  // Poll the scale continuously so the live weight is always visible in the top bar
   useEffect(() => {
-    if (!weightModal) return;
-    if (getSettings().useScale === false) {
-      setScaleStatus("اكتب الوزن يدوياً بالكيلوغرام");
-      return;
-    }
+    if (settings.useScale === false) return;
     const n = native();
-    if (!n) {
-      setScaleStatus("الميزان يعمل فقط في نسخة الويندوز المثبتة على الكاشير");
-      return;
-    }
+    if (!n) return;
     let alive = true;
     const tick = async () => {
       if (!alive) return;
@@ -123,24 +117,19 @@ function PosPage() {
         ? await n.readWeight(s.scaleIp, s.scalePort).catch((e) => ({ ok: false, error: String(e) }))
         : await n.readWeightSerial(s.scaleCom, s.scaleBaud).catch((e) => ({ ok: false, error: String(e) }));
       if (!alive) return;
-      const where = s.scaleMode === "lan" ? `${s.scaleIp}` : `${s.scaleCom || "بدون منفذ"}`;
-      if (r.ok && (r.weight ?? 0) > 0) {
-        setWeight((r.weight as number).toFixed(3));
-        setScaleStatus("تم جلب الوزن من الميزان");
-      } else if (r.ok) {
-        setScaleStatus("الميزان متصل — ضع المنتج على الميزان");
-      } else if ((r as { waiting?: boolean }).waiting) {
-        setScaleStatus("جاري جلب الوزن من الميزان...");
-      } else {
-        setScaleStatus(`تعذر جلب الوزن من الميزان (${where}): ${String(r.error || "").slice(0, 120)}`);
-      }
+      if (r.ok) setLiveWeight((r.weight ?? 0) > 0 ? (r.weight as number) : 0);
       setTimeout(tick, 150);
     };
-    setScaleStatus("جاري جلب الوزن من الميزان...");
     tick();
     return () => {
       alive = false;
     };
+  }, [settings.useScale]);
+
+  // Poll the scale while the manual weight window is open (manual mode only)
+  useEffect(() => {
+    if (!weightModal) return;
+    setScaleStatus("اكتب الوزن يدوياً بالكيلوغرام");
   }, [weightModal]);
 
   const addProduct = (p: Product) => {
@@ -150,6 +139,19 @@ function PosPage() {
       return;
     }
     if (p.unit === "kg") {
+      if (settings.useScale !== false && native()) {
+        if (liveWeight <= 0) {
+          toast.error("ضع المنتج على الميزان أولاً");
+          return;
+        }
+        const w = liveWeight;
+        setCart((c) => [
+          ...c,
+          { productId: p.id, name: p.name, unit: "kg", price: p.price, qty: w, total: roundToCash250(w * p.price) },
+        ]);
+        toast.success(`${p.name} — ${w.toFixed(3)} كغم`);
+        return;
+      }
       setWeight("");
       setWeightModal(p);
       return;
@@ -273,6 +275,20 @@ function PosPage() {
               placeholder="ابحث بالاسم أو امسح الباركود..."
               className="h-12 flex-1 rounded-xl border border-border bg-card px-4 text-foreground outline-none focus:border-primary"
             />
+            {settings.useScale !== false && (
+              <div className="flex h-12 min-w-48 items-center justify-between gap-3 rounded-xl border-2 border-primary/50 bg-card px-4 shadow-inner">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-black tracking-tight text-primary">
+                    {liveWeight > 0 ? liveWeight.toFixed(3) : "0.000"}
+                  </span>
+                  <span className="text-xs font-bold text-muted-foreground">كغم</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className={`h-2 w-2 rounded-full ${liveWeight > 0 ? "animate-pulse bg-primary" : "bg-muted-foreground/40"}`} />
+                  <span className="text-[10px] font-bold text-muted-foreground">الميزان</span>
+                </div>
+              </div>
+            )}
             <button
               onClick={() => setPriceMode((v) => !v)}
               className={`flex h-12 items-center gap-2 rounded-xl px-5 font-bold transition ${priceMode ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
