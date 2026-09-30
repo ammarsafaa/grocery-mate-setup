@@ -133,6 +133,25 @@ ipcMain.handle("list-serial-ports", () => new Promise((resolve) => {
     });
 }));
 
+// Runs a PowerShell script from a temp .ps1 file (-File). Passing multi-line scripts
+// with quotes/here-strings through -Command gets mangled by Windows argument quoting.
+function runPsFile(exe, script, opts, cb) {
+  const os = require("os");
+  const { execFile } = require("child_process");
+  const file = path.join(os.tmpdir(), `zeros-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}.ps1`);
+  try { fs.writeFileSync(file, "\ufeff" + script, "utf8"); } catch (e) { return cb(e, "", ""); }
+  execFile(exe, ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", file], { windowsHide: true, ...opts }, (err, stdout, stderr) => {
+    try { fs.unlinkSync(file); } catch {}
+    cb(err, stdout, stderr);
+  });
+}
+const cleanPsError = (err, stderr) => {
+  const t = String(stderr || "").replace(/\s+/g, " ").trim();
+  if (t) return t.slice(0, 300);
+  if (err && err.killed) return "timeout";
+  return String((err && err.message) || "ps-error").split("\n")[0].slice(0, 120);
+};
+
 // Reads the weight from a serial (RS232) port via PowerShell.
 ipcMain.handle("read-weight-serial", async (_e, com, baud) => {
   const sdk = await readWeightSdk(com, Number(baud) || 9600);
@@ -164,9 +183,8 @@ foreach ($q in $reqs) {
 $p.Close()
 [Console]::Out.Write($sb.ToString())
 `;
-  const { execFile } = require("child_process");
-  execFile("powershell", ["-NoProfile", "-Command", ps], { timeout: 12000, encoding: "latin1" }, (err, stdout) => {
-    if (err) return resolve({ ok: false, error: String(err.message || err) });
+  runPsFile("powershell", ps, { timeout: 12000, encoding: "latin1" }, (err, stdout, stderr) => {
+    if (err && !String(stdout || "").trim()) return resolve({ ok: false, error: cleanPsError(err, stderr) });
     const buf = String(stdout || "");
     const w = parseWeight(buf);
     if (w != null) resolve({ ok: true, weight: w, raw: buf });
@@ -206,14 +224,13 @@ $r = [RtScale]::rtscaleGetPluWeight($id, [ref]$w)
 if ($r -ne 0) { [Console]::Out.Write("WFAIL:$r"); exit }
 [Console]::Out.Write("W:" + $w.ToString([Globalization.CultureInfo]::InvariantCulture))
 `;
-    const { execFile } = require("child_process");
     const ps32 = path.join(process.env.WINDIR || "C:\\Windows", "SysWOW64", "WindowsPowerShell", "v1.0", "powershell.exe");
     const exe = fs.existsSync(ps32) ? ps32 : "powershell";
-    execFile(exe, ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", ps], { timeout: 10000, windowsHide: true }, (err, stdout, stderr) => {
+    runPsFile(exe, ps, { timeout: 10000 }, (err, stdout, stderr) => {
       const out = String(stdout || "").trim();
       const m = out.match(/W:(-?\d+(?:\.\d+)?)/);
       if (m) return resolve({ ok: true, weight: Math.abs(parseFloat(m[1])), raw: "SDK " + out });
-      resolve({ ok: false, error: out || String((err && err.message) || stderr || "sdk-error").slice(0, 300), raw: "SDK " + out });
+      resolve({ ok: false, error: out || cleanPsError(err, stderr), raw: "SDK " + out });
     });
   });
 }
