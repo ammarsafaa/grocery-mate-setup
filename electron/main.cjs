@@ -155,6 +155,7 @@ const cleanPsError = (err, stderr) => {
 // ---- Persistent scale daemon: connects once, then streams the weight continuously. ----
 // Previously every read spawned a new PowerShell (slow). Now one long-lived process
 // keeps the scale connection open and polls it, so weight appears almost instantly.
+const SCALE_DIR = app.isPackaged ? path.join(process.resourcesPath, "scale") : path.join(__dirname, "scale");
 let scaleDaemon = null; // { proc, key, startedAt, lastWeight, lastWeightAt, lastError, file }
 
 const killScaleDaemon = () => {
@@ -269,7 +270,7 @@ function ensureScaleDaemon(target) {
     }
   });
   child.stderr.on("data", () => {});
-  child.on("exit", () => { if (scaleDaemon === d) scaleDaemon = null; });
+  child.on("exit", () => { try { fs.unlinkSync(d.file); } catch {} if (scaleDaemon === d) scaleDaemon = null; });
   return d;
 }
 
@@ -291,12 +292,14 @@ ipcMain.handle("read-weight", async (_e, host, port) => {
   void port; // the SDK uses BaudRate 0 for network connections
   if (!/^[\d.]{7,15}$/.test(String(host || ""))) return { ok: false, error: "bad-address" };
   const d = ensureScaleDaemon({ kind: "lan", host: String(host) });
+  if (d) d.lastRequestAt = Date.now();
   return daemonResult(d);
 });
 
 ipcMain.handle("read-weight-serial", async (_e, com, baud) => {
   if (!/^COM\d{1,2}$/i.test(String(com || ""))) return { ok: false, error: "no-com" };
   const d = ensureScaleDaemon({ kind: "com", com: String(com).toUpperCase(), baud: Number(baud) || 9600 });
+  if (d) d.lastRequestAt = Date.now();
   return daemonResult(d);
 });
 
