@@ -243,7 +243,7 @@ function ensureScaleDaemon(target) {
   const file = path.join(os.tmpdir(), `zeros-scale-${process.pid}-${Date.now()}.ps1`);
   try { fs.writeFileSync(file, "\ufeff" + scaleDaemonPs(target), "utf8"); } catch { return null; }
   const child = spawn(exe, ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", file], { windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
-  const d = { proc: child, key, startedAt: Date.now(), lastWeight: null, lastWeightAt: 0, lastError: "", file };
+  const d = { proc: child, key, startedAt: Date.now(), lastRequestAt: Date.now(), lastWeight: null, lastWeightAt: 0, lastError: "", file };
   scaleDaemon = d;
   let buf = "";
   child.stdout.on("data", (chunk) => {
