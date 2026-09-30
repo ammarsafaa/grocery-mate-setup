@@ -305,6 +305,30 @@ function SettingsPage() {
           >
             اختبار الميزان
           </button>
+          {settings.scaleMode !== "lan" && (
+            <button
+              type="button"
+              onClick={async () => {
+                const n = native();
+                if (!n) { setScaleTest("الفحص يعمل في برنامج Windows فقط"); return; }
+                const speeds = [9600, 4800, 2400, 19200, 38400, 57600, 115200, 1200];
+                for (const b of speeds) {
+                  setScaleTest(`جارٍ فحص السرعة ${b}... اترك شيئاً على الميزان`);
+                  const r = await n.readWeightSerial(settings.scaleCom, b).catch(() => ({ ok: false, raw: "" } as { ok: boolean; weight?: number; raw?: string }));
+                  if (r.raw) {
+                    const hex = Array.from(r.raw.slice(0, 40)).map((c) => c.charCodeAt(0).toString(16).padStart(2, "0")).join(" ");
+                    if (r.ok) setSettings({ ...settings, scaleBaud: b });
+                    setScaleTest(`${r.ok ? `نجح ✓ الوزن ${r.weight} كغم على السرعة ${b} (اضغط حفظ)` : `وصلت بيانات على السرعة ${b} لكن لم أفهمها — أرسل لي صورة هذه الرسالة`} | ${JSON.stringify(r.raw).slice(0, 150)} | HEX: ${hex}`);
+                    return;
+                  }
+                }
+                setScaleTest("لم يرسل الميزان أي بيانات على كل السرعات. تأكد من إغلاق برنامج Rongta، ومن أن الكيبل Null Modem، ومن تفعيل إرسال الوزن في الميزان.");
+              }}
+              className="mt-3 ms-2 rounded-xl bg-secondary px-4 py-2 font-bold"
+            >
+              فحص تلقائي لكل السرعات
+            </button>
+          )}
           {scaleTest && <p dir="auto" className="mt-2 break-all rounded-lg bg-secondary p-3 text-sm">{scaleTest}</p>}
           <button
             onClick={() => save(settings)}
