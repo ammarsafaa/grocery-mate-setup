@@ -18,6 +18,10 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "electron/scale",
+        "to": "scale"
       }
     ],
     "win": {
