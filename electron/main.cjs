@@ -134,7 +134,13 @@ ipcMain.handle("list-serial-ports", () => new Promise((resolve) => {
 }));
 
 // Reads the weight from a serial (RS232) port via PowerShell.
-ipcMain.handle("read-weight-serial", (_e, com, baud) => new Promise((resolve) => {
+ipcMain.handle("read-weight-serial", async (_e, com, baud) => {
+  const sdk = await readWeightSdk(com, Number(baud) || 9600);
+  if (sdk.ok) return sdk;
+  const r = await readWeightSerialRaw(com, baud);
+  return r.ok ? r : { ...r, error: `SDK: ${sdk.error} | RS232: ${r.error}` };
+});
+const readWeightSerialRaw = (com, baud) => new Promise((resolve) => {
   if (!/^COM\d{1,2}$/i.test(String(com || ""))) return resolve({ ok: false, error: "no-com" });
   const b = [1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200].includes(Number(baud)) ? Number(baud) : 9600;
   const ps = `
@@ -166,15 +172,15 @@ $p.Close()
     if (w != null) resolve({ ok: true, weight: w, raw: buf });
     else resolve({ ok: false, error: buf.trim() ? "unparsed" : "no-data", raw: buf });
   });
-}));
+});
 
 // Official Rongta SDK (rtslabelscale.dll, 32-bit): rtscaleConnect + rtscaleGetPluWeight.
 // Run through the 32-bit PowerShell that ships with Windows so no extra install is needed.
 const SCALE_DIR = app.isPackaged ? path.join(process.resourcesPath, "scale") : path.join(__dirname, "scale");
 function readWeightSdk(host, port) {
   return new Promise((resolve) => {
-    if (!/^[\d.]{7,15}$/.test(String(host || ""))) return resolve({ ok: false, error: "bad-ip" });
-    const p = Math.max(1, Math.min(65535, Number(port) || 5001));
+    if (!/^([\d.]{7,15}|COM\d{1,2})$/i.test(String(host || ""))) return resolve({ ok: false, error: "bad-address" });
+    const p = Math.max(1, Math.min(115200, Number(port) || 5001));
     const dir = SCALE_DIR.replace(/'/g, "''");
     const ps = `
 $ErrorActionPreference = 'Stop'
@@ -192,7 +198,7 @@ public static class RtScale {
 [void][RtScale]::SetDllDirectory('${dir}')
 [void][RtScale]::rtscaleLoadIniFile('${dir}\\SYSTEM.CFG')
 $id = 0
-$r = [RtScale]::rtscaleConnect('${host}', ${p}, [ref]$id)
+$r = [RtScale]::rtscaleConnect('${String(host).toUpperCase()}', ${p}, [ref]$id)
 if ($r -ne 0) { [Console]::Out.Write("CONNFAIL:$r"); exit }
 $w = 0.0
 $r = [RtScale]::rtscaleGetPluWeight($id, [ref]$w)
