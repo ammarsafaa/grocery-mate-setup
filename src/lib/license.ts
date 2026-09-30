@@ -66,10 +66,4 @@ export async function activate(key: string): Promise<boolean> {
   return true;
 }
 
-/** Owner tool: sign a machine code with the private key (base64 JWK text). */
-export async function generateKey(privateKeyText: string, machineId: string): Promise<string> {
-  const jwk = JSON.parse(atob(privateKeyText.trim())) as JsonWebKey;
-  const priv = await crypto.subtle.importKey("jwk", jwk, { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]);
-  const sig = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, priv, new TextEncoder().encode(machineId.trim().toUpperCase()));
-  return bytesToB64u(sig);
-}
+export { bytesToB64u };

@@ -14,8 +14,8 @@ import { Route as ActivateRouteImport } from './routes/activate'
 import { Route as CashboxRouteImport } from './routes/cashbox'
 import { Route as GroupsRouteImport } from './routes/groups'
 import { Route as InventoryRouteImport } from './routes/inventory'
-import { Route as LicenseGeneratorRouteImport } from './routes/license-generator'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as OwnerRouteImport } from './routes/owner'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as PurchasesRouteImport } from './routes/purchases'
 import { Route as ReceiptDesignerRouteImport } from './routes/receipt-designer'
@@ -48,14 +48,14 @@ const InventoryRoute = InventoryRouteImport.update({
   path: '/inventory',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LicenseGeneratorRoute = LicenseGeneratorRouteImport.update({
-  id: '/license-generator',
-  path: '/license-generator',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OwnerRoute = OwnerRouteImport.update({
+  id: '/owner',
+  path: '/owner',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProductsRoute = ProductsRouteImport.update({
@@ -95,8 +95,8 @@ export interface FileRoutesByFullPath {
   '/cashbox': typeof CashboxRoute
   '/groups': typeof GroupsRoute
   '/inventory': typeof InventoryRoute
-  '/license-generator': typeof LicenseGeneratorRoute
   '/login': typeof LoginRoute
+  '/owner': typeof OwnerRoute
   '/products': typeof ProductsRoute
   '/purchases': typeof PurchasesRoute
   '/receipt-designer': typeof ReceiptDesignerRoute
@@ -110,8 +110,8 @@ export interface FileRoutesByTo {
   '/cashbox': typeof CashboxRoute
   '/groups': typeof GroupsRoute
   '/inventory': typeof InventoryRoute
-  '/license-generator': typeof LicenseGeneratorRoute
   '/login': typeof LoginRoute
+  '/owner': typeof OwnerRoute
   '/products': typeof ProductsRoute
   '/purchases': typeof PurchasesRoute
   '/receipt-designer': typeof ReceiptDesignerRoute
@@ -126,8 +126,8 @@ export interface FileRoutesById {
   '/cashbox': typeof CashboxRoute
   '/groups': typeof GroupsRoute
   '/inventory': typeof InventoryRoute
-  '/license-generator': typeof LicenseGeneratorRoute
   '/login': typeof LoginRoute
+  '/owner': typeof OwnerRoute
   '/products': typeof ProductsRoute
   '/purchases': typeof PurchasesRoute
   '/receipt-designer': typeof ReceiptDesignerRoute
@@ -143,8 +143,8 @@ export interface FileRouteTypes {
     | '/cashbox'
     | '/groups'
     | '/inventory'
-    | '/license-generator'
     | '/login'
+    | '/owner'
     | '/products'
     | '/purchases'
     | '/receipt-designer'
@@ -158,8 +158,8 @@ export interface FileRouteTypes {
     | '/cashbox'
     | '/groups'
     | '/inventory'
-    | '/license-generator'
     | '/login'
+    | '/owner'
     | '/products'
     | '/purchases'
     | '/receipt-designer'
@@ -173,8 +173,8 @@ export interface FileRouteTypes {
     | '/cashbox'
     | '/groups'
     | '/inventory'
-    | '/license-generator'
     | '/login'
+    | '/owner'
     | '/products'
     | '/purchases'
     | '/receipt-designer'
@@ -189,8 +189,8 @@ export interface RootRouteChildren {
   CashboxRoute: typeof CashboxRoute
   GroupsRoute: typeof GroupsRoute
   InventoryRoute: typeof InventoryRoute
-  LicenseGeneratorRoute: typeof LicenseGeneratorRoute
   LoginRoute: typeof LoginRoute
+  OwnerRoute: typeof OwnerRoute
   ProductsRoute: typeof ProductsRoute
   PurchasesRoute: typeof PurchasesRoute
   ReceiptDesignerRoute: typeof ReceiptDesignerRoute
@@ -236,18 +236,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InventoryRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/license-generator': {
-      id: '/license-generator'
-      path: '/license-generator'
-      fullPath: '/license-generator'
-      preLoaderRoute: typeof LicenseGeneratorRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/owner': {
+      id: '/owner'
+      path: '/owner'
+      fullPath: '/owner'
+      preLoaderRoute: typeof OwnerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/products': {
@@ -301,8 +301,8 @@ const rootRouteChildren: RootRouteChildren = {
   CashboxRoute: CashboxRoute,
   GroupsRoute: GroupsRoute,
   InventoryRoute: InventoryRoute,
-  LicenseGeneratorRoute: LicenseGeneratorRoute,
   LoginRoute: LoginRoute,
+  OwnerRoute: OwnerRoute,
   ProductsRoute: ProductsRoute,
   PurchasesRoute: PurchasesRoute,
   ReceiptDesignerRoute: ReceiptDesignerRoute,
