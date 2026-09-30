@@ -15,3 +15,4 @@
 - Receipt layouts are stored as structured element settings per paper width, not arbitrary HTML, to keep printing safe and portable.
 - Receipt element positioning uses bounded per-element offsets and a 4 mm print safe area on each edge to prevent thermal-printer clipping.
 - Receipt and shift report printing both render from src/lib/printLayout.ts (mm-positioned elements, per kind and paper slot); the designer preview uses the same content and CSS so preview matches print.
+- Licensing keys are issued only from the password-gated web page /owner (server-side signing with LICENSE_PRIVATE_KEY secret); the in-app generator was removed so customers never see it.
