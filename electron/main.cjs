@@ -250,7 +250,7 @@ const readWeightTcp = (host, port) => new Promise((resolve) => {
     const w = parse();
     if (w != null && /[\r\n]/.test(buf)) done({ ok: true, weight: w });
   });
-}));
+});
 
 ipcMain.handle("list-printers", async (event) => {
   return event.sender.getPrintersAsync();
