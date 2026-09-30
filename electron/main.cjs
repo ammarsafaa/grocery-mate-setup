@@ -168,8 +168,59 @@ $p.Close()
   });
 }));
 
-// Reads whatever the scale sends over TCP and extracts the weight in kg.
-ipcMain.handle("read-weight", (_e, host, port) => new Promise((resolve) => {
+// Official Rongta SDK (rtslabelscale.dll, 32-bit): rtscaleConnect + rtscaleGetPluWeight.
+// Run through the 32-bit PowerShell that ships with Windows so no extra install is needed.
+const SCALE_DIR = app.isPackaged ? path.join(process.resourcesPath, "scale") : path.join(__dirname, "scale");
+function readWeightSdk(host, port) {
+  return new Promise((resolve) => {
+    if (!/^[\d.]{7,15}$/.test(String(host || ""))) return resolve({ ok: false, error: "bad-ip" });
+    const p = Math.max(1, Math.min(65535, Number(port) || 5001));
+    const dir = SCALE_DIR.replace(/'/g, "''");
+    const ps = `
+$ErrorActionPreference = 'Stop'
+Set-Location -LiteralPath '${dir}'
+Add-Type -TypeDefinition @"
+using System; using System.Runtime.InteropServices;
+public static class RtScale {
+  [DllImport("kernel32.dll", CharSet=CharSet.Unicode)] public static extern bool SetDllDirectory(string p);
+  [DllImport("rtslabelscale.dll", CallingConvention=CallingConvention.StdCall)] public static extern int rtscaleLoadIniFile([MarshalAs(UnmanagedType.LPStr)] string f);
+  [DllImport("rtslabelscale.dll", CallingConvention=CallingConvention.StdCall)] public static extern int rtscaleConnect([MarshalAs(UnmanagedType.LPStr)] string addr, int port, ref int connid);
+  [DllImport("rtslabelscale.dll", CallingConvention=CallingConvention.StdCall)] public static extern int rtscaleDisConnect(int connid);
+  [DllImport("rtslabelscale.dll", CallingConvention=CallingConvention.StdCall)] public static extern int rtscaleGetPluWeight(int connid, ref double w);
+}
+"@
+[void][RtScale]::SetDllDirectory('${dir}')
+[void][RtScale]::rtscaleLoadIniFile('${dir}\\SYSTEM.CFG')
+$id = 0
+$r = [RtScale]::rtscaleConnect('${host}', ${p}, [ref]$id)
+if ($r -ne 0) { [Console]::Out.Write("CONNFAIL:$r"); exit }
+$w = 0.0
+$r = [RtScale]::rtscaleGetPluWeight($id, [ref]$w)
+[void][RtScale]::rtscaleDisConnect($id)
+if ($r -ne 0) { [Console]::Out.Write("WFAIL:$r"); exit }
+[Console]::Out.Write("W:" + $w.ToString([Globalization.CultureInfo]::InvariantCulture))
+`;
+    const { execFile } = require("child_process");
+    const ps32 = path.join(process.env.WINDIR || "C:\\Windows", "SysWOW64", "WindowsPowerShell", "v1.0", "powershell.exe");
+    const exe = fs.existsSync(ps32) ? ps32 : "powershell";
+    execFile(exe, ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", ps], { timeout: 10000, windowsHide: true }, (err, stdout, stderr) => {
+      const out = String(stdout || "").trim();
+      const m = out.match(/W:(-?\d+(?:\.\d+)?)/);
+      if (m) return resolve({ ok: true, weight: Math.abs(parseFloat(m[1])), raw: "SDK " + out });
+      resolve({ ok: false, error: out || String((err && err.message) || stderr || "sdk-error").slice(0, 300), raw: "SDK " + out });
+    });
+  });
+}
+
+ipcMain.handle("read-weight", async (_e, host, port) => {
+  const sdk = await readWeightSdk(host, port);
+  if (sdk.ok) return sdk;
+  const tcp = await readWeightTcp(host, port);
+  return tcp.ok ? tcp : { ...tcp, error: `SDK: ${sdk.error} | TCP: ${tcp.error}` };
+});
+
+// Fallback: reads whatever the scale sends over raw TCP and extracts the weight in kg.
+const readWeightTcp = (host, port) => new Promise((resolve) => {
   let buf = "";
   let finished = false;
   const s = net.createConnection({ host, port: Number(port) }, () => {
