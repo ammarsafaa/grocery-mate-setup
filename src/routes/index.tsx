@@ -119,7 +119,7 @@ function PosPage() {
     const tick = async () => {
       if (!alive) return;
       const s = getSettings();
-      const r: { ok: boolean; weight?: number; error?: string } = s.scaleMode === "lan"
+      const r: { ok: boolean; weight?: number; error?: string; waiting?: boolean } = s.scaleMode === "lan"
         ? await n.readWeight(s.scaleIp, s.scalePort).catch((e) => ({ ok: false, error: String(e) }))
         : await n.readWeightSerial(s.scaleCom, s.scaleBaud).catch((e) => ({ ok: false, error: String(e) }));
       if (!alive) return;
@@ -129,12 +129,14 @@ function PosPage() {
         setScaleStatus("تم جلب الوزن من الميزان");
       } else if (r.ok) {
         setScaleStatus("الميزان متصل — ضع المنتج على الميزان");
+      } else if ((r as { waiting?: boolean }).waiting) {
+        setScaleStatus("جاري جلب الوزن من الميزان...");
       } else {
         setScaleStatus(`تعذر جلب الوزن من الميزان (${where}): ${String(r.error || "").slice(0, 120)}`);
       }
-      setTimeout(tick, 300);
+      setTimeout(tick, 150);
     };
-    setScaleStatus("جاري الاتصال بالميزان...");
+    setScaleStatus("جاري جلب الوزن من الميزان...");
     tick();
     return () => {
       alive = false;

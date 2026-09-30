@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const net = require("net");
 const crypto = require("crypto");
-const { execSync } = require("child_process");
+const { execSync, spawn } = require("child_process");
 
 // In an installed build, the UI is copied to resources/app so it cannot be
 // omitted from app.asar. Development still reads the normal Vite output.
@@ -152,56 +152,22 @@ const cleanPsError = (err, stderr) => {
   return String((err && err.message) || "ps-error").split("\n")[0].slice(0, 120);
 };
 
-// Reads the weight from a serial (RS232) port via PowerShell.
-ipcMain.handle("read-weight-serial", async (_e, com, baud) => {
-  const sdk = await readWeightSdk(com, Number(baud) || 9600);
-  if (sdk.ok) return sdk;
-  const r = await readWeightSerialRaw(com, baud);
-  return r.ok ? r : { ...r, error: `SDK: ${sdk.error} | RS232: ${r.error}` };
-});
-const readWeightSerialRaw = (com, baud) => new Promise((resolve) => {
-  if (!/^COM\d{1,2}$/i.test(String(com || ""))) return resolve({ ok: false, error: "no-com" });
-  const b = [1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200].includes(Number(baud)) ? Number(baud) : 9600;
-  const ps = `
-$p = New-Object System.IO.Ports.SerialPort '${String(com).toUpperCase()}',${b},'None',8,'One'
-$p.ReadTimeout = 400
-$p.DtrEnable = $true
-$p.RtsEnable = $true
-$p.Encoding = [Text.Encoding]::GetEncoding(28591)
-$p.Open()
-$sb = New-Object Text.StringBuilder
-$reqs = @([byte[]](0x05), [byte[]](0x57,0x0D,0x0A), [byte[]](0x50,0x0D,0x0A), [byte[]](0x52,0x0D,0x0A))
-foreach ($q in $reqs) {
-  try { $p.Write($q, 0, $q.Length) } catch {}
-  $sw = [Diagnostics.Stopwatch]::StartNew()
-  while ($sw.ElapsedMilliseconds -lt 900) {
-    try { $s = $p.ReadExisting(); if ($s) { [void]$sb.Append($s) } } catch {}
-    Start-Sleep -Milliseconds 60
-  }
-  if ($sb.Length -gt 0) { break }
-}
-$p.Close()
-[Console]::Out.Write($sb.ToString())
-`;
-  runPsFile("powershell", ps, { timeout: 12000, encoding: "latin1" }, (err, stdout, stderr) => {
-    if (err && !String(stdout || "").trim()) return resolve({ ok: false, error: cleanPsError(err, stderr) });
-    const buf = String(stdout || "");
-    const w = parseWeight(buf);
-    if (w != null) resolve({ ok: true, weight: w, raw: buf });
-    else resolve({ ok: false, error: buf.trim() ? "unparsed" : "no-data", raw: buf });
-  });
-});
-
-// Official Rongta SDK (rtslabelscale.dll, 32-bit): rtscaleConnect + rtscaleGetPluWeight.
-// Run through the 32-bit PowerShell that ships with Windows so no extra install is needed.
+// ---- Persistent scale daemon: connects once, then streams the weight continuously. ----
+// Previously every read spawned a new PowerShell (slow). Now one long-lived process
+// keeps the scale connection open and polls it, so weight appears almost instantly.
 const SCALE_DIR = app.isPackaged ? path.join(process.resourcesPath, "scale") : path.join(__dirname, "scale");
-function readWeightSdk(host, port) {
-  return new Promise((resolve) => {
-    if (!/^([\d.]{7,15}|COM\d{1,2})$/i.test(String(host || ""))) return resolve({ ok: false, error: "bad-address" });
-    // Official SDK: BaudRate 0 = network (IP), otherwise RS232 baud rate.
-    const p = /^COM/i.test(String(host)) ? Math.max(1, Math.min(115200, Number(port) || 9600)) : 0;
-    const dir = SCALE_DIR.replace(/'/g, "''");
-    const ps = `
+let scaleDaemon = null; // { proc, key, startedAt, lastWeight, lastWeightAt, lastError, file }
+
+const killScaleDaemon = () => {
+  if (!scaleDaemon) return;
+  try { scaleDaemon.proc.kill(); } catch {}
+  try { fs.unlinkSync(scaleDaemon.file); } catch {}
+  scaleDaemon = null;
+};
+
+function scaleDaemonPs(target) {
+  const dir = SCALE_DIR.replace(/'/g, "''");
+  const common = `
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath '${dir}'
 Add-Type -TypeDefinition @"
@@ -216,64 +182,125 @@ public static class RtScale {
 "@
 [void][RtScale]::SetDllDirectory('${dir}')
 [void][RtScale]::rtscaleLoadIniFile('${dir}\\SYSTEM.CFG')
-$id = 0
-$r = [RtScale]::rtscaleConnect('${String(host).toUpperCase()}', ${p}, [ref]$id)
-if ($r -ne 0) { [Console]::Out.Write("CONNFAIL:$r"); exit }
-$w = 0.0
-$r = [RtScale]::rtscaleGetPluWeight($id, [ref]$w)
-[void][RtScale]::rtscaleDisConnect($id)
-if ($r -ne 0) { [Console]::Out.Write("WFAIL:$r"); exit }
-[Console]::Out.Write("W:" + $w.ToString([Globalization.CultureInfo]::InvariantCulture))
 `;
-    const ps32 = path.join(process.env.WINDIR || "C:\\Windows", "SysWOW64", "WindowsPowerShell", "v1.0", "powershell.exe");
-    const exe = fs.existsSync(ps32) ? ps32 : "powershell";
-    runPsFile(exe, ps, { timeout: /^COM/i.test(String(host)) ? 25000 : 12000 }, (err, stdout, stderr) => {
-      const out = String(stdout || "").trim();
-      const m = out.match(/W:(-?\d+(?:\.\d+)?)/);
-      if (m) return resolve({ ok: true, weight: Math.abs(parseFloat(m[1])), raw: "SDK " + out });
-      resolve({ ok: false, error: out || cleanPsError(err, stderr), raw: "SDK " + out });
-    });
-  });
+  if (target.kind === "lan") {
+    // Official SDK: BaudRate 0 = network (IP).
+    return common + `
+$id = 0
+$r = [RtScale]::rtscaleConnect('${String(target.host).toUpperCase()}', 0, [ref]$id)
+if ($r -ne 0) { [Console]::Out.WriteLine("CONNFAIL:$r"); exit }
+[Console]::Out.WriteLine("CONNECTED")
+while ($true) {
+  $w = 0.0
+  $r = [RtScale]::rtscaleGetPluWeight($id, [ref]$w)
+  if ($r -eq 0) { [Console]::Out.WriteLine("W:" + $w.ToString([Globalization.CultureInfo]::InvariantCulture)) }
+  Start-Sleep -Milliseconds 120
+}
+`;
+  }
+  // COM: try the SDK first; if the scale refuses, fall back to a continuous serial read.
+  const baud = Math.max(1, Math.min(115200, Number(target.baud) || 9600));
+  const com = String(target.com).toUpperCase();
+  return common + `
+$id = 0
+$r = [RtScale]::rtscaleConnect('${com}', ${baud}, [ref]$id)
+if ($r -eq 0) {
+  [Console]::Out.WriteLine("CONNECTED")
+  while ($true) {
+    $w = 0.0
+    $r = [RtScale]::rtscaleGetPluWeight($id, [ref]$w)
+    if ($r -eq 0) { [Console]::Out.WriteLine("W:" + $w.ToString([Globalization.CultureInfo]::InvariantCulture)) }
+    Start-Sleep -Milliseconds 120
+  }
+}
+$p = New-Object System.IO.Ports.SerialPort '${com}',${baud},'None',8,'One'
+$p.ReadTimeout = 200
+$p.DtrEnable = $true
+$p.RtsEnable = $true
+$p.Encoding = [Text.Encoding]::GetEncoding(28591)
+try {
+  $p.Open()
+  [Console]::Out.WriteLine("SERIAL-OPEN")
+  $reqs = @([byte[]](0x05), [byte[]](0x57,0x0D,0x0A), [byte[]](0x50,0x0D,0x0A), [byte[]](0x52,0x0D,0x0A))
+  $ri = 0
+  while ($true) {
+    try { $s = $p.ReadExisting(); if ($s) { [Console]::Out.WriteLine("R:" + [Convert]::ToBase64String([Text.Encoding]::GetEncoding(28591).GetBytes($s))) } } catch {}
+    $ri = $ri % $reqs.Length
+    try { $q = $reqs[$ri]; $p.Write($q, 0, $q.Length) } catch {}
+    $ri++
+    Start-Sleep -Milliseconds 150
+  }
+} catch { [Console]::Out.WriteLine("SERIALFAIL:" + $_.Exception.Message) }
+`;
 }
 
+function ensureScaleDaemon(target) {
+  const key = JSON.stringify(target);
+  if (scaleDaemon && scaleDaemon.key === key) return scaleDaemon;
+  killScaleDaemon();
+  const ps32 = path.join(process.env.WINDIR || "C:\\Windows", "SysWOW64", "WindowsPowerShell", "v1.0", "powershell.exe");
+  const exe = fs.existsSync(ps32) ? ps32 : "powershell";
+  const os = require("os");
+  const file = path.join(os.tmpdir(), `zeros-scale-${process.pid}-${Date.now()}.ps1`);
+  try { fs.writeFileSync(file, "\ufeff" + scaleDaemonPs(target), "utf8"); } catch { return null; }
+  const child = spawn(exe, ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", file], { windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
+  const d = { proc: child, key, startedAt: Date.now(), lastRequestAt: Date.now(), lastWeight: null, lastWeightAt: 0, lastError: "", file };
+  scaleDaemon = d;
+  let buf = "";
+  child.stdout.on("data", (chunk) => {
+    buf += chunk.toString("latin1");
+    let idx;
+    while ((idx = buf.indexOf("\n")) >= 0) {
+      const line = buf.slice(0, idx).trim();
+      buf = buf.slice(idx + 1);
+      if (!line) continue;
+      if (line.startsWith("W:")) {
+        const w = parseFloat(line.slice(2));
+        if (!isNaN(w)) { d.lastWeight = Math.abs(w); d.lastWeightAt = Date.now(); d.lastError = ""; }
+      } else if (line.startsWith("R:")) {
+        try {
+          const w = parseWeight(Buffer.from(line.slice(2), "base64").toString("latin1"));
+          if (w != null) { d.lastWeight = w; d.lastWeightAt = Date.now(); d.lastError = ""; }
+        } catch {}
+      } else if (line.startsWith("CONNFAIL:")) {
+        d.lastError = line;
+      } else if (line.startsWith("SERIALFAIL:")) {
+        d.lastError = line;
+      }
+    }
+  });
+  child.stderr.on("data", () => {});
+  child.on("exit", () => { try { fs.unlinkSync(d.file); } catch {} if (scaleDaemon === d) scaleDaemon = null; });
+  return d;
+}
+
+// Close the scale connection automatically when nothing asked for it for a while,
+// so the scale stays free for other programs when the cashier isn't weighing.
+setInterval(() => {
+  if (scaleDaemon && Date.now() - scaleDaemon.lastRequestAt > 30000) killScaleDaemon();
+}, 5000).unref();
+
+const daemonResult = (d) => {
+  if (!d) return { ok: false, error: "start-failed" };
+  if (d.lastWeight != null && Date.now() - d.lastWeightAt < 2000) return { ok: true, weight: d.lastWeight, raw: "live" };
+  if (d.lastError) return { ok: false, error: d.lastError, raw: "live" };
+  if (Date.now() - d.startedAt < 10000) return { ok: false, waiting: true, raw: "live" };
+  return { ok: false, error: "no-data", raw: "live" };
+};
+
 ipcMain.handle("read-weight", async (_e, host, port) => {
-  const sdk = await readWeightSdk(host, port);
-  if (sdk.ok) return sdk;
-  const tcp = await readWeightTcp(host, port);
-  return tcp.ok ? tcp : { ...tcp, error: `SDK: ${sdk.error} | TCP: ${tcp.error}` };
+  void port; // the SDK uses BaudRate 0 for network connections
+  if (!/^[\d.]{7,15}$/.test(String(host || ""))) return { ok: false, error: "bad-address" };
+  const d = ensureScaleDaemon({ kind: "lan", host: String(host) });
+  if (d) d.lastRequestAt = Date.now();
+  return daemonResult(d);
 });
 
-// Fallback: reads whatever the scale sends over raw TCP and extracts the weight in kg.
-const readWeightTcp = (host, port) => new Promise((resolve) => {
-  let buf = "";
-  let finished = false;
-  const s = net.createConnection({ host, port: Number(port) }, () => {
-    // Some scales stream continuously; others answer a request. Try common ones.
-    try { s.write("W\r\n"); s.write("P\r\n"); s.write(Buffer.from([0x05])); } catch {}
-  });
-  const done = (v) => { if (finished) return; finished = true; s.destroy(); resolve({ raw: buf, ...v }); };
-  const parse = () => {
-    const txt = buf.replace(/[^\x20-\x7E\r\n]/g, " ");
-    let m = txt.match(/(-?\d+[.,]\d+)\s*(kg|g)?/i);
-    if (m) {
-      let w = parseFloat(m[1].replace(",", "."));
-      if (m[2] && m[2].toLowerCase() === "g") w = w / 1000;
-      return Math.abs(w);
-    }
-    m = txt.match(/(\d{4,7})\s*(kg|g)?/i); // integer grams e.g. 001175
-    if (m) return parseInt(m[1], 10) / 1000;
-    return null;
-  };
-  s.setTimeout(4000, () => {
-    const w = parse();
-    done(w != null ? { ok: true, weight: w } : { ok: false, error: buf ? "unparsed" : "no-data" });
-  });
-  s.on("error", (err) => done({ ok: false, error: err.message }));
-  s.on("data", (d) => {
-    buf += d.toString("latin1");
-    const w = parse();
-    if (w != null && /[\r\n]/.test(buf)) done({ ok: true, weight: w });
-  });
+ipcMain.handle("read-weight-serial", async (_e, com, baud) => {
+  if (!/^COM\d{1,2}$/i.test(String(com || ""))) return { ok: false, error: "no-com" };
+  const d = ensureScaleDaemon({ kind: "com", com: String(com).toUpperCase(), baud: Number(baud) || 9600 });
+  if (d) d.lastRequestAt = Date.now();
+  return daemonResult(d);
 });
 
 ipcMain.handle("list-printers", async (event) => {

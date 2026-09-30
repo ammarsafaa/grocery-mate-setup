@@ -3,8 +3,8 @@ export interface PosNative {
   machineId: () => string;
   pickFolder: () => Promise<string | null>;
   saveBackup: (folder: string, name: string, content: string) => Promise<boolean>;
-  readWeight: (host: string, port: number) => Promise<{ ok: boolean; weight?: number; error?: string; raw?: string }>;
-  readWeightSerial: (com: string, baud: number) => Promise<{ ok: boolean; weight?: number; error?: string; raw?: string }>;
+  readWeight: (host: string, port: number) => Promise<{ ok: boolean; weight?: number; error?: string; raw?: string; waiting?: boolean }>;
+  readWeightSerial: (com: string, baud: number) => Promise<{ ok: boolean; weight?: number; error?: string; raw?: string; waiting?: boolean }>;
   listSerialPorts: () => Promise<string[]>;
   dbGetAll: () => Record<string, string>;
   dbSet: (key: string, value: string) => boolean;
