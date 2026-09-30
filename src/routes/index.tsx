@@ -139,6 +139,19 @@ function PosPage() {
       return;
     }
     if (p.unit === "kg") {
+      if (settings.useScale !== false && native()) {
+        if (liveWeight <= 0) {
+          toast.error("ضع المنتج على الميزان أولاً");
+          return;
+        }
+        const w = liveWeight;
+        setCart((c) => [
+          ...c,
+          { productId: p.id, name: p.name, unit: "kg", price: p.price, qty: w, total: roundToCash250(w * p.price) },
+        ]);
+        toast.success(`${p.name} — ${w.toFixed(3)} كغم`);
+        return;
+      }
       setWeight("");
       setWeightModal(p);
       return;
@@ -262,6 +275,20 @@ function PosPage() {
               placeholder="ابحث بالاسم أو امسح الباركود..."
               className="h-12 flex-1 rounded-xl border border-border bg-card px-4 text-foreground outline-none focus:border-primary"
             />
+            {settings.useScale !== false && (
+              <div className="flex h-12 min-w-48 items-center justify-between gap-3 rounded-xl border-2 border-primary/50 bg-card px-4 shadow-inner">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-black tracking-tight text-primary">
+                    {liveWeight > 0 ? liveWeight.toFixed(3) : "0.000"}
+                  </span>
+                  <span className="text-xs font-bold text-muted-foreground">كغم</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className={`h-2 w-2 rounded-full ${liveWeight > 0 ? "animate-pulse bg-primary" : "bg-muted-foreground/40"}`} />
+                  <span className="text-[10px] font-bold text-muted-foreground">الميزان</span>
+                </div>
+              </div>
+            )}
             <button
               onClick={() => setPriceMode((v) => !v)}
               className={`flex h-12 items-center gap-2 rounded-xl px-5 font-bold transition ${priceMode ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
