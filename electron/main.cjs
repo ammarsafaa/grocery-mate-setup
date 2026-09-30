@@ -276,10 +276,7 @@ function ensureScaleDaemon(target) {
 // Close the scale connection automatically when nothing asked for it for a while,
 // so the scale stays free for other programs when the cashier isn't weighing.
 setInterval(() => {
-  if (scaleDaemon && Date.now() - scaleDaemon.lastWeightAt > 30000) {
-    const d = scaleDaemon;
-    if (Date.now() - Math.max(d.lastWeightAt, d.startedAt) > 30000) killScaleDaemon();
-  }
+  if (scaleDaemon && Date.now() - scaleDaemon.lastRequestAt > 30000) killScaleDaemon();
 }, 5000).unref();
 
 const daemonResult = (d) => {
