@@ -226,7 +226,7 @@ if ($r -ne 0) { [Console]::Out.Write("WFAIL:$r"); exit }
 `;
     const ps32 = path.join(process.env.WINDIR || "C:\\Windows", "SysWOW64", "WindowsPowerShell", "v1.0", "powershell.exe");
     const exe = fs.existsSync(ps32) ? ps32 : "powershell";
-    runPsFile(exe, ps, { timeout: 10000 }, (err, stdout, stderr) => {
+    runPsFile(exe, ps, { timeout: /^COM/i.test(String(host)) ? 25000 : 12000 }, (err, stdout, stderr) => {
       const out = String(stdout || "").trim();
       const m = out.match(/W:(-?\d+(?:\.\d+)?)/);
       if (m) return resolve({ ok: true, weight: Math.abs(parseFloat(m[1])), raw: "SDK " + out });
