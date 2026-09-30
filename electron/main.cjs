@@ -198,7 +198,8 @@ const SCALE_DIR = app.isPackaged ? path.join(process.resourcesPath, "scale") : p
 function readWeightSdk(host, port) {
   return new Promise((resolve) => {
     if (!/^([\d.]{7,15}|COM\d{1,2})$/i.test(String(host || ""))) return resolve({ ok: false, error: "bad-address" });
-    const p = Math.max(1, Math.min(115200, Number(port) || 5001));
+    // Official SDK: BaudRate 0 = network (IP), otherwise RS232 baud rate.
+    const p = /^COM/i.test(String(host)) ? Math.max(1, Math.min(115200, Number(port) || 9600)) : 0;
     const dir = SCALE_DIR.replace(/'/g, "''");
     const ps = `
 $ErrorActionPreference = 'Stop'
