@@ -17,3 +17,4 @@
 - Receipt and shift report printing both render from src/lib/printLayout.ts (mm-positioned elements, per kind and paper slot); the designer preview uses the same content and CSS so preview matches print.
 - Licensing keys are issued only from the password-gated web page /owner (server-side signing with LICENSE_PRIVATE_KEY secret); the in-app generator was removed so customers never see it.
 - Multi-cashier sync: each cashier keeps local SQLite and syncs to an optional in-store SQL Server via src/lib/sync.ts (records upserted by id with a server sequence, product stock synced as deltas) so selling never depends on the network.
+- Licensing accepts two key types: legacy ECDSA P-256 signatures and ZEROS License Center keys (ZEROS1.payload.signature, Ed25519 via @noble/curves); only public keys live in src/lib/license.ts so activation stays offline.

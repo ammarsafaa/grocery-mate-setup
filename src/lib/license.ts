@@ -1,3 +1,4 @@
+import { ed25519 } from "@noble/curves/ed25519.js";
 import { getLicense, saveLicense } from "./db";
 
 /**
@@ -37,7 +38,31 @@ function bytesToB64u(b: ArrayBuffer): string {
     .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-export async function verifyKey(machineId: string, key: string): Promise<boolean> {
+// ZEROS License Center (Ed25519) — public key only.
+const CENTER_ED25519_X = "I8bxvA6KUttkVCRiHQ71unJDTACbePyJ1av7qwLzpj8";
+const PRODUCT_CODE = "ZEROS-GROCERY";
+
+export type LicenseCheck = "ok" | "invalid" | "machine" | "product";
+
+export function checkCenterKey(machineId: string, key: string): LicenseCheck {
+  try {
+    const parts = key.trim().split(".");
+    if (parts.length !== 3 || parts[0] !== "ZEROS1") return "invalid";
+    const payloadBytes = b64uToBytes(parts[1]!);
+    const sig = b64uToBytes(parts[2]!);
+    if (sig.length !== 64) return "invalid";
+    if (!ed25519.verify(sig, payloadBytes, b64uToBytes(CENTER_ED25519_X))) return "invalid";
+    const p = JSON.parse(new TextDecoder().decode(payloadBytes));
+    if (p.v !== 1 || p.lifetime !== true) return "invalid";
+    if (p.product !== PRODUCT_CODE) return "product";
+    if (String(p.machine ?? "").toUpperCase() !== machineId.trim().toUpperCase()) return "machine";
+    return "ok";
+  } catch {
+    return "invalid";
+  }
+}
+
+async function verifyLegacyKey(machineId: string, key: string): Promise<boolean> {
   try {
     const pub = await crypto.subtle.importKey("jwk", PUBLIC_JWK, { name: "ECDSA", namedCurve: "P-256" }, false, ["verify"]);
     return await crypto.subtle.verify(
@@ -49,6 +74,16 @@ export async function verifyKey(machineId: string, key: string): Promise<boolean
   } catch {
     return false;
   }
+}
+
+export async function checkKey(machineId: string, key: string): Promise<LicenseCheck> {
+  const k = key.trim();
+  if (k.startsWith("ZEROS1.")) return checkCenterKey(machineId, k);
+  return (await verifyLegacyKey(machineId, k)) ? "ok" : "invalid";
+}
+
+export async function verifyKey(machineId: string, key: string): Promise<boolean> {
+  return (await checkKey(machineId, key)) === "ok";
 }
 
 export async function isLicensed(): Promise<boolean> {
