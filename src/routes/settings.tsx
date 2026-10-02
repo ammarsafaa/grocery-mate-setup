@@ -357,6 +357,8 @@ function SettingsPage() {
           </button>
         </section>
 
+        <TelegramSection settings={settings} save={save} />
+
         {/* Multi-cashier SQL Server sync */}
         {user?.role === "admin" && (
         <section className="rounded-2xl border border-border bg-card p-6">
@@ -628,5 +630,38 @@ function SettingsPage() {
         </section>
       </div>
     </AppLayout>
+  );
+}
+
+function TelegramSection({ settings, save }: { settings: Settings; save: (s: Settings) => void }) {
+  const [token, setToken] = useState(settings.telegramToken ?? "");
+  const [ids, setIds] = useState(settings.telegramChatIds ?? "");
+  const [busy, setBusy] = useState(false);
+  const test = async () => {
+    save({ ...settings, telegramToken: token.trim(), telegramChatIds: ids.trim() });
+    setBusy(true);
+    const { sendTelegram } = await import("@/lib/telegram");
+    const r = await sendTelegram(`✅ رسالة تجريبية من ${settings.storeName || "زيروس"} — سيتم إرسال تقرير كل وردية هنا.`);
+    setBusy(false);
+    if (r.ok) toast.success("وصلت الرسالة التجريبية إلى تيليجرام"); else toast.error(`فشل الإرسال: ${r.error}`);
+  };
+  return (
+    <section className="rounded-2xl border border-border bg-card p-6">
+      <h2 className="mb-2 text-lg font-bold">إرسال التقارير إلى تيليجرام</h2>
+      <p className="mb-4 text-sm text-muted-foreground">عند غلق كل وردية يُرسل تقريرها تلقائياً. إذا لم يكن هناك إنترنت يُحفظ ويُرسل عند عودته.</p>
+      <label className="mb-4 flex items-center gap-2 font-bold">
+        <input type="checkbox" checked={!!settings.telegramEnabled} onChange={(e) => save({ ...settings, telegramEnabled: e.target.checked, telegramToken: token.trim(), telegramChatIds: ids.trim() })} />
+        تفعيل الإرسال إلى تيليجرام
+      </label>
+      <label className="mb-1 block text-sm text-muted-foreground">رمز البوت (من BotFather)</label>
+      <input value={token} onChange={(e) => setToken(e.target.value)} dir="ltr" placeholder="123456:ABC..." className="mb-3 h-12 w-full rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary" />
+      <label className="mb-1 block text-sm text-muted-foreground">رقم المحادثة (أكثر من رقم افصل بينها بفاصلة)</label>
+      <input value={ids} onChange={(e) => setIds(e.target.value)} dir="ltr" placeholder="123456789, -100987654321" className="mb-4 h-12 w-full rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary" />
+      <div className="flex gap-2">
+        <button onClick={() => save({ ...settings, telegramToken: token.trim(), telegramChatIds: ids.trim() })} className="rounded-xl bg-primary px-6 py-3 font-bold text-primary-foreground">حفظ</button>
+        <button disabled={busy} onClick={test} className="rounded-xl bg-secondary px-6 py-3 font-bold disabled:opacity-60">{busy ? "جارٍ الإرسال..." : "إرسال رسالة تجريبية"}</button>
+      </div>
+      <p className="mt-4 text-xs text-muted-foreground">لمعرفة رقم المحادثة: أرسل أي رسالة للبوت ثم افتح البوت @userinfobot وسيعطيك رقمك.</p>
+    </section>
   );
 }

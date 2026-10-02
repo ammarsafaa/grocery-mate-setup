@@ -31,6 +31,7 @@ export function closeShift(shiftId: string, closingCash: number): { shift: Shift
     return closed;
   });
   saveShifts(updated);
+  import("./telegram").then((m) => m.sendShiftReportTelegram(closed, sales)).catch(() => {});
   return { shift: closed, sales };
 }
 

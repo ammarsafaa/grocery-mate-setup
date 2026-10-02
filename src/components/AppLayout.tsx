@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getSyncStatus, startSyncLoop, type SyncStatus } from "@/lib/sync";
+import { startTelegramQueue } from "@/lib/telegram";
 import { isLicensed } from "@/lib/license";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
@@ -53,7 +54,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     const h = () => setSync(getSyncStatus());
     h();
     window.addEventListener("grocery-pos:sync-status", h);
-    startSyncLoop();
+    startSyncLoop(); startTelegramQueue();
     return () => window.removeEventListener("grocery-pos:sync-status", h);
   }, []);
 

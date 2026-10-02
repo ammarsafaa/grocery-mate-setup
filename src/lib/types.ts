@@ -185,6 +185,9 @@ export interface Settings {
   labelPluLength: number;
   labelValueType: "weight" | "price";
   labelWeightDecimals: number;
+  telegramEnabled?: boolean;
+  telegramToken?: string;
+  telegramChatIds?: string; // comma separated
 }
 
 export interface LicenseState {
