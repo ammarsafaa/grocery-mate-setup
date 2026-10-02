@@ -15,7 +15,6 @@ import { Route as CashboxRouteImport } from './routes/cashbox'
 import { Route as GroupsRouteImport } from './routes/groups'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as OwnerRouteImport } from './routes/owner'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as PurchasesRouteImport } from './routes/purchases'
 import { Route as ReceiptDesignerRouteImport } from './routes/receipt-designer'
@@ -51,11 +50,6 @@ const InventoryRoute = InventoryRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OwnerRoute = OwnerRouteImport.update({
-  id: '/owner',
-  path: '/owner',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProductsRoute = ProductsRouteImport.update({
@@ -96,7 +90,6 @@ export interface FileRoutesByFullPath {
   '/groups': typeof GroupsRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
-  '/owner': typeof OwnerRoute
   '/products': typeof ProductsRoute
   '/purchases': typeof PurchasesRoute
   '/receipt-designer': typeof ReceiptDesignerRoute
@@ -111,7 +104,6 @@ export interface FileRoutesByTo {
   '/groups': typeof GroupsRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
-  '/owner': typeof OwnerRoute
   '/products': typeof ProductsRoute
   '/purchases': typeof PurchasesRoute
   '/receipt-designer': typeof ReceiptDesignerRoute
@@ -127,7 +119,6 @@ export interface FileRoutesById {
   '/groups': typeof GroupsRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
-  '/owner': typeof OwnerRoute
   '/products': typeof ProductsRoute
   '/purchases': typeof PurchasesRoute
   '/receipt-designer': typeof ReceiptDesignerRoute
@@ -144,7 +135,6 @@ export interface FileRouteTypes {
     | '/groups'
     | '/inventory'
     | '/login'
-    | '/owner'
     | '/products'
     | '/purchases'
     | '/receipt-designer'
@@ -159,7 +149,6 @@ export interface FileRouteTypes {
     | '/groups'
     | '/inventory'
     | '/login'
-    | '/owner'
     | '/products'
     | '/purchases'
     | '/receipt-designer'
@@ -174,7 +163,6 @@ export interface FileRouteTypes {
     | '/groups'
     | '/inventory'
     | '/login'
-    | '/owner'
     | '/products'
     | '/purchases'
     | '/receipt-designer'
@@ -190,7 +178,6 @@ export interface RootRouteChildren {
   GroupsRoute: typeof GroupsRoute
   InventoryRoute: typeof InventoryRoute
   LoginRoute: typeof LoginRoute
-  OwnerRoute: typeof OwnerRoute
   ProductsRoute: typeof ProductsRoute
   PurchasesRoute: typeof PurchasesRoute
   ReceiptDesignerRoute: typeof ReceiptDesignerRoute
@@ -241,13 +228,6 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/owner': {
-      id: '/owner'
-      path: '/owner'
-      fullPath: '/owner'
-      preLoaderRoute: typeof OwnerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/products': {
@@ -302,7 +282,6 @@ const rootRouteChildren: RootRouteChildren = {
   GroupsRoute: GroupsRoute,
   InventoryRoute: InventoryRoute,
   LoginRoute: LoginRoute,
-  OwnerRoute: OwnerRoute,
   ProductsRoute: ProductsRoute,
   PurchasesRoute: PurchasesRoute,
   ReceiptDesignerRoute: ReceiptDesignerRoute,
