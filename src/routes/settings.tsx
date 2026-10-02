@@ -1,7 +1,8 @@
 import { native } from "@/lib/native";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Download, Upload, Plus, Trash2, Scale, HardDrive, Palette, Printer, Layers3, ReceiptText } from "lucide-react";
+import { Download, Upload, Plus, Trash2, Scale, HardDrive, Palette, Printer, Layers3, ReceiptText, Server } from "lucide-react";
+import { testSqlConnection, syncNow, getSyncStatus } from "@/lib/sync";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/AppLayout";
@@ -355,6 +356,63 @@ function SettingsPage() {
             حفظ
           </button>
         </section>
+
+        {/* Multi-cashier SQL Server sync */}
+        {user?.role === "admin" && (
+        <section className="rounded-2xl border border-border bg-card p-6">
+          <h2 className="mb-2 flex items-center gap-2 text-lg font-bold">
+            <Server className="h-5 w-5 text-primary" /> الربط مع الخادم (SQL Server) — لأكثر من كاشير
+          </h2>
+          <p className="mb-4 text-sm text-muted-foreground">كل كاشير يبيع حتى لو انقطعت الشبكة، والبيانات تُرسل للخادم تلقائياً عند رجوع الاتصال.</p>
+          <label className="mb-4 flex items-center gap-3">
+            <input type="checkbox" checked={!!settings.syncEnabled} onChange={(e) => setSettings({ ...settings, syncEnabled: e.target.checked })} className="h-5 w-5 accent-primary" />
+            <span className="text-sm font-semibold">تشغيل الربط مع الخادم</span>
+          </label>
+          <div className="mb-4 grid gap-3 md:grid-cols-2">
+            {([
+              ["sqlHost", "عنوان الخادم (IP أو اسم الجهاز\\SQLEXPRESS)", "192.168.1.10"],
+              ["sqlPort", "المنفذ", "1433"],
+              ["sqlDatabase", "اسم قاعدة البيانات", "ZerosDB"],
+              ["sqlUser", "اسم المستخدم", "sa"],
+              ["sqlPassword", "كلمة السر", ""],
+              ["terminalCode", "رقم هذا الكاشير", "1"],
+            ] as const).map(([key, label, ph]) => (
+              <div key={key}>
+                <label className="mb-1 block text-sm text-muted-foreground">{label}</label>
+                <input
+                  dir="ltr"
+                  type={key === "sqlPassword" ? "password" : key === "sqlPort" ? "number" : "text"}
+                  value={String(settings[key] ?? "")}
+                  placeholder={ph}
+                  onChange={(e) => setSettings({ ...settings, [key]: key === "sqlPort" ? Number(e.target.value) : e.target.value })}
+                  className="h-12 w-full rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary"
+                />
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => save(settings)} className="rounded-xl bg-primary px-6 py-3 font-bold text-primary-foreground">حفظ</button>
+            <button
+              onClick={async () => {
+                if (!native()) { toast.info("الربط متاح في نسخة الويندوز"); return; }
+                save(settings);
+                const r = await testSqlConnection();
+                if (r.ok) toast.success("تم الاتصال بالخادم بنجاح"); else toast.error(`فشل الاتصال: ${r.error}`);
+              }}
+              className="rounded-xl bg-secondary px-6 py-3 font-bold"
+            >اختبار الاتصال</button>
+            <button
+              onClick={async () => {
+                if (!native()) { toast.info("الربط متاح في نسخة الويندوز"); return; }
+                save(settings);
+                const ok = await syncNow();
+                if (ok) toast.success("تمت المزامنة"); else toast.error(`تعذرت المزامنة: ${getSyncStatus().error ?? "الربط غير مفعّل"}`);
+              }}
+              className="rounded-xl bg-secondary px-6 py-3 font-bold"
+            >مزامنة الآن</button>
+          </div>
+        </section>
+        )}
 
         {/* Scale label barcode */}
         <section className="rounded-2xl border border-border bg-card p-6">
