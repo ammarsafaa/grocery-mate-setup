@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getSyncStatus, startSyncLoop, type SyncStatus } from "@/lib/sync";
+import { startTelegramQueue } from "@/lib/telegram";
 import { isLicensed } from "@/lib/license";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
