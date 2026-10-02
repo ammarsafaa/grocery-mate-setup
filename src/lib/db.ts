@@ -259,6 +259,7 @@ export function resetAllData() {
   write("receiptDesign:58", null);
   write("receiptDesign:80", null);
   write("session", null);
+  write("meta:sync", null);
 }
 
 // ---------- Shifts ----------

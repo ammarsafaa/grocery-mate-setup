@@ -19,6 +19,15 @@ export interface PosNative {
   downloadUpdate?: () => Promise<{ ok: boolean; error?: string }>;
   installUpdate?: () => void;
   onUpdateStatus?: (cb: (s: UpdateStatus) => void) => () => void;
+  sqlQuery?: (cfg: SqlConfig, sql: string, params: Record<string, unknown>) => Promise<{ ok: boolean; rows?: Array<Record<string, unknown>>; error?: string }>;
+}
+
+export interface SqlConfig {
+  server: string;
+  port: number;
+  database: string;
+  user: string;
+  password: string;
 }
 
 export interface UpdateStatus {
