@@ -48,8 +48,8 @@ export function checkCenterKey(machineId: string, key: string): LicenseCheck {
   try {
     const parts = key.trim().split(".");
     if (parts.length !== 3 || parts[0] !== "ZEROS1") return "invalid";
-    const payloadBytes = b64uToBytes(parts[1]);
-    const sig = b64uToBytes(parts[2]);
+    const payloadBytes = b64uToBytes(parts[1]!);
+    const sig = b64uToBytes(parts[2]!);
     if (sig.length !== 64) return "invalid";
     if (!ed25519.verify(sig, payloadBytes, b64uToBytes(CENTER_ED25519_X))) return "invalid";
     const p = JSON.parse(new TextDecoder().decode(payloadBytes));
