@@ -357,6 +357,8 @@ function SettingsPage() {
           </button>
         </section>
 
+        <TelegramSection settings={settings} save={save} />
+
         {/* Multi-cashier SQL Server sync */}
         {user?.role === "admin" && (
         <section className="rounded-2xl border border-border bg-card p-6">
