@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
-import { activate, getMachineId } from "@/lib/license";
+import { activate, checkKey, getMachineId } from "@/lib/license";
 import zerosLogo from "@/assets/zeros-logo.png";
 
 export const Route = createFileRoute("/activate")({
@@ -29,12 +29,15 @@ function ActivatePage() {
 
   const submit = async () => {
     setBusy(true);
-    const ok = await activate(key);
+    const res = await checkKey(getMachineId(), key);
+    const ok = res === "ok" && (await activate(key));
     setBusy(false);
     if (ok) {
       toast.success("تم تفعيل النظام");
       navigate({ to: "/login" });
-    } else toast.error("مفتاح التفعيل غير صحيح لهذا الجهاز");
+    } else if (res === "machine") toast.error("هذا المفتاح صادر لجهاز آخر");
+    else if (res === "product") toast.error("هذا المفتاح صادر لنظام آخر");
+    else toast.error("مفتاح التفعيل غير صالح");
   };
 
   return (
