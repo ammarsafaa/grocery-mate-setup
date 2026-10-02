@@ -67,7 +67,7 @@ export function receiptContent(sale: Sale, design: ReceiptDesign = getReceiptDes
       case "logo": return design.logo ? `<img src="${design.logo}" class="pl-logo" />` : "";
       case "store": return esc(st.storeName);
       case "contact": return `${esc(design.address)}${design.address && design.phone ? "<br>" : ""}${esc(design.phone)}`;
-      case "invoice": return `فاتورة رقم: ${sale.number}`;
+      case "invoice": return `فاتورة رقم: ${sale.terminal ? `${sale.terminal}-${sale.number}` : sale.number}`;
       case "date": return new Date(sale.createdAt).toLocaleString("en-GB");
       case "cashier": return `الكاشير: ${esc(sale.userName)}`;
       case "items": return `<table class="${tb}"><thead><tr><th>المنتج</th><th>الكمية/الوزن</th><th>سعر الوحدة</th><th>المبلغ</th></tr></thead><tbody>${sale.items.map((i) => `<tr><td>${esc(i.name)}</td><td>${i.unit === "kg" ? `${i.qty.toFixed(3)} كغم` : `${i.qty} قطعة`}</td><td>${n(i.price)}${i.unit === "kg" ? "/كغم" : ""}</td><td>${n(i.total)}</td></tr>`).join("")}</tbody></table>`;

@@ -10,6 +10,8 @@ import {
   getOpenShift,
   addSale,
   nextSaleNumber,
+  currentTerminal,
+  saleLabel,
   saveProducts,
   formatMoney,
   maybeAutoBackup,
@@ -218,6 +220,7 @@ function PosPage() {
       createdAt: new Date().toISOString(),
       paid: total,
       change: 0,
+      terminal: currentTerminal(),
     };
     addSale(sale);
     // Decrement stock once per product, even when it appears on several cart lines.
@@ -231,7 +234,7 @@ function PosPage() {
     recordSaleMovements(sale);
     setProducts(all.filter((p) => p.active));
     setCart([]);
-    toast.success(`تم حفظ الفاتورة رقم ${nextSaleNumber() - 1}`);
+    toast.success(`تم حفظ الفاتورة رقم ${saleLabel(sale)}`);
     if (settings.autoPrint) {
       const n = native();
       if (n) {
