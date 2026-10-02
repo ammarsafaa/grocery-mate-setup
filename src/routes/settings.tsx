@@ -372,7 +372,7 @@ function SettingsPage() {
             {([
               ["sqlHost", "عنوان الخادم (IP أو اسم الجهاز\\SQLEXPRESS)", "192.168.1.10"],
               ["sqlPort", "المنفذ", "1433"],
-              ["sqlDatabase", "اسم قاعدة البيانات", "ZerosDB"],
+              ["sqlDatabase", "اسم قاعدة البيانات", "GroceryPOS"],
               ["sqlUser", "اسم المستخدم", "sa"],
               ["sqlPassword", "كلمة السر", ""],
               ["terminalCode", "رقم هذا الكاشير", "1"],
