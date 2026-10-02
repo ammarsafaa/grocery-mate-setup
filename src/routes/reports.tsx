@@ -141,7 +141,7 @@ function ReportsPage() {
               <tbody>
                 {filtered.map((s) => (
                   <tr key={s.id} className="border-t border-border">
-                    <td className="p-3 font-bold">#{s.number}</td>
+                    <td className="p-3 font-bold">#{s.terminal ? `${s.terminal}-${s.number}` : s.number}</td>
                     <td className="p-3">{new Date(s.createdAt).toLocaleString("en-GB")}</td>
                     <td className="p-3">{s.userName}</td>
                     <td className="p-3 text-muted-foreground">

@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { getSyncStatus, startSyncLoop, type SyncStatus } from "@/lib/sync";
 import { isLicensed } from "@/lib/license";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
@@ -47,6 +48,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     isLicensed().then((ok) => { if (!ok) navigate({ to: "/activate" }); });
   }, [navigate]);
+  const [sync, setSync] = useState<SyncStatus>({ state: "off", pending: 0 });
+  useEffect(() => {
+    const h = () => setSync(getSyncStatus());
+    h();
+    window.addEventListener("grocery-pos:sync-status", h);
+    startSyncLoop();
+    return () => window.removeEventListener("grocery-pos:sync-status", h);
+  }, []);
+
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -80,6 +90,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </nav>
 
         <div className="mt-4 border-t border-sidebar-border pt-3">
+          {sync.state !== "off" && (
+            <div title={sync.error || ""} className="mb-2 flex items-center justify-center gap-2 px-3 text-xs md:justify-start">
+              <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${sync.state === "error" ? "bg-destructive" : "bg-primary"}`} />
+              <span className="hidden text-muted-foreground md:block">{sync.state === "error" ? "الخادم غير متصل — البيع مستمر" : "متصل بالخادم"}</span>
+            </div>
+          )}
           <div className="mb-2 hidden px-3 text-xs text-muted-foreground md:block">
             {user?.name} — {user?.role === "admin" ? "مدير" : "كاشير"}
           </div>
