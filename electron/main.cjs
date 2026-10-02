@@ -65,6 +65,40 @@ ipcMain.on("db-set", (e, key, value) => {
   e.returnValue = true;
 });
 
+// ---------- SQL Server (multi-cashier sync) ----------
+// One connection pool per server config; queries come from the UI sync module.
+const sqlPools = new Map();
+async function sqlPool(cfg) {
+  const key = JSON.stringify(cfg);
+  let p = sqlPools.get(key);
+  if (!p) {
+    const mssql = require("mssql");
+    const pool = new mssql.ConnectionPool({
+      server: cfg.server, port: Number(cfg.port) || 1433, database: cfg.database,
+      user: cfg.user || undefined, password: cfg.password || undefined,
+      options: { encrypt: false, trustServerCertificate: true },
+      connectionTimeout: 5000, requestTimeout: 15000, pool: { max: 4, min: 0, idleTimeoutMillis: 30000 },
+    });
+    p = pool.connect().catch((err) => { sqlPools.delete(key); throw err; });
+    sqlPools.set(key, p);
+  }
+  return p;
+}
+ipcMain.handle("sql-query", async (_e, cfg, sqlText, params) => {
+  try {
+    const pool = await sqlPool(cfg);
+    const req = pool.request();
+    for (const [k, v] of Object.entries(params || {})) req.input(k, v);
+    const r = await req.query(sqlText);
+    return { ok: true, rows: r.recordset || [] };
+  } catch (err) {
+    const key = JSON.stringify(cfg);
+    if (err && /ECONN|ETIMEOUT|ESOCKET|ELOGIN/.test(String(err.code))) sqlPools.delete(key);
+    return { ok: false, error: String((err && err.message) || err) };
+  }
+});
+
+
 // Copies the whole SQLite file to the chosen backup folder (real database backup).
 ipcMain.handle("backup-db", async (_e, folder) => {
   if (!db || !dbPath) return { ok: false, error: "no-db" };

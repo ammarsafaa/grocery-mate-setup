@@ -49,9 +49,16 @@ function ReportsPage() {
     if (ready && !user) navigate({ to: "/login" });
   }, [user, ready, navigate]);
 
-  useEffect(() => setSales(getSales().slice().reverse()), []);
+  const [terminal, setTerminal] = useState<string>("all");
+  useEffect(() => {
+    const load = () => setSales(getSales().slice().reverse());
+    load();
+    window.addEventListener("grocery-pos:data-synced", load);
+    return () => window.removeEventListener("grocery-pos:data-synced", load);
+  }, []);
+  const terminals = useMemo(() => [...new Set(sales.map((s) => s.terminal).filter((t): t is string => !!t))].sort(), [sales]);
 
-  const filtered = useMemo(() => sales.filter((s) => inPeriod(s, period)), [sales, period]);
+  const filtered = useMemo(() => sales.filter((s) => inPeriod(s, period) && (terminal === "all" || s.terminal === terminal)), [sales, period, terminal]);
   const total = filtered.reduce((t, s) => t + s.total, 0);
 
   const topProducts = useMemo(() => {
@@ -93,6 +100,12 @@ function ReportsPage() {
               {t.label}
             </button>
           ))}
+          {terminals.length > 0 && (
+            <select value={terminal} onChange={(e) => setTerminal(e.target.value)} className="rounded-xl border border-border bg-card px-4 font-bold">
+              <option value="all">كل الكاشيرات</option>
+              {terminals.map((t) => <option key={t} value={t}>كاشير {t}</option>)}
+            </select>
+          )}
         </div>
 
         <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-3">
@@ -128,7 +141,7 @@ function ReportsPage() {
               <tbody>
                 {filtered.map((s) => (
                   <tr key={s.id} className="border-t border-border">
-                    <td className="p-3 font-bold">#{s.number}</td>
+                    <td className="p-3 font-bold">#{s.terminal ? `${s.terminal}-${s.number}` : s.number}</td>
                     <td className="p-3">{new Date(s.createdAt).toLocaleString("en-GB")}</td>
                     <td className="p-3">{s.userName}</td>
                     <td className="p-3 text-muted-foreground">

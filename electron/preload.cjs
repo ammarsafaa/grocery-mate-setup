@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld("posNative", {
   },
   quitApp: () => ipcRenderer.send("confirm-quit"),
   appVersion: () => ipcRenderer.sendSync("app-version"),
+  sqlQuery: (cfg, sql, params) => ipcRenderer.invoke("sql-query", cfg, sql, params),
   checkUpdate: () => ipcRenderer.invoke("update-check"),
   downloadUpdate: () => ipcRenderer.invoke("update-download"),
   installUpdate: () => ipcRenderer.send("update-install"),

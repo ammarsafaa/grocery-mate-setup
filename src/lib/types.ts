@@ -53,6 +53,7 @@ export interface Sale {
   createdAt: string; // ISO
   paid?: number;
   change?: number;
+  terminal?: string | undefined; // cashier device code when multi-cashier sync is on
 }
 
 export interface Supplier {
@@ -149,6 +150,14 @@ export interface Shift {
 
 export interface Settings {
   storeName: string;
+  // Multi-cashier sync with an in-store SQL Server (per device, never synced)
+  syncEnabled?: boolean;
+  sqlHost?: string;
+  sqlPort?: number;
+  sqlDatabase?: string;
+  sqlUser?: string;
+  sqlPassword?: string;
+  terminalCode?: string;
   currency: string;
   backupFolder: string;
   autoBackup: boolean;
