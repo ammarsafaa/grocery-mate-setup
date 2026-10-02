@@ -121,7 +121,7 @@ export async function syncNow(): Promise<boolean> {
         if (cur && snap.get(id) !== recHash(col, cur)) continue;
         if (r.deleted) { map.delete(id); delete known[id]; continue; }
         const rec = JSON.parse(String(r.data)) as Rec;
-        if (col === "products") rec.stock = cur ? cur.stock : 0;
+        if (col === "products") rec.stock = cur ? Number(cur.stock) || 0 : 0;
         map.set(id, rec);
         known[id] = recHash(col, rec);
       }
