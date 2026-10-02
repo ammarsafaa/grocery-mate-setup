@@ -50,15 +50,22 @@ function ReportsPage() {
   }, [user, ready, navigate]);
 
   const [terminal, setTerminal] = useState<string>("all");
+  const [seller, setSeller] = useState<string>("all");
   useEffect(() => {
     const load = () => setSales(getSales().slice().reverse());
     load();
     window.addEventListener("grocery-pos:data-synced", load);
     return () => window.removeEventListener("grocery-pos:data-synced", load);
   }, []);
+  const isAdmin = user?.role === "admin";
   const terminals = useMemo(() => [...new Set(sales.map((s) => s.terminal).filter((t): t is string => !!t))].sort(), [sales]);
+  const sellers = useMemo(() => { const m = new Map<string, string>(); for (const s of sales) m.set(s.userId, s.userName); return [...m.entries()]; }, [sales]);
 
-  const filtered = useMemo(() => sales.filter((s) => inPeriod(s, period) && (terminal === "all" || s.terminal === terminal)), [sales, period, terminal]);
+  // Sales from all cashier devices arrive through sync; a cashier sees only their own, wherever they sold.
+  const filtered = useMemo(() => sales.filter((s) =>
+    inPeriod(s, period) &&
+    (isAdmin ? (seller === "all" || s.userId === seller) : s.userId === user?.id) &&
+    (terminal === "all" || s.terminal === terminal)), [sales, period, terminal, seller, isAdmin, user?.id]);
   const total = filtered.reduce((t, s) => t + s.total, 0);
 
   const topProducts = useMemo(() => {
@@ -100,7 +107,13 @@ function ReportsPage() {
               {t.label}
             </button>
           ))}
-          {terminals.length > 0 && (
+          {isAdmin && sellers.length > 1 && (
+            <select value={seller} onChange={(e) => setSeller(e.target.value)} className="rounded-xl border border-border bg-card px-4 font-bold">
+              <option value="all">كل المستخدمين</option>
+              {sellers.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+            </select>
+          )}
+          {isAdmin && terminals.length > 0 && (
             <select value={terminal} onChange={(e) => setTerminal(e.target.value)} className="rounded-xl border border-border bg-card px-4 font-bold">
               <option value="all">كل الكاشيرات</option>
               {terminals.map((t) => <option key={t} value={t}>كاشير {t}</option>)}
