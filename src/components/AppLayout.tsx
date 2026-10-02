@@ -54,7 +54,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     const h = () => setSync(getSyncStatus());
     h();
     window.addEventListener("grocery-pos:sync-status", h);
-    startSyncLoop();
+    startSyncLoop(); startTelegramQueue();
     return () => window.removeEventListener("grocery-pos:sync-status", h);
   }, []);
 
