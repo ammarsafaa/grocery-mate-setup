@@ -220,10 +220,32 @@ export function recordSaleMovements(sale: Sale) {
   saveStockMovements(movements);
 }
 
+/** Invoice numbers are counted per cashier device, so several cashiers never collide. */
 export function nextSaleNumber(): number {
-  const sales = getSales();
+  const term = getSettings().syncEnabled ? (getSettings().terminalCode || "1") : undefined;
+  const sales = getSales().filter((s) => (s.terminal ?? undefined) === term || (!term && !s.terminal));
   return sales.length ? Math.max(...sales.map((s) => s.number)) + 1 : 1;
 }
+
+export function currentTerminal(): string | undefined {
+  const s = getSettings();
+  return s.syncEnabled ? (s.terminalCode || "1") : undefined;
+}
+
+export function saleLabel(sale: Sale): string {
+  return sale.terminal ? `${sale.terminal}-${sale.number}` : String(sale.number);
+}
+
+// ---------- Generic access for multi-cashier sync ----------
+export function readCollection<T>(key: string): T[] { return read<T[]>(key, []); }
+export function writeCollection<T>(key: string, items: T[]) {
+  write(key, items);
+  if (key === "products") window.dispatchEvent(new CustomEvent("grocery-pos:products-updated"));
+  if (key === "groups") window.dispatchEvent(new CustomEvent("grocery-pos:groups-updated"));
+  window.dispatchEvent(new CustomEvent("grocery-pos:data-synced", { detail: key }));
+}
+export function readMeta<T>(key: string, fallback: T): T { return read<T>(`meta:${key}`, fallback); }
+export function writeMeta<T>(key: string, value: T) { write(`meta:${key}`, value); }
 
 // ---------- Expenses ----------
 export function getExpenses(): Expense[] { return read<Expense[]>("expenses", []); }
