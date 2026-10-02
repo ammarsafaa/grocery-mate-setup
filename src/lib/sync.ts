@@ -8,7 +8,9 @@ import { native, type SqlConfig } from "./native";
 import { getSettings, readCollection, writeCollection, readMeta, writeMeta } from "./db";
 
 const COLLECTIONS = ["products", "groups", "users", "suppliers", "sales", "stockMovements", "shifts", "expenses", "purchases", "supplierPayments"] as const;
-type Rec = { id: string; [k: string]: unknown };
+/* eslint-disable @typescript-eslint/no-explicit-any */
+type Rec = { id: string; stock?: number; [k: string]: any };
+type Row = Record<string, any> & { ver?: any; collection?: any; id?: any; deleted?: any; data?: any; product_id?: any; stock?: any };
 type Meta = { lastVer: number; hashes: Record<string, Record<string, number>>; stockBase: Record<string, number> };
 
 export type SyncStatus = { state: "off" | "ok" | "error" | "syncing"; pending: number; lastAt?: string; error?: string };
@@ -31,7 +33,7 @@ async function q(cfg: SqlConfig, sql: string, params: Record<string, unknown> = 
   if (!n?.sqlQuery) throw new Error("متاح في نسخة Windows فقط");
   const r = await n.sqlQuery(cfg, sql, params);
   if (!r.ok) throw new Error(r.error || "SQL error");
-  return r.rows ?? [];
+  return (r.rows ?? []) as Row[];
 }
 
 const SCHEMA = `
@@ -101,15 +103,15 @@ export async function syncNow(): Promise<boolean> {
     const recs = await q(cfg, `SELECT collection, id, data, deleted, ver FROM zeros_records WHERE ver > @v`, { v: meta.lastVer });
     const stocks = await q(cfg, `SELECT product_id, stock, ver FROM zeros_stock WHERE ver > @v OR @v = 0 OR product_id IN (SELECT id FROM zeros_records WHERE collection = 'products' AND ver > @v)`, { v: meta.lastVer });
     let maxVer = meta.lastVer;
-    const byCol = new Map<string, Array<Record<string, unknown>>>();
+    const byCol = new Map<string, Row[]>();
     for (const r of recs) { maxVer = Math.max(maxVer, Number(r.ver)); const arr = byCol.get(String(r.collection)) ?? []; arr.push(r); byCol.set(String(r.collection), arr); }
     for (const s of stocks) maxVer = Math.max(maxVer, Number(s.ver));
 
     for (const col of COLLECTIONS) {
       const incoming = byCol.get(col);
       if (!incoming?.length && !(col === "products" && stocks.length)) continue;
-      const known = meta.hashes[col];
-      const snap = snapshots[col];
+      const known = meta.hashes[col] ?? (meta.hashes[col] = {});
+      const snap = snapshots[col] ?? new Map<string, number>();
       const local = readCollection<Rec>(col);
       const map = new Map(local.map((r) => [r.id, r]));
       for (const r of incoming ?? []) {

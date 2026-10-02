@@ -53,7 +53,7 @@ export interface Sale {
   createdAt: string; // ISO
   paid?: number;
   change?: number;
-  terminal?: string; // cashier device code when multi-cashier sync is on
+  terminal?: string | undefined; // cashier device code when multi-cashier sync is on
 }
 
 export interface Supplier {
