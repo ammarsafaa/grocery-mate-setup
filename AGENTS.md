@@ -16,3 +16,4 @@
 - Receipt element positioning uses bounded per-element offsets and a 4 mm print safe area on each edge to prevent thermal-printer clipping.
 - Receipt and shift report printing both render from src/lib/printLayout.ts (mm-positioned elements, per kind and paper slot); the designer preview uses the same content and CSS so preview matches print.
 - Licensing keys are issued only from the password-gated web page /owner (server-side signing with LICENSE_PRIVATE_KEY secret); the in-app generator was removed so customers never see it.
+- Multi-cashier sync: each cashier keeps local SQLite and syncs to an optional in-store SQL Server via src/lib/sync.ts (records upserted by id with a server sequence, product stock synced as deltas) so selling never depends on the network.
