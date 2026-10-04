@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Download, Upload, Plus, Trash2, Scale, HardDrive, Palette, Printer, Layers3, ReceiptText, Server } from "lucide-react";
 import { testSqlConnection, syncNow, getSyncStatus } from "@/lib/sync";
+import { testAclas, sendToAclas, aclasErrorText } from "@/lib/aclas";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/AppLayout";
@@ -191,7 +192,7 @@ function SettingsPage() {
         {/* Scale */}
         <section className="rounded-2xl border border-border bg-card p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
-            <Scale className="h-5 w-5 text-primary" /> الميزان (رونكتا RLS1100)
+            <Scale className="h-5 w-5 text-primary" /> ميزان رونكتا RLS1100 (جلب الوزن المباشر)
           </h2>
           <div className="mb-4">
             <label className="mb-1 block text-sm text-muted-foreground">طريقة ربط الميزان</label>
@@ -664,6 +665,48 @@ function TelegramSection({ settings, save }: { settings: Settings; save: (s: Set
         <button disabled={busy} onClick={test} className="rounded-xl bg-secondary px-6 py-3 font-bold disabled:opacity-60">{busy ? "جارٍ الإرسال..." : "إرسال رسالة تجريبية"}</button>
       </div>
       <p className="mt-4 text-xs text-muted-foreground">لمعرفة رقم المحادثة: أرسل أي رسالة للبوت ثم افتح البوت @userinfobot وسيعطيك رقمك.</p>
+    </section>
+  );
+}
+
+function AclasSection({ settings, setSettings, save }: { settings: Settings; setSettings: (s: Settings) => void; save: (s: Settings) => void }) {
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+  const ip = settings.aclasIp ?? "";
+  const run = async (op: "test" | "send") => {
+    setBusy(true);
+    setMsg(op === "test" ? "جارٍ الاتصال بالميزان..." : "جارٍ إرسال المنتجات والأسعار...");
+    save(settings);
+    try {
+      const r = op === "test" ? await testAclas(ip) : await sendToAclas(ip);
+      if (r.ok) setMsg(op === "test" ? "تم الاتصال بالميزان بنجاح ✓" : `تم إرسال ${(r as { count?: number }).count ?? 0} منتج إلى الميزان ✓`);
+      else setMsg(`فشل: ${aclasErrorText(r)}`);
+    } finally { setBusy(false); }
+  };
+  return (
+    <section className="rounded-2xl border border-border bg-card p-6">
+      <h2 className="mb-2 flex items-center gap-2 text-lg font-bold"><Scale className="h-5 w-5 text-primary" /> ميزان أكلاس LS6 (كيبل شبكة)</h2>
+      <p className="mb-4 text-sm text-muted-foreground">يرسل زيروس المنتجات وأسعارها إلى الميزان. الميزان يطبع ملصق باركود، والكاشير يمسحه. فعّل «قراءة ملصقات الميزان» بالأسفل. المنتجات التي لها رقم PLU فقط تُرسل.</p>
+      <label className="mb-4 flex items-center justify-between gap-4 rounded-lg bg-secondary p-4">
+        <span className="font-bold">تفعيل ميزان أكلاس</span>
+        <input type="checkbox" checked={!!settings.aclasEnabled} onChange={(e) => setSettings({ ...settings, aclasEnabled: e.target.checked })} className="h-5 w-5 accent-primary" />
+      </label>
+      {settings.aclasEnabled && (
+        <>
+          <label className="mb-1 block text-sm text-muted-foreground">عنوان الميزان (IP)</label>
+          <input dir="ltr" value={ip} placeholder="192.168.1.100" onChange={(e) => setSettings({ ...settings, aclasIp: e.target.value.trim() })} className="h-12 w-full rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary md:w-1/2" />
+          <label className="mt-4 flex items-center justify-between gap-4 rounded-lg bg-secondary p-4">
+            <div><div className="font-bold">إرسال تلقائي عند تغيير السعر</div><div className="text-sm text-muted-foreground">بعد أي تعديل على المنتجات تُرسل الأسعار للميزان خلال ثوانٍ</div></div>
+            <input type="checkbox" checked={!!settings.aclasAutoSend} onChange={(e) => setSettings({ ...settings, aclasAutoSend: e.target.checked })} className="h-5 w-5 accent-primary" />
+          </label>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button disabled={busy} onClick={() => run("test")} className="rounded-xl bg-secondary px-5 py-3 font-bold disabled:opacity-50">اختبار الاتصال</button>
+            <button disabled={busy} onClick={() => run("send")} className="rounded-xl bg-secondary px-5 py-3 font-bold disabled:opacity-50">إرسال المنتجات والأسعار إلى الميزان</button>
+          </div>
+          {msg && <p className="mt-3 rounded-lg bg-secondary p-3 text-sm">{msg}</p>}
+        </>
+      )}
+      <button onClick={() => save(settings)} className="mt-4 rounded-xl bg-primary px-6 py-3 font-bold text-primary-foreground">حفظ</button>
     </section>
   );
 }
