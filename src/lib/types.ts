@@ -181,6 +181,10 @@ export interface Settings {
   openDrawer: boolean;
   labelBarcodeEnabled: boolean;
   useScale: boolean;
+  // Aclas LS6 label scale (LAN): products/prices are sent to the scale
+  aclasEnabled?: boolean;
+  aclasIp?: string;
+  aclasAutoSend?: boolean;
   labelPrefixes: string; // comma separated, e.g. "20,21,22"
   labelPluLength: number;
   labelValueType: "weight" | "price";
