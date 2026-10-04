@@ -98,6 +98,32 @@ ipcMain.handle("sql-query", async (_e, cfg, sqlText, params) => {
   }
 });
 
+// ---------- Aclas LS6 label scale (LAN) ----------
+// Runs the official AclasSDKConsole.exe. Exit codes: 0 ok, 1 offline, 2/3 params, 4 exec error.
+const ACLAS_DIR = app.isPackaged ? path.join(process.resourcesPath, "aclas") : path.join(__dirname, "aclas");
+let aclasBusy = Promise.resolve();
+ipcMain.handle("aclas-exec", (_e, ip, op, content) => {
+  if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(String(ip || ""))) return { ok: false, error: "عنوان IP غير صحيح" };
+  const run = () => new Promise((resolve) => {
+    const { execFile } = require("child_process");
+    const os = require("os");
+    const file = path.join(os.tmpdir(), `zeros-aclas-${Date.now()}.txt`);
+    try {
+      if (op === "send") fs.writeFileSync(file, Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(String(content), "utf16le")]));
+    } catch (err) { return resolve({ ok: false, error: String(err) }); }
+    const args = ["-h", String(ip), "-t", op === "send" ? "Down" : "Up", "-b", "PLU", "-n", file];
+    execFile(path.join(ACLAS_DIR, "AclasSDKConsole.exe"), args, { cwd: ACLAS_DIR, windowsHide: true, timeout: 120000 }, (err) => {
+      for (const f of [file, file + ".result"]) { try { fs.unlinkSync(f); } catch {} }
+      if (!err) return resolve({ ok: true, code: 0 });
+      if (typeof err.code === "number") return resolve({ ok: false, code: err.code });
+      resolve({ ok: false, error: err.killed ? "انتهت المهلة — الميزان لم يستجب" : String(err.message || err).split("\n")[0] });
+    });
+  });
+  const p = aclasBusy.then(run, run);
+  aclasBusy = p.then(() => {}, () => {});
+  return p;
+});
+
 
 // Copies the whole SQLite file to the chosen backup folder (real database backup).
 ipcMain.handle("backup-db", async (_e, folder) => {

@@ -357,6 +357,8 @@ function SettingsPage() {
           </button>
         </section>
 
+        <AclasSection settings={settings} setSettings={setSettings} save={save} />
+
         <TelegramSection settings={settings} save={save} />
 
         {/* Multi-cashier SQL Server sync */}

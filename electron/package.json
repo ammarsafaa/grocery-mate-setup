@@ -22,6 +22,10 @@
       {
         "from": "electron/scale",
         "to": "scale"
+      },
+      {
+        "from": "electron/aclas",
+        "to": "aclas"
       }
     ],
     "win": {
