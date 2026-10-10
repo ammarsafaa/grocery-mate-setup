@@ -152,11 +152,16 @@ ipcMain.handle("aclas-exec", (_e, ip, op, content) => {
 // Copies the whole SQLite file to the chosen backup folder (real database backup).
 ipcMain.handle("backup-db", async (_e, folder) => {
   if (!db || !dbPath) return { ok: false, error: "no-db" };
-  fs.mkdirSync(folder, { recursive: true });
-  const today = new Date().toISOString().slice(0, 10);
-  const dest = path.join(folder, `grocery-pos-backup-${today}.db`);
-  await db.backup(dest);
-  return { ok: true, path: dest };
+  try {
+    const target = folder && String(folder).trim() ? folder : path.join(path.dirname(dbPath), "Backups");
+    fs.mkdirSync(target, { recursive: true });
+    const today = new Date().toISOString().slice(0, 10);
+    const dest = path.join(target, `grocery-pos-backup-${today}.db`);
+    await db.backup(dest);
+    return { ok: true, path: dest };
+  } catch (e) {
+    return { ok: false, error: String((e && e.message) || e) };
+  }
 });
 
 // Restores a .db backup: replaces the live database file, then relaunches so the app loads it.
