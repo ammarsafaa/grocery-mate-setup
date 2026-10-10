@@ -155,6 +155,8 @@ export interface Settings {
   /** First-run SQL Server setup finished ("done") or skipped ("skipped"). */
   sqlSetup?: "done" | "skipped";
   syncEnabled?: boolean;
+  /** true = this device hosts SQL Server itself (main cashier) — no IP/port needed. */
+  sqlIsMain?: boolean;
   sqlHost?: string;
   sqlPort?: number;
   sqlDatabase?: string;
