@@ -11,8 +11,11 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
+      - name: Use public npm registry in lockfile
+        shell: bash
+        run: sed -i -E 's#https://[a-z0-9-]+-npm\.pkg\.dev/[^"]*/sandbox-npm-cache/#https://registry.npmjs.org/#g' bun.lock
       - name: Install application dependencies
-        run: bun install --frozen-lockfile
+        run: bun install
       - name: Build Windows application interface
         run: bun run build
         env:
