@@ -152,6 +152,8 @@ export interface Shift {
 export interface Settings {
   storeName: string;
   // Multi-cashier sync with an in-store SQL Server (per device, never synced)
+  /** First-run SQL Server setup finished ("done") or skipped ("skipped"). */
+  sqlSetup?: "done" | "skipped";
   syncEnabled?: boolean;
   sqlHost?: string;
   sqlPort?: number;

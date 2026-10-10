@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Delete } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { getSettings } from "@/lib/db";
+import { native } from "@/lib/native";
 import zerosLogo from "@/assets/zeros-logo.png";
 
 export const Route = createFileRoute("/login")({
@@ -28,7 +29,10 @@ function LoginPage() {
   const [error, setError] = useState(false);
   const storeName = getSettings().storeName;
   useEffect(() => {
-    isLicensed().then((ok) => { if (!ok) navigate({ to: "/activate" }); });
+    isLicensed().then((ok) => {
+      if (!ok) navigate({ to: "/activate" });
+      else if (native() && !getSettings().sqlSetup) navigate({ to: "/db-setup" });
+    });
   }, [navigate]);
 
   const press = (d: string) => {
