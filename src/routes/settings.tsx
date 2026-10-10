@@ -375,10 +375,32 @@ function SettingsPage() {
             <input type="checkbox" checked={!!settings.syncEnabled} onChange={(e) => setSettings({ ...settings, syncEnabled: e.target.checked })} className="h-5 w-5 accent-primary" />
             <span className="text-sm font-semibold">تشغيل الربط مع الخادم</span>
           </label>
+          <div className="mb-4 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setSettings({ ...settings, sqlIsMain: true })}
+              className={`rounded-xl border px-4 py-3 text-sm font-bold ${settings.sqlIsMain !== false ? "border-primary bg-primary/10 text-primary" : "border-border bg-secondary"}`}
+            >
+              هذا الجهاز هو الرئيسي
+              <span className="mt-1 block text-xs font-normal text-muted-foreground">SQL Server على نفس الجهاز — بدون IP</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSettings({ ...settings, sqlIsMain: false })}
+              className={`rounded-xl border px-4 py-3 text-sm font-bold ${settings.sqlIsMain === false ? "border-primary bg-primary/10 text-primary" : "border-border bg-secondary"}`}
+            >
+              كاشير ثانوي
+              <span className="mt-1 block text-xs font-normal text-muted-foreground">يتصل بجهاز رئيسي آخر — يحتاج IP</span>
+            </button>
+          </div>
           <div className="mb-4 grid gap-3 md:grid-cols-2">
             {([
-              ["sqlHost", "عنوان الخادم (IP أو اسم الجهاز\\SQLEXPRESS)", "192.168.1.10"],
-              ["sqlPort", "المنفذ", "1433"],
+              ...(settings.sqlIsMain === false
+                ? ([
+                    ["sqlHost", "عنوان الجهاز الرئيسي (IP)", "192.168.1.10"],
+                    ["sqlPort", "المنفذ", "1433"],
+                  ] as const)
+                : []),
               ["sqlDatabase", "اسم قاعدة البيانات", "GroceryPOS"],
               ["sqlUser", "اسم المستخدم", "sa"],
               ["sqlPassword", "كلمة السر", ""],
@@ -424,7 +446,8 @@ function SettingsPage() {
               <li>نصّب SQL Server Express على الجهاز الرئيسي واختر وضع الدخول المختلط (Mixed) وحدد كلمة مرور للمستخدم sa.</li>
               <li>افتح SQL Server Configuration Manager ← Network Configuration ← فعّل TCP/IP واجعل المنفذ 1433، ثم أعد تشغيل الخدمة.</li>
               <li>اسمح بالمنفذ 1433 في جدار حماية ويندوز.</li>
-              <li>على كل جهاز: اكتب IP الجهاز الرئيسي والمستخدم sa وكلمة المرور، واضغط «تجهيز قاعدة البيانات» — القاعدة والجداول تُنشأ تلقائياً.</li>
+              <li>على الجهاز الرئيسي: اختر «هذا الجهاز هو الرئيسي» واضغط «تجهيز قاعدة البيانات» — القاعدة والجداول تُنشأ تلقائياً بدون IP.</li>
+              <li>على كل كاشير ثانوي: اختر «كاشير ثانوي» واكتب IP الجهاز الرئيسي والمستخدم sa وكلمة المرور.</li>
               <li>اجعل رقم الجهاز مختلفاً لكل كاشير (1، 2، 3...).</li>
             </ol>
           </details>

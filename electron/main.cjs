@@ -70,10 +70,20 @@ ipcMain.on("db-set", (e, key, value) => {
 const sqlPools = new Map();
 function sqlConn(cfg, database) {
   const mssql = require("mssql");
+  // Named instance support: ".\SQLEXPRESS" or "HOST\SQLEXPRESS" → server + instanceName (no port).
+  let server = String(cfg.server || "");
+  let instanceName;
+  const bs = server.indexOf("\\");
+  if (bs >= 0) {
+    instanceName = server.slice(bs + 1);
+    server = server.slice(0, bs) || "localhost";
+    if (server === ".") server = "localhost";
+  }
   return new mssql.ConnectionPool({
-    server: cfg.server, port: Number(cfg.port) || 1433, database,
+    server, database,
+    ...(instanceName ? {} : { port: Number(cfg.port) || 1433 }),
     user: cfg.user || undefined, password: cfg.password || undefined,
-    options: { encrypt: false, trustServerCertificate: true },
+    options: { encrypt: false, trustServerCertificate: true, ...(instanceName ? { instanceName } : {}) },
     connectionTimeout: 5000, requestTimeout: 30000, pool: { max: 4, min: 0, idleTimeoutMillis: 30000 },
   });
 }

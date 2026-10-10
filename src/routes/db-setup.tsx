@@ -24,6 +24,7 @@ function DbSetupPage() {
   const navigate = useNavigate();
   const init = getSettings();
   const [f, setF] = useState({
+    sqlIsMain: init.sqlIsMain ?? true,
     sqlHost: init.sqlHost ?? "",
     sqlPort: init.sqlPort ?? 1433,
     sqlDatabase: init.sqlDatabase || "GroceryPOS",
@@ -36,7 +37,7 @@ function DbSetupPage() {
 
   const connect = async () => {
     if (!native()) { toast.info("الربط متاح في نسخة الويندوز"); return; }
-    if (!f.sqlHost.trim()) { setError("اكتب عنوان الخادم"); return; }
+    if (!f.sqlIsMain && !f.sqlHost.trim()) { setError("اكتب عنوان الجهاز الرئيسي (IP)"); return; }
     setBusy(true); setError("");
     const prev = getSettings();
     saveSettings({ ...prev, ...f, sqlPort: Number(f.sqlPort) || 1433, syncEnabled: true });
@@ -59,14 +60,19 @@ function DbSetupPage() {
     navigate({ to: "/login" });
   };
 
-  const fields = [
-    ["sqlHost", "عنوان الخادم (IP أو اسم الجهاز\\SQLEXPRESS)", "192.168.1.10"],
-    ["sqlPort", "المنفذ", "1433"],
+  const fields = (
+    f.sqlIsMain
+      ? []
+      : [
+          ["sqlHost", "عنوان الجهاز الرئيسي (IP)", "192.168.1.10"],
+          ["sqlPort", "المنفذ", "1433"],
+        ]
+  ).concat([
     ["sqlDatabase", "اسم قاعدة البيانات", "GroceryPOS"],
     ["sqlUser", "اسم المستخدم", "sa"],
     ["sqlPassword", "كلمة السر", ""],
     ["terminalCode", "رقم هذا الكاشير", "1"],
-  ] as const;
+  ]) as [keyof typeof f, string, string][];
 
   return (
     <div dir="rtl" className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -77,6 +83,24 @@ function DbSetupPage() {
         <p className="mb-5 text-sm text-muted-foreground">
           اكتب معلومات خادم SQL Server. إذا القاعدة غير موجودة يتم إنشاؤها مع جداولها تلقائياً، وإذا موجودة يرتبط بها هذا الجهاز.
         </p>
+        <div className="mb-4 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setF({ ...f, sqlIsMain: true })}
+            className={`rounded-xl border px-4 py-3 text-sm font-bold ${f.sqlIsMain ? "border-primary bg-primary/10 text-primary" : "border-border bg-secondary"}`}
+          >
+            هذا الجهاز هو الرئيسي
+            <span className="mt-1 block text-xs font-normal text-muted-foreground">SQL Server منصّب على نفس هذا الجهاز — بدون IP</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setF({ ...f, sqlIsMain: false })}
+            className={`rounded-xl border px-4 py-3 text-sm font-bold ${!f.sqlIsMain ? "border-primary bg-primary/10 text-primary" : "border-border bg-secondary"}`}
+          >
+            كاشير ثانوي
+            <span className="mt-1 block text-xs font-normal text-muted-foreground">يتصل بجهاز رئيسي آخر عبر الشبكة — يحتاج IP</span>
+          </button>
+        </div>
         <div className="mb-4 grid gap-3 md:grid-cols-2">
           {fields.map(([key, label, ph]) => (
             <div key={key}>

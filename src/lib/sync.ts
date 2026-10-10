@@ -23,8 +23,11 @@ function recHash(col: string, r: Rec) { if (col === "products") { const { stock:
 
 function config(): SqlConfig | null {
   const s = getSettings();
-  if (!s.syncEnabled || !s.sqlHost || !s.sqlDatabase) return null;
-  return { server: s.sqlHost, port: Number(s.sqlPort) || 1433, database: s.sqlDatabase, user: s.sqlUser ?? "", password: s.sqlPassword ?? "" };
+  if (!s.syncEnabled || !s.sqlDatabase) return null;
+  // Main cashier: SQL Server runs on this same device — no IP/port needed.
+  const server = s.sqlIsMain ? ".\\SQLEXPRESS" : (s.sqlHost ?? "").trim();
+  if (!server) return null;
+  return { server, port: s.sqlIsMain ? 1433 : Number(s.sqlPort) || 1433, database: s.sqlDatabase, user: s.sqlUser ?? "", password: s.sqlPassword ?? "" };
 }
 function terminal() { return (getSettings().terminalCode || "1").trim(); }
 
