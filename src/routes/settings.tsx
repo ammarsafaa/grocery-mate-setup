@@ -404,10 +404,10 @@ function SettingsPage() {
                 if (!native()) { toast.info("الربط متاح في نسخة الويندوز"); return; }
                 save(settings);
                 const r = await testSqlConnection();
-                if (r.ok) toast.success("تم الاتصال بالخادم بنجاح"); else toast.error(`فشل الاتصال: ${r.error}`);
+                if (r.ok) toast.success("قاعدة البيانات جاهزة — تم الاتصال وإنشاء الجداول"); else toast.error(`فشل الاتصال: ${r.error}`);
               }}
               className="rounded-xl bg-secondary px-6 py-3 font-bold"
-            >اختبار الاتصال</button>
+            >تجهيز قاعدة البيانات واختبار الاتصال</button>
             <button
               onClick={async () => {
                 if (!native()) { toast.info("الربط متاح في نسخة الويندوز"); return; }
@@ -418,6 +418,16 @@ function SettingsPage() {
               className="rounded-xl bg-secondary px-6 py-3 font-bold"
             >مزامنة الآن</button>
           </div>
+          <details className="mt-4 rounded-xl bg-secondary/50 p-4 text-sm leading-7">
+            <summary className="cursor-pointer font-bold">طريقة تجهيز الجهاز الرئيسي (مرة واحدة)</summary>
+            <ol className="mt-2 list-decimal pr-5">
+              <li>نصّب SQL Server Express على الجهاز الرئيسي واختر وضع الدخول المختلط (Mixed) وحدد كلمة مرور للمستخدم sa.</li>
+              <li>افتح SQL Server Configuration Manager ← Network Configuration ← فعّل TCP/IP واجعل المنفذ 1433، ثم أعد تشغيل الخدمة.</li>
+              <li>اسمح بالمنفذ 1433 في جدار حماية ويندوز.</li>
+              <li>على كل جهاز: اكتب IP الجهاز الرئيسي والمستخدم sa وكلمة المرور، واضغط «تجهيز قاعدة البيانات» — القاعدة والجداول تُنشأ تلقائياً.</li>
+              <li>اجعل رقم الجهاز مختلفاً لكل كاشير (1، 2، 3...).</li>
+            </ol>
+          </details>
         </section>
         )}
 
