@@ -83,6 +83,24 @@ function DbSetupPage() {
         <p className="mb-5 text-sm text-muted-foreground">
           اكتب معلومات خادم SQL Server. إذا القاعدة غير موجودة يتم إنشاؤها مع جداولها تلقائياً، وإذا موجودة يرتبط بها هذا الجهاز.
         </p>
+        <div className="mb-4 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setF({ ...f, sqlIsMain: true })}
+            className={`rounded-xl border px-4 py-3 text-sm font-bold ${f.sqlIsMain ? "border-primary bg-primary/10 text-primary" : "border-border bg-secondary"}`}
+          >
+            هذا الجهاز هو الرئيسي
+            <span className="mt-1 block text-xs font-normal text-muted-foreground">SQL Server منصّب على نفس هذا الجهاز — بدون IP</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setF({ ...f, sqlIsMain: false })}
+            className={`rounded-xl border px-4 py-3 text-sm font-bold ${!f.sqlIsMain ? "border-primary bg-primary/10 text-primary" : "border-border bg-secondary"}`}
+          >
+            كاشير ثانوي
+            <span className="mt-1 block text-xs font-normal text-muted-foreground">يتصل بجهاز رئيسي آخر عبر الشبكة — يحتاج IP</span>
+          </button>
+        </div>
         <div className="mb-4 grid gap-3 md:grid-cols-2">
           {fields.map(([key, label, ph]) => (
             <div key={key}>
