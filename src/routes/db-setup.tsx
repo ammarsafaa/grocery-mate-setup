@@ -60,14 +60,19 @@ function DbSetupPage() {
     navigate({ to: "/login" });
   };
 
-  const fields = [
-    ["sqlHost", "عنوان الخادم (IP أو اسم الجهاز\\SQLEXPRESS)", "192.168.1.10"],
-    ["sqlPort", "المنفذ", "1433"],
+  const fields = (
+    f.sqlIsMain
+      ? []
+      : [
+          ["sqlHost", "عنوان الجهاز الرئيسي (IP)", "192.168.1.10"],
+          ["sqlPort", "المنفذ", "1433"],
+        ]
+  ).concat([
     ["sqlDatabase", "اسم قاعدة البيانات", "GroceryPOS"],
     ["sqlUser", "اسم المستخدم", "sa"],
     ["sqlPassword", "كلمة السر", ""],
     ["terminalCode", "رقم هذا الكاشير", "1"],
-  ] as const;
+  ]) as [keyof typeof f, string, string][];
 
   return (
     <div dir="rtl" className="flex min-h-screen items-center justify-center bg-background p-4">
