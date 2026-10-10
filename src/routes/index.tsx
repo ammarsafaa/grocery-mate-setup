@@ -227,6 +227,7 @@ function PosPage() {
       terminal: currentTerminal(),
     };
     addSale(sale);
+    if (settings.speakTotals && !pic) speakArabic(`المبلغ ${total} دينار`);
     // Decrement stock once per product, even when it appears on several cart lines.
     const sold = new Map<string, number>();
     for (const item of cart) sold.set(item.productId, (sold.get(item.productId) ?? 0) + item.qty);
