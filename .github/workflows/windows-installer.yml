@@ -60,7 +60,3 @@ jobs:
             --generate-notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Zeros-Setup
-          path: pkg/release/*.exe
