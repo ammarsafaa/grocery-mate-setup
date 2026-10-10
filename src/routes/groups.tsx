@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { FolderOpen, GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
+import { FolderOpen, GripVertical, ImageIcon, Pencil, Plus, Trash2 } from "lucide-react";
+import { resizeImage } from "@/lib/image";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { useAuth } from "@/lib/auth";
@@ -52,7 +53,7 @@ function GroupsPage() {
     <div className="flex items-center justify-between"><div><h1 className="text-2xl font-bold">مجموعات المنتجات</h1><p className="text-sm text-muted-foreground">رتّب المجموعات كما تريد أن تظهر للكاشير</p></div><button onClick={() => setEditing({ id: uid(), name: "", color: "primary", icon: "package", order: groups.length, active: true })} className="flex items-center gap-2 rounded-lg bg-primary px-5 py-3 font-bold text-primary-foreground"><Plus className="h-5 w-5"/>مجموعة جديدة</button></div>
     <div className="overflow-hidden rounded-lg border border-border bg-card">
       {groups.map((group, index) => <div key={group.id} className="flex items-center gap-3 border-b border-border p-4 last:border-0">
-        <GripVertical className="h-5 w-5 text-muted-foreground"/><div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/15"><FolderOpen className="h-5 w-5 text-primary"/></div>
+        <GripVertical className="h-5 w-5 text-muted-foreground"/>{group.image ? <img src={group.image} alt={group.name} className="h-11 w-11 rounded-lg object-cover"/> : <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/15"><FolderOpen className="h-5 w-5 text-primary"/></div>}
         <div className="flex-1"><div className="font-bold">{group.name}</div><div className="text-xs text-muted-foreground">{group.active ? "ظاهرة في نقطة البيع" : "مخفية"}</div></div>
         <button title="للأعلى" onClick={() => move(index, -1)} className="rounded-lg bg-secondary px-3 py-2">↑</button><button title="للأسفل" onClick={() => move(index, 1)} className="rounded-lg bg-secondary px-3 py-2">↓</button>
         <button onClick={() => commit(groups.map((g) => g.id === group.id ? { ...g, active: !g.active } : g))} className="rounded-lg bg-secondary px-3 py-2 text-sm font-bold">{group.active ? "إخفاء" : "إظهار"}</button>
