@@ -28,11 +28,22 @@ function config(): SqlConfig | null {
 }
 function terminal() { return (getSettings().terminalCode || "1").trim(); }
 
+/** Turns technical SQL Server errors into clear Arabic messages. */
+export function friendlySqlError(msg: string): string {
+  const m = String(msg);
+  if (/BADNAME/.test(m)) return "اسم القاعدة يجب أن يكون بأحرف إنجليزية وأرقام فقط بدون مسافات (مثل GroceryPOS)";
+  if (/Login failed/i.test(m)) return "اسم المستخدم أو كلمة المرور لخادم SQL غير صحيحة";
+  if (/CREATE DATABASE permission|permission denied/i.test(m)) return "المستخدم لا يملك صلاحية إنشاء قاعدة البيانات — استخدم المستخدم sa";
+  if (/ETIMEOUT|timeout|Failed to connect|ECONNREFUSED|ESOCKET|getaddrinfo|ENOTFOUND/i.test(m))
+    return "لا يمكن الوصول للجهاز الرئيسي — تأكد من IP، وتشغيل SQL Server، وتفعيل TCP/IP والمنفذ 1433، والسماح به في جدار الحماية";
+  return m;
+}
+
 async function q(cfg: SqlConfig, sql: string, params: Record<string, unknown> = {}) {
   const n = native();
   if (!n?.sqlQuery) throw new Error("متاح في نسخة Windows فقط");
   const r = await n.sqlQuery(cfg, sql, params);
-  if (!r.ok) throw new Error(r.error || "SQL error");
+  if (!r.ok) throw new Error(friendlySqlError(r.error || "SQL error"));
   return (r.rows ?? []) as Row[];
 }
 

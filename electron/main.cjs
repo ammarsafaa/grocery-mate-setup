@@ -68,18 +68,32 @@ ipcMain.on("db-set", (e, key, value) => {
 // ---------- SQL Server (multi-cashier sync) ----------
 // One connection pool per server config; queries come from the UI sync module.
 const sqlPools = new Map();
+function sqlConn(cfg, database) {
+  const mssql = require("mssql");
+  return new mssql.ConnectionPool({
+    server: cfg.server, port: Number(cfg.port) || 1433, database,
+    user: cfg.user || undefined, password: cfg.password || undefined,
+    options: { encrypt: false, trustServerCertificate: true },
+    connectionTimeout: 5000, requestTimeout: 30000, pool: { max: 4, min: 0, idleTimeoutMillis: 30000 },
+  });
+}
+// Creates the database on the server if it doesn't exist yet (connects via master).
+async function ensureDatabase(cfg) {
+  const name = String(cfg.database || "");
+  if (!/^[A-Za-z0-9_]{1,100}$/.test(name)) throw new Error("BADNAME");
+  const master = await sqlConn(cfg, "master").connect();
+  try {
+    await master.request().query(`IF DB_ID(N'${name}') IS NULL CREATE DATABASE [${name}]`);
+  } finally { await master.close().catch(() => {}); }
+}
 async function sqlPool(cfg) {
   const key = JSON.stringify(cfg);
   let p = sqlPools.get(key);
   if (!p) {
-    const mssql = require("mssql");
-    const pool = new mssql.ConnectionPool({
-      server: cfg.server, port: Number(cfg.port) || 1433, database: cfg.database,
-      user: cfg.user || undefined, password: cfg.password || undefined,
-      options: { encrypt: false, trustServerCertificate: true },
-      connectionTimeout: 5000, requestTimeout: 15000, pool: { max: 4, min: 0, idleTimeoutMillis: 30000 },
-    });
-    p = pool.connect().catch((err) => { sqlPools.delete(key); throw err; });
+    p = (async () => {
+      await ensureDatabase(cfg);
+      return sqlConn(cfg, cfg.database).connect();
+    })().catch((err) => { sqlPools.delete(key); throw err; });
     sqlPools.set(key, p);
   }
   return p;
