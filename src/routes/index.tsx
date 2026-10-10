@@ -22,6 +22,7 @@ import {
   parseScaleLabel,
   uid,
 } from "@/lib/db";
+import { speakArabic } from "@/lib/image";
 import { buildReceiptHtml } from "@/lib/receipt";
 import type { CartItem, Product, ProductGroup, Sale } from "@/lib/types";
 
@@ -57,6 +58,9 @@ function PosPage() {
   const [priceMode, setPriceMode] = useState(false);
   const [priceEdit, setPriceEdit] = useState<Product | null>(null);
   const [priceDraft, setPriceDraft] = useState("");
+  const [payOpen, setPayOpen] = useState(false);
+  const [paidDraft, setPaidDraft] = useState(0);
+  const pic = !!settings.pictureMode;
 
   const saveQuickPrice = () => {
     const value = Number(priceDraft);
@@ -301,8 +305,8 @@ function PosPage() {
             </button>
           </div>
           {settings.useProductGroups && !search && <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
-            {selectedGroup && <button onClick={() => setSelectedGroup(null)} className="flex min-w-24 items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-3 font-bold"><ArrowRight className="h-4 w-4"/>رجوع</button>}
-            {!selectedGroup && groups.map((group) => <button key={group.id} onClick={() => setSelectedGroup(group.id)} className="flex min-w-32 flex-col items-center gap-2 rounded-lg border border-border bg-card px-5 py-4 font-bold hover:border-primary"><FolderOpen className="h-7 w-7 text-primary"/>{group.name}</button>)}
+            {selectedGroup && <button onClick={() => setSelectedGroup(null)} className="flex min-w-24 items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-3 font-bold"><ArrowRight className={pic ? "h-10 w-10" : "h-4 w-4"}/>{!pic && "رجوع"}</button>}
+            {!selectedGroup && groups.map((group) => <button key={group.id} onClick={() => setSelectedGroup(group.id)} className="flex min-w-32 flex-col items-center gap-2 rounded-lg border border-border bg-card px-5 py-4 font-bold hover:border-primary">{group.image ? <img src={group.image} alt={group.name} className={pic ? "h-28 w-28 rounded-xl object-cover" : "h-16 w-16 rounded-xl object-cover"}/> : <FolderOpen className={pic ? "h-16 w-16 text-primary" : "h-7 w-7 text-primary"}/>}<span className={pic ? "text-xs" : ""}>{group.name}</span></button>)}
           </div>}
           <div className="grid flex-1 grid-cols-2 content-start gap-3 overflow-auto lg:grid-cols-3 xl:grid-cols-4">
             {(!settings.useProductGroups || selectedGroup || search ? filtered : []).map((p) => (
@@ -312,12 +316,12 @@ function PosPage() {
                 className="flex min-h-28 flex-col items-center justify-center gap-1 rounded-2xl border border-border bg-card p-3 transition hover:border-primary hover:bg-accent active:scale-95"
               >
                 {p.image ? (
-                  <img src={p.image} alt={p.name} className="h-20 w-20 rounded-xl object-cover" />
+                  <img src={p.image} alt={p.name} className={pic ? "h-32 w-32 rounded-xl object-cover" : "h-20 w-20 rounded-xl object-cover"} />
                 ) : (
                   p.unit === "kg" && <Scale className="h-5 w-5 text-primary" />
                 )}
-                 <span className="product-name font-bold text-foreground">{p.name}</span>
-                <span className="text-sm text-muted-foreground">
+                 <span className={pic ? "text-xs text-muted-foreground" : "product-name font-bold text-foreground"}>{p.name}</span>
+                <span className={pic ? "text-lg font-black text-primary" : "text-sm text-muted-foreground"}>
                   {formatMoney(p.price)} {p.unit === "kg" ? "/ كغم" : ""}
                 </span>
               </button>
@@ -355,7 +359,7 @@ function PosPage() {
                     onClick={() => setCart(cart.filter((_, x) => x !== idx))}
                     className="text-muted-foreground hover:text-destructive"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className={pic ? "h-8 w-8 text-destructive" : "h-4 w-4"} />
                   </button>
                 </div>
               </div>
@@ -364,13 +368,13 @@ function PosPage() {
           <div className="border-t border-border p-4">
             <div className="mb-3 flex items-center justify-between text-xl font-bold">
               <span>الإجمالي</span>
-              <span className="text-primary">{formatMoney(total)}</span>
+              <span className={pic ? "text-4xl font-black text-primary" : "text-primary"}>{formatMoney(total)}</span>
             </div>
             {itemsTotal !== total && <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground"><span>تقريب نقدي</span><span>{formatMoney(total - itemsTotal)}</span></div>}
             <button
-              onClick={checkout}
+              onClick={() => { if (pic) { setPaidDraft(0); setPayOpen(true); if (settings.speakTotals) speakArabic(`المبلغ ${total} دينار`); } else checkout(); }}
               disabled={cart.length === 0}
-              className="h-14 w-full rounded-xl bg-primary text-lg font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-40"
+              className={`${pic ? "h-24" : "h-14"} w-full rounded-xl bg-primary text-lg font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-40"
             >
               <Printer className="ml-2 inline h-5 w-5" />
               دفع وحفظ الفاتورة
