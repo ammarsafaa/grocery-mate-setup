@@ -211,7 +211,7 @@ function PosPage() {
     setWeightModal(null);
   };
 
-  const checkout = async () => {
+  const checkout = async (paidAmount?: number) => {
     if (!user || !shift || cart.length === 0) return;
     const sale: Sale = {
       id: uid(),
@@ -222,8 +222,8 @@ function PosPage() {
       items: cart,
       total,
       createdAt: new Date().toISOString(),
-      paid: total,
-      change: 0,
+      paid: paidAmount && paidAmount > total ? paidAmount : total,
+      change: paidAmount && paidAmount > total ? paidAmount - total : 0,
       terminal: currentTerminal(),
     };
     addSale(sale);
@@ -374,14 +374,37 @@ function PosPage() {
             <button
               onClick={() => { if (pic) { setPaidDraft(0); setPayOpen(true); if (settings.speakTotals) speakArabic(`المبلغ ${total} دينار`); } else checkout(); }}
               disabled={cart.length === 0}
-              className={`${pic ? "h-24" : "h-14"} w-full rounded-xl bg-primary text-lg font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-40"
+              className={`${pic ? "h-24" : "h-14"} w-full rounded-xl bg-primary text-lg font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-40`}
             >
-              <Printer className="ml-2 inline h-5 w-5" />
-              دفع وحفظ الفاتورة
+              <Printer className={pic ? "inline h-12 w-12" : "ml-2 inline h-5 w-5"} />
+              {!pic && "دفع وحفظ الفاتورة"}
             </button>
           </div>
         </div>
       </div>
+
+      {/* Picture-mode payment: tap the notes the customer handed over */}
+      {payOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4">
+          <div className="w-full max-w-2xl rounded-2xl border border-border bg-card p-6">
+            <div className="mb-4 flex items-center justify-between text-4xl font-black"><ShoppingBasket className="h-10 w-10 text-primary"/><span className="text-primary">{formatMoney(total)}</span></div>
+            <div className="grid grid-cols-4 gap-3">
+              {[250, 500, 1000, 5000, 10000, 25000, 50000].map((n) => (
+                <button key={n} onClick={() => setPaidDraft((v) => v + n)} className="h-20 rounded-xl border-2 border-primary/40 bg-secondary text-2xl font-black hover:border-primary active:scale-95">{formatMoney(n)}</button>
+              ))}
+              <button onClick={() => setPaidDraft(0)} className="flex h-20 items-center justify-center rounded-xl bg-destructive text-destructive-foreground"><Trash2 className="h-9 w-9"/></button>
+            </div>
+            <div className="my-5 grid grid-cols-2 gap-3 text-center">
+              <div className="rounded-xl bg-secondary p-4"><div className="text-3xl">💵</div><div className="text-3xl font-black">{formatMoney(paidDraft)}</div></div>
+              <div className="rounded-xl bg-primary/15 p-4"><div className="text-3xl">↩️</div><div className="text-3xl font-black text-primary">{formatMoney(Math.max(0, paidDraft - total))}</div></div>
+            </div>
+            <div className="flex gap-3">
+              <button disabled={paidDraft > 0 && paidDraft < total} onClick={() => { const change = Math.max(0, paidDraft - total); if (settings.speakTotals && change > 0) speakArabic(`الباقي ${change} دينار`); setPayOpen(false); checkout(paidDraft); }} className="flex h-20 flex-1 items-center justify-center rounded-xl bg-primary text-primary-foreground disabled:opacity-40"><Printer className="h-10 w-10"/></button>
+              <button onClick={() => setPayOpen(false)} className="flex h-20 w-28 items-center justify-center rounded-xl bg-secondary"><ArrowRight className="h-10 w-10"/></button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Quick price modal */}
       {priceEdit && (
