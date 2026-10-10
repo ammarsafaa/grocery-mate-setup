@@ -31,6 +31,7 @@ export interface ProductGroup {
   icon: string;
   order: number;
   active: boolean;
+  image?: string | undefined; // small data URL
 }
 
 export interface CartItem {
@@ -168,6 +169,8 @@ export interface Settings {
   scaleCom: string; // e.g. "COM3"
   scaleBaud: number; // e.g. 9600
   useProductGroups: boolean;
+  pictureMode?: boolean; // big pictures + colored buttons for cashiers who can't read
+  speakTotals?: boolean; // say the total and change out loud
   colorPreset: "emerald" | "blue" | "red" | "amber" | "custom";
   colorMode: "dark" | "light";
   customColor: string;

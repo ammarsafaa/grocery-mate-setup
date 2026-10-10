@@ -22,6 +22,7 @@ import {
   parseScaleLabel,
   uid,
 } from "@/lib/db";
+import { speakArabic } from "@/lib/image";
 import { buildReceiptHtml } from "@/lib/receipt";
 import type { CartItem, Product, ProductGroup, Sale } from "@/lib/types";
 
@@ -57,6 +58,9 @@ function PosPage() {
   const [priceMode, setPriceMode] = useState(false);
   const [priceEdit, setPriceEdit] = useState<Product | null>(null);
   const [priceDraft, setPriceDraft] = useState("");
+  const [payOpen, setPayOpen] = useState(false);
+  const [paidDraft, setPaidDraft] = useState(0);
+  const pic = !!settings.pictureMode;
 
   const saveQuickPrice = () => {
     const value = Number(priceDraft);
@@ -207,7 +211,7 @@ function PosPage() {
     setWeightModal(null);
   };
 
-  const checkout = async () => {
+  const checkout = async (paidAmount?: number) => {
     if (!user || !shift || cart.length === 0) return;
     const sale: Sale = {
       id: uid(),
@@ -218,11 +222,12 @@ function PosPage() {
       items: cart,
       total,
       createdAt: new Date().toISOString(),
-      paid: total,
-      change: 0,
+      paid: paidAmount && paidAmount > total ? paidAmount : total,
+      change: paidAmount && paidAmount > total ? paidAmount - total : 0,
       terminal: currentTerminal(),
     };
     addSale(sale);
+    if (settings.speakTotals && !pic) speakArabic(`المبلغ ${total} دينار`);
     // Decrement stock once per product, even when it appears on several cart lines.
     const sold = new Map<string, number>();
     for (const item of cart) sold.set(item.productId, (sold.get(item.productId) ?? 0) + item.qty);
@@ -301,8 +306,8 @@ function PosPage() {
             </button>
           </div>
           {settings.useProductGroups && !search && <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
-            {selectedGroup && <button onClick={() => setSelectedGroup(null)} className="flex min-w-24 items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-3 font-bold"><ArrowRight className="h-4 w-4"/>رجوع</button>}
-            {!selectedGroup && groups.map((group) => <button key={group.id} onClick={() => setSelectedGroup(group.id)} className="flex min-w-32 flex-col items-center gap-2 rounded-lg border border-border bg-card px-5 py-4 font-bold hover:border-primary"><FolderOpen className="h-7 w-7 text-primary"/>{group.name}</button>)}
+            {selectedGroup && <button onClick={() => setSelectedGroup(null)} className="flex min-w-24 items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-3 font-bold"><ArrowRight className={pic ? "h-10 w-10" : "h-4 w-4"}/>{!pic && "رجوع"}</button>}
+            {!selectedGroup && groups.map((group) => <button key={group.id} onClick={() => setSelectedGroup(group.id)} className="flex min-w-32 flex-col items-center gap-2 rounded-lg border border-border bg-card px-5 py-4 font-bold hover:border-primary">{group.image ? <img src={group.image} alt={group.name} className={pic ? "h-28 w-28 rounded-xl object-cover" : "h-16 w-16 rounded-xl object-cover"}/> : <FolderOpen className={pic ? "h-16 w-16 text-primary" : "h-7 w-7 text-primary"}/>}<span className={pic ? "text-xs" : ""}>{group.name}</span></button>)}
           </div>}
           <div className="grid flex-1 grid-cols-2 content-start gap-3 overflow-auto lg:grid-cols-3 xl:grid-cols-4">
             {(!settings.useProductGroups || selectedGroup || search ? filtered : []).map((p) => (
@@ -312,12 +317,12 @@ function PosPage() {
                 className="flex min-h-28 flex-col items-center justify-center gap-1 rounded-2xl border border-border bg-card p-3 transition hover:border-primary hover:bg-accent active:scale-95"
               >
                 {p.image ? (
-                  <img src={p.image} alt={p.name} className="h-20 w-20 rounded-xl object-cover" />
+                  <img src={p.image} alt={p.name} className={pic ? "h-32 w-32 rounded-xl object-cover" : "h-20 w-20 rounded-xl object-cover"} />
                 ) : (
                   p.unit === "kg" && <Scale className="h-5 w-5 text-primary" />
                 )}
-                 <span className="product-name font-bold text-foreground">{p.name}</span>
-                <span className="text-sm text-muted-foreground">
+                 <span className={pic ? "text-xs text-muted-foreground" : "product-name font-bold text-foreground"}>{p.name}</span>
+                <span className={pic ? "text-lg font-black text-primary" : "text-sm text-muted-foreground"}>
                   {formatMoney(p.price)} {p.unit === "kg" ? "/ كغم" : ""}
                 </span>
               </button>
@@ -355,7 +360,7 @@ function PosPage() {
                     onClick={() => setCart(cart.filter((_, x) => x !== idx))}
                     className="text-muted-foreground hover:text-destructive"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className={pic ? "h-8 w-8 text-destructive" : "h-4 w-4"} />
                   </button>
                 </div>
               </div>
@@ -364,20 +369,43 @@ function PosPage() {
           <div className="border-t border-border p-4">
             <div className="mb-3 flex items-center justify-between text-xl font-bold">
               <span>الإجمالي</span>
-              <span className="text-primary">{formatMoney(total)}</span>
+              <span className={pic ? "text-4xl font-black text-primary" : "text-primary"}>{formatMoney(total)}</span>
             </div>
             {itemsTotal !== total && <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground"><span>تقريب نقدي</span><span>{formatMoney(total - itemsTotal)}</span></div>}
             <button
-              onClick={checkout}
+              onClick={() => { if (pic) { setPaidDraft(0); setPayOpen(true); if (settings.speakTotals) speakArabic(`المبلغ ${total} دينار`); } else checkout(); }}
               disabled={cart.length === 0}
-              className="h-14 w-full rounded-xl bg-primary text-lg font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-40"
+              className={`${pic ? "h-24" : "h-14"} w-full rounded-xl bg-primary text-lg font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-40`}
             >
-              <Printer className="ml-2 inline h-5 w-5" />
-              دفع وحفظ الفاتورة
+              <Printer className={pic ? "inline h-12 w-12" : "ml-2 inline h-5 w-5"} />
+              {!pic && "دفع وحفظ الفاتورة"}
             </button>
           </div>
         </div>
       </div>
+
+      {/* Picture-mode payment: tap the notes the customer handed over */}
+      {payOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4">
+          <div className="w-full max-w-2xl rounded-2xl border border-border bg-card p-6">
+            <div className="mb-4 flex items-center justify-between text-4xl font-black"><ShoppingBasket className="h-10 w-10 text-primary"/><span className="text-primary">{formatMoney(total)}</span></div>
+            <div className="grid grid-cols-4 gap-3">
+              {[250, 500, 1000, 5000, 10000, 25000, 50000].map((n) => (
+                <button key={n} onClick={() => setPaidDraft((v) => v + n)} className="h-20 rounded-xl border-2 border-primary/40 bg-secondary text-2xl font-black hover:border-primary active:scale-95">{formatMoney(n)}</button>
+              ))}
+              <button onClick={() => setPaidDraft(0)} className="flex h-20 items-center justify-center rounded-xl bg-destructive text-destructive-foreground"><Trash2 className="h-9 w-9"/></button>
+            </div>
+            <div className="my-5 grid grid-cols-2 gap-3 text-center">
+              <div className="rounded-xl bg-secondary p-4"><div className="text-3xl">💵</div><div className="text-3xl font-black">{formatMoney(paidDraft)}</div></div>
+              <div className="rounded-xl bg-primary/15 p-4"><div className="text-3xl">↩️</div><div className="text-3xl font-black text-primary">{formatMoney(Math.max(0, paidDraft - total))}</div></div>
+            </div>
+            <div className="flex gap-3">
+              <button disabled={paidDraft > 0 && paidDraft < total} onClick={() => { const change = Math.max(0, paidDraft - total); if (settings.speakTotals && change > 0) speakArabic(`الباقي ${change} دينار`); setPayOpen(false); checkout(paidDraft); }} className="flex h-20 flex-1 items-center justify-center rounded-xl bg-primary text-primary-foreground disabled:opacity-40"><Printer className="h-10 w-10"/></button>
+              <button onClick={() => setPayOpen(false)} className="flex h-20 w-28 items-center justify-center rounded-xl bg-secondary"><ArrowRight className="h-10 w-10"/></button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Quick price modal */}
       {priceEdit && (
