@@ -24,6 +24,7 @@ function DbSetupPage() {
   const navigate = useNavigate();
   const init = getSettings();
   const [f, setF] = useState({
+    sqlIsMain: init.sqlIsMain ?? true,
     sqlHost: init.sqlHost ?? "",
     sqlPort: init.sqlPort ?? 1433,
     sqlDatabase: init.sqlDatabase || "GroceryPOS",
@@ -36,7 +37,7 @@ function DbSetupPage() {
 
   const connect = async () => {
     if (!native()) { toast.info("الربط متاح في نسخة الويندوز"); return; }
-    if (!f.sqlHost.trim()) { setError("اكتب عنوان الخادم"); return; }
+    if (!f.sqlIsMain && !f.sqlHost.trim()) { setError("اكتب عنوان الجهاز الرئيسي (IP)"); return; }
     setBusy(true); setError("");
     const prev = getSettings();
     saveSettings({ ...prev, ...f, sqlPort: Number(f.sqlPort) || 1433, syncEnabled: true });
