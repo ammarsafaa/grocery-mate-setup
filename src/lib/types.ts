@@ -171,7 +171,6 @@ export interface Settings {
   useProductGroups: boolean;
   pictureMode?: boolean; // big pictures + colored buttons for cashiers who can't read
   speakTotals?: boolean; // say the total and change out loud
-  askPaid?: boolean; // ask how much the customer paid, then show/speak the change
   colorPreset: "emerald" | "blue" | "red" | "amber" | "custom";
   colorMode: "dark" | "light";
   customColor: string;

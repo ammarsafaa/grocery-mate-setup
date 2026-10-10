@@ -287,6 +287,8 @@ const DEFAULT_SETTINGS: Settings = {
   scaleCom: "",
   scaleBaud: 9600,
   useProductGroups: false,
+  pictureMode: false,
+  speakTotals: false,
   colorPreset: "emerald",
   colorMode: "dark",
   customColor: "#10b981",
