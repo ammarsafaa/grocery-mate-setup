@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ActivateRouteImport } from './routes/activate'
 import { Route as CashboxRouteImport } from './routes/cashbox'
+import { Route as DbSetupRouteImport } from './routes/db-setup'
 import { Route as GroupsRouteImport } from './routes/groups'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as LoginRouteImport } from './routes/login'
@@ -35,6 +36,11 @@ const ActivateRoute = ActivateRouteImport.update({
 const CashboxRoute = CashboxRouteImport.update({
   id: '/cashbox',
   path: '/cashbox',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DbSetupRoute = DbSetupRouteImport.update({
+  id: '/db-setup',
+  path: '/db-setup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GroupsRoute = GroupsRouteImport.update({
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/activate': typeof ActivateRoute
   '/cashbox': typeof CashboxRoute
+  '/db-setup': typeof DbSetupRoute
   '/groups': typeof GroupsRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/activate': typeof ActivateRoute
   '/cashbox': typeof CashboxRoute
+  '/db-setup': typeof DbSetupRoute
   '/groups': typeof GroupsRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/activate': typeof ActivateRoute
   '/cashbox': typeof CashboxRoute
+  '/db-setup': typeof DbSetupRoute
   '/groups': typeof GroupsRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
@@ -132,6 +141,7 @@ export interface FileRouteTypes {
     | '/'
     | '/activate'
     | '/cashbox'
+    | '/db-setup'
     | '/groups'
     | '/inventory'
     | '/login'
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
     | '/'
     | '/activate'
     | '/cashbox'
+    | '/db-setup'
     | '/groups'
     | '/inventory'
     | '/login'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/'
     | '/activate'
     | '/cashbox'
+    | '/db-setup'
     | '/groups'
     | '/inventory'
     | '/login'
@@ -175,6 +187,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActivateRoute: typeof ActivateRoute
   CashboxRoute: typeof CashboxRoute
+  DbSetupRoute: typeof DbSetupRoute
   GroupsRoute: typeof GroupsRoute
   InventoryRoute: typeof InventoryRoute
   LoginRoute: typeof LoginRoute
@@ -207,6 +220,13 @@ declare module '@tanstack/react-router' {
       path: '/cashbox'
       fullPath: '/cashbox'
       preLoaderRoute: typeof CashboxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/db-setup': {
+      id: '/db-setup'
+      path: '/db-setup'
+      fullPath: '/db-setup'
+      preLoaderRoute: typeof DbSetupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/groups': {
@@ -279,6 +299,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActivateRoute: ActivateRoute,
   CashboxRoute: CashboxRoute,
+  DbSetupRoute: DbSetupRoute,
   GroupsRoute: GroupsRoute,
   InventoryRoute: InventoryRoute,
   LoginRoute: LoginRoute,
