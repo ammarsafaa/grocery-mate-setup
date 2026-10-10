@@ -42,7 +42,7 @@ function DbSetupPage() {
     saveSettings({ ...prev, ...f, sqlPort: Number(f.sqlPort) || 1433, syncEnabled: true });
     const r = await testSqlConnection();
     if (!r.ok) {
-      saveSettings({ ...getSettings(), syncEnabled: prev.syncEnabled });
+      saveSettings({ ...getSettings(), syncEnabled: !!prev.syncEnabled });
       setError(r.error || "فشل الاتصال");
       setBusy(false);
       return;
