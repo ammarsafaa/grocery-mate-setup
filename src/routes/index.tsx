@@ -8,6 +8,8 @@ import { AppLayout } from "@/components/AppLayout";
 import {
   getProducts,
   getOpenShift,
+  getShifts,
+  saveShifts,
   addSale,
   nextSaleNumber,
   currentTerminal,
@@ -24,6 +26,7 @@ import {
 } from "@/lib/db";
 import { speakArabic } from "@/lib/image";
 import { buildReceiptHtml } from "@/lib/receipt";
+import { buildShiftReportHtml, closeShift as doCloseShift, printHtml } from "@/lib/shiftReport";
 import type { CartItem, Product, ProductGroup, Sale } from "@/lib/types";
 
 export const Route = createFileRoute("/")({
@@ -48,6 +51,26 @@ function PosPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [search, setSearch] = useState("");
   const [shift, setShift] = useState(getOpenShift());
+  const [openedMsg, setOpenedMsg] = useState(false);
+  const [endOpen, setEndOpen] = useState(false);
+  const [endCash, setEndCash] = useState("");
+  const [ending, setEnding] = useState(false);
+  useEffect(() => {
+    if (!user || getOpenShift() || !getSettings().easyShift) return;
+    const s = { id: uid(), userId: user.id, userName: user.name, openedAt: new Date().toISOString(), openingCash: 0 };
+    saveShifts([...getShifts(), s]);
+    setShift(s);
+    setOpenedMsg(true);
+  }, [user]);
+  const endShift = async () => {
+    if (!shift || ending) return;
+    setEnding(true);
+    const { shift: closed, sales } = doCloseShift(shift.id, Number(endCash) || 0);
+    window.dispatchEvent(new Event("grocery-pos:shift-closed"));
+    toast.success("تم إنهاء الوردية، جارٍ طباعة التقرير");
+    await printHtml(buildShiftReportHtml(closed, sales));
+    setEnding(false); setEndOpen(false); setEndCash(""); setShift(undefined);
+  };
   const [weightModal, setWeightModal] = useState<Product | null>(null);
   const [weight, setWeight] = useState("");
   const [scaleStatus, setScaleStatus] = useState("");
@@ -251,6 +274,18 @@ function PosPage() {
 
   if (!ready || !user) return null;
 
+  if (!shift && settings.easyShift) {
+    return (
+      <AppLayout>
+        <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
+          <PlayCircle className="h-16 w-16 text-primary" />
+          <h2 className="text-2xl font-bold">انتهت الوردية</h2>
+          <button onClick={() => { if (!user) return; const s = { id: uid(), userId: user.id, userName: user.name, openedAt: new Date().toISOString(), openingCash: 0 }; saveShifts([...getShifts(), s]); setShift(s); setOpenedMsg(true); }} className="rounded-xl bg-primary px-8 py-3 text-lg font-bold text-primary-foreground">فتح وردية جديدة</button>
+        </div>
+      </AppLayout>
+    );
+  }
+
   if (!shift) {
     return (
       <AppLayout>
@@ -271,6 +306,26 @@ function PosPage() {
 
   return (
     <AppLayout>
+      {openedMsg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 text-center">
+            <PlayCircle className="mx-auto mb-3 h-16 w-16 text-primary" />
+            <h2 className="mb-6 text-2xl font-bold">تم فتح ورديتك ✅</h2>
+            <button autoFocus onClick={() => setOpenedMsg(false)} className="h-14 w-full rounded-xl bg-primary text-xl font-bold text-primary-foreground">موافق</button>
+          </div>
+        </div>
+      )}
+      {endOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 text-center">
+            <h2 className="mb-4 text-2xl font-bold">إنهاء الوردية</h2>
+            <label className="mb-2 block text-muted-foreground">كم فلوس بالقاصة؟</label>
+            <input type="number" autoFocus value={endCash} onChange={(e) => setEndCash(e.target.value)} className="mb-4 h-14 w-full rounded-xl border border-border bg-secondary px-4 text-center text-2xl font-bold outline-none focus:border-primary" />
+            <button disabled={ending} onClick={endShift} className="mb-2 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-destructive text-xl font-bold text-destructive-foreground disabled:opacity-50"><Printer className="h-6 w-6" /> غلق وطباعة</button>
+            <button onClick={() => setEndOpen(false)} className="h-12 w-full rounded-xl bg-secondary font-bold">رجوع</button>
+          </div>
+        </div>
+      )}
       <div className="flex h-screen">
         {/* Products grid */}
         <div className="flex flex-1 flex-col p-4">
@@ -283,6 +338,9 @@ function PosPage() {
               placeholder="ابحث بالاسم أو امسح الباركود..."
               className="h-12 flex-1 rounded-xl border border-border bg-card px-4 text-foreground outline-none focus:border-primary"
             />
+            {settings.easyShift && (
+              <button onClick={() => setEndOpen(true)} className="h-12 rounded-xl bg-destructive px-5 font-bold text-destructive-foreground">إنهاء الوردية</button>
+            )}
             {settings.useScale !== false && (
               <div className="flex h-12 min-w-48 items-center justify-between gap-3 rounded-xl border-2 border-primary/50 bg-card px-4 shadow-inner">
                 <div className="flex items-baseline gap-1">
