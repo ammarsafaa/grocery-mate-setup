@@ -174,6 +174,7 @@ export interface Settings {
   scaleBaud: number; // e.g. 9600
   useProductGroups: boolean;
   pictureMode?: boolean; // big pictures + colored buttons for cashiers who can't read
+  easyShift?: boolean; // auto-open shift after PIN + quick close button in POS
   speakTotals?: boolean; // say the total and change out loud
   colorPreset: "emerald" | "blue" | "red" | "amber" | "custom";
   colorMode: "dark" | "light";
