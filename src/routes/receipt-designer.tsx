@@ -114,7 +114,7 @@ function Designer() {
             <Num label="الهامش الأيسر" value={m.left} onChange={(v) => setLayout({ ...layout, margins: { ...m, left: v } })}/>
             <Num label="الهامش السفلي" value={m.bottom} onChange={(v) => setLayout({ ...layout, margins: { ...m, bottom: v } })}/>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">أقل هامش يمين/يسار 4 ملم حتى لا ينقص الكلام. مساحة الطباعة: {W} ملم</p>
+          <p className="mt-1 text-xs text-muted-foreground">أقل هامش يمين/يسار 2 ملم — إذا نزلت عن 4 ملم ممكن الطابعة تقص الحواف. مساحة الطباعة: {W} ملم</p>
           <label className="mt-2 flex items-center gap-2 text-sm"><input type="checkbox" checked={layout.tableBorders} onChange={(e) => setLayout({ ...layout, tableBorders: e.target.checked })}/>خطوط الجدول</label>
         </div>
         {active && <div className="border-t border-border pt-3"><h2 className="mb-2 font-bold">{active.label}</h2>

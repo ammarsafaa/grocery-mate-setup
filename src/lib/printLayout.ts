@@ -11,7 +11,7 @@ export interface LayoutElement {
 export interface Margins { top: number; right: number; bottom: number; left: number; }
 export interface PrintLayout { kind: LayoutKind; slot: 58 | 80; paperWidthMm: number; margins: Margins; tableBorders: boolean; elements: LayoutElement[]; }
 
-export const SAFE_MM = 4;
+export const SAFE_MM = 2;
 export const FONTS = ["Cairo", "Tajawal", "Noto Kufi Arabic", "Tahoma", "Arial"];
 
 export const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
