@@ -122,9 +122,10 @@ export async function syncNow(): Promise<boolean> {
         if (known[r.id] === h) continue;
         pending++;
         const data = col === "products" ? JSON.stringify({ ...r, stock: undefined }) : JSON.stringify(r);
-        await q(cfg, `MERGE zeros_records AS t USING (SELECT @c AS collection, @id AS id) AS s ON t.collection = s.collection AND t.id = s.id
-          WHEN MATCHED THEN UPDATE SET data = @d, deleted = 0, terminal = @t, ver = NEXT VALUE FOR zeros_seq, updated_at = SYSUTCDATETIME()
-          WHEN NOT MATCHED THEN INSERT (collection, id, data, deleted, terminal, ver) VALUES (@c, @id, @d, 0, @t, NEXT VALUE FOR zeros_seq);`, { c: col, id: r.id, d: data, t: term });
+        // SQL Server forbids NEXT VALUE FOR inside MERGE, so take the number first, then update or insert.
+        await q(cfg, `DECLARE @nv BIGINT = NEXT VALUE FOR zeros_seq;
+          UPDATE zeros_records SET data = @d, deleted = 0, terminal = @t, ver = @nv, updated_at = SYSUTCDATETIME() WHERE collection = @c AND id = @id;
+          IF @@ROWCOUNT = 0 INSERT INTO zeros_records (collection, id, data, deleted, terminal, ver) VALUES (@c, @id, @d, 0, @t, @nv);`, { c: col, id: r.id, d: data, t: term });
         known[r.id] = h;
       }
       for (const id of Object.keys(known)) {
