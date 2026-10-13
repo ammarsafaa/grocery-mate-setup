@@ -22,6 +22,7 @@ contextBridge.exposeInMainWorld("posNative", {
   quitApp: () => ipcRenderer.send("confirm-quit"),
   appVersion: () => ipcRenderer.sendSync("app-version"),
   sqlQuery: (cfg, sql, params) => ipcRenderer.invoke("sql-query", cfg, sql, params),
+  sqlFixLocal: () => ipcRenderer.invoke("sql-fix-local"),
   aclasExec: (ip, op, content) => ipcRenderer.invoke("aclas-exec", ip, op, content),
   checkUpdate: () => ipcRenderer.invoke("update-check"),
   downloadUpdate: () => ipcRenderer.invoke("update-download"),
