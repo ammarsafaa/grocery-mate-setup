@@ -16,6 +16,8 @@ import {
   Boxes,
   ReceiptText,
   Wallet,
+  Menu,
+  X,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useAuth } from "@/lib/auth";
@@ -59,17 +61,34 @@ export function AppLayout({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("grocery-pos:sync-status", h);
   }, []);
 
+  // القائمة الجانبية تختفي تلقائياُ داخل نقطة البيع حتى تأخذ المنتجات مساحة كاملة
+  const isPos = pathname === "/";
+  const [hidden, setHidden] = useState(isPos);
+  useEffect(() => {
+    setHidden(pathname === "/");
+  }, [pathname]);
+
+
+
 
   return (
     <div className="flex min-h-screen bg-background">
-      <aside className="flex w-20 flex-col items-center border-l border-border bg-sidebar py-4 md:w-56 md:items-stretch md:px-3">
-        <div className="mb-6 flex items-center gap-2 px-2">
-          <img src={zerosLogo} alt="شعار زيروس" className="h-11 w-11 shrink-0 object-contain" />
-          <div className="hidden min-w-0 md:block">
-            <div className="text-base font-bold text-foreground">زيروس</div>
-            <div className="truncate text-xs text-muted-foreground">{storeName}</div>
+      {!hidden && (
+        <aside className="flex w-20 shrink-0 flex-col items-center border-l border-border bg-sidebar py-4 md:w-56 md:items-stretch md:px-3">
+          <div className="mb-6 flex items-center gap-2 px-2">
+            <img src={zerosLogo} alt="شعار زيروس" className="h-11 w-11 shrink-0 object-contain" />
+            <div className="hidden min-w-0 flex-1 md:block">
+              <div className="text-base font-bold text-foreground">زيروس</div>
+              <div className="truncate text-xs text-muted-foreground">{storeName}</div>
+            </div>
+            <button
+              onClick={() => setHidden(true)}
+              title="إخفاء القائمة"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-sidebar-accent hover:text-foreground"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
-        </div>
 
         <nav className="flex flex-1 flex-col gap-1">
           {NAV.filter((item) => !("admin" in item) || !item.admin || user?.role === "admin").map(({ to, label, icon: Icon }) => {
@@ -112,7 +131,21 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <span className="hidden md:block">خروج</span>
           </button>
         </div>
-      </aside>
+        </aside>
+      )}
+
+      {hidden && (
+        <div className="flex w-11 shrink-0 flex-col items-center border-l border-border bg-sidebar py-3">
+          <button
+            onClick={() => setHidden(false)}
+            title="إظهار القائمة"
+            aria-label="إظهار القائمة"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-sidebar-foreground transition hover:bg-sidebar-accent"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        </div>
+      )}
 
       <main className="flex-1 overflow-auto">{children}</main>
     </div>
