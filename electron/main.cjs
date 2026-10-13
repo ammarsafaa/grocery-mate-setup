@@ -407,7 +407,15 @@ try {
 
 function ensureScaleDaemon(target) {
   const key = JSON.stringify(target);
-  if (scaleDaemon && scaleDaemon.key === key) return scaleDaemon;
+  if (scaleDaemon && scaleDaemon.key === key) {
+    const d0 = scaleDaemon;
+    const now = Date.now();
+    // Scale turned off/on: the old connection goes dead silently. Reconnect when
+    // no weight arrived for 3s (after a 6s warm-up), or the connect failed.
+    const stale = d0.lastWeightAt ? now - d0.lastWeightAt > 3000 : now - d0.startedAt > 6000;
+    const failed = d0.lastError && now - d0.startedAt > 3000;
+    if (!stale && !failed) return d0;
+  }
   killScaleDaemon();
   const ps32 = path.join(process.env.WINDIR || "C:\\Windows", "SysWOW64", "WindowsPowerShell", "v1.0", "powershell.exe");
   const exe = fs.existsSync(ps32) ? ps32 : "powershell";
