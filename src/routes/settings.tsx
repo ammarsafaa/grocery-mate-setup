@@ -425,7 +425,9 @@ function SettingsPage() {
             <button
               onClick={async () => {
                 if (!native()) { toast.info("الربط متاح في نسخة الويندوز"); return; }
-                save(settings);
+                const s = { ...settings, syncEnabled: true };
+                setSettings(s);
+                save(s);
                 const r = await testSqlConnection();
                 if (r.ok) toast.success("قاعدة البيانات جاهزة — تم الاتصال وإنشاء الجداول"); else toast.error(`فشل الاتصال: ${r.error}`);
               }}
@@ -434,7 +436,9 @@ function SettingsPage() {
             <button
               onClick={async () => {
                 if (!native()) { toast.info("الربط متاح في نسخة الويندوز"); return; }
-                save(settings);
+                const s = { ...settings, syncEnabled: true };
+                setSettings(s);
+                save(s);
                 const ok = await syncNow();
                 if (ok) toast.success("تمت المزامنة"); else toast.error(`تعذرت المزامنة: ${getSyncStatus().error ?? "الربط غير مفعّل"}`);
               }}
