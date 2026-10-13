@@ -124,7 +124,18 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <span className="hidden md:block">خروج</span>
           </button>
         </div>
-      </aside>
+        </aside>
+      )}
+
+      {hidden && (
+        <button
+          onClick={() => setHidden(false)}
+          title="إظهار القائمة"
+          className="fixed top-3 right-3 z-50 flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-sidebar text-sidebar-foreground shadow-lg transition hover:bg-sidebar-accent"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+      )}
 
       <main className="flex-1 overflow-auto">{children}</main>
     </div>
