@@ -2,9 +2,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/AppLayout";
-import { getSales, formatMoney } from "@/lib/db";
+import { getSales, formatMoney, returnSale, getOpenShift } from "@/lib/db";
 import type { Sale } from "@/lib/types";
-import { Printer } from "lucide-react";
+import { Printer, Undo2 } from "lucide-react";
 import { native } from "@/lib/native";
 import { buildReceiptHtml } from "@/lib/receipt";
 import { getSettings } from "@/lib/db";
@@ -148,7 +148,7 @@ function ReportsPage() {
                   <th className="p-3 text-right font-semibold">الوقت</th>
                   <th className="p-3 text-right font-semibold">الكاشير</th>
                   <th className="p-3 text-right font-semibold">المواد</th>
-                  <th className="p-3 text-right font-semibold">الإجمالي</th><th className="p-3">طباعة</th>
+                  <th className="p-3 text-right font-semibold">الإجمالي</th><th className="p-3">طباعة</th><th className="p-3">إرجاع</th>
                 </tr>
               </thead>
               <tbody>
