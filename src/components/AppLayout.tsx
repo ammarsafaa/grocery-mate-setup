@@ -61,6 +61,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("grocery-pos:sync-status", h);
   }, []);
 
+  // القائمة الجانبية تختفي تلقائياُ داخل نقطة البيع حتى تأخذ المنتجات مساحة كاملة
+  const isPos = pathname === "/";
+  const [hidden, setHidden] = useState(isPos);
+  useEffect(() => {
+    setHidden(pathname === "/");
+  }, [pathname]);
+
+
+
 
   return (
     <div className="flex min-h-screen bg-background">
