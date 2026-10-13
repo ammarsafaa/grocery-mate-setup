@@ -1,6 +1,16 @@
 import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, ImageIcon } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Plus, Pencil, Trash2, ImageIcon, Search, X } from "lucide-react";
+import { smartScore } from "@/lib/search";
+
+const FILTERS = [
+  { id: "piece", label: "بالقطعة" },
+  { id: "kg", label: "بالكيلو" },
+  { id: "low", label: "مخزون قليل" },
+  { id: "out", label: "نافد" },
+  { id: "noimage", label: "بدون صورة" },
+  { id: "nobarcode", label: "بدون باركود" },
+];
 
 function resizeImage(file: File, max = 256): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -67,6 +77,28 @@ function ProductsPage() {
   const [groups, setGroups] = useState<ProductGroup[]>([]);
   const [priceEditId, setPriceEditId] = useState<string | null>(null);
   const [priceDraft, setPriceDraft] = useState("");
+  const [query, setQuery] = useState("");
+  const [groupFilter, setGroupFilter] = useState("");
+  const [filter, setFilter] = useState("");
+
+  const visible = useMemo(() => {
+    const list = products.filter((p) => {
+      if (groupFilter === "__none" ? p.groupId : groupFilter && p.groupId !== groupFilter) return false;
+      if (filter === "piece" && p.unit !== "piece") return false;
+      if (filter === "kg" && p.unit !== "kg") return false;
+      if (filter === "low" && !(p.stock > 0 && p.stock <= (p.minStock ?? 0))) return false;
+      if (filter === "out" && p.stock > 0) return false;
+      if (filter === "noimage" && p.image) return false;
+      if (filter === "nobarcode" && p.barcode) return false;
+      return true;
+    });
+    if (!query.trim()) return list;
+    return list
+      .map((p) => ({ p, s: smartScore(query, [p.name, p.barcode, p.plu, groups.find((g) => g.id === p.groupId)?.name ?? p.category]) }))
+      .filter((x) => x.s > 0)
+      .sort((a, b) => b.s - a.s)
+      .map((x) => x.p);
+  }, [products, groups, query, groupFilter, filter]);
 
   const saveQuickPrice = (id: string) => {
     const value = Number(priceDraft);
@@ -144,6 +176,43 @@ function ProductsPage() {
           </button>
         </div>
 
+        <div className="mb-4 space-y-3">
+          <div className="relative">
+            <Search className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter") return;
+                const code = query.trim();
+                const hit = products.find((p) => code && (p.barcode === code || p.plu === code));
+                if (hit) { setEditing({ ...hit }); setIsNew(false); setQuery(""); }
+              }}
+              placeholder="ابحث بالاسم أو الباركود أو رقم الميزان أو المجموعة..."
+              className="h-12 w-full rounded-xl border border-border bg-card pr-12 pl-10 outline-none focus:border-primary"
+            />
+            {query && (
+              <button onClick={() => setQuery("")} className="absolute left-3 top-1/2 -translate-y-1/2 rounded-lg p-1 hover:bg-accent" aria-label="مسح البحث">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)} className="h-10 rounded-lg border border-border bg-card px-3">
+              <option value="">كل المجموعات</option>
+              <option value="__none">بدون مجموعة</option>
+              {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+            </select>
+            {FILTERS.map((f) => (
+              <button key={f.id} onClick={() => setFilter(filter === f.id ? "" : f.id)}
+                className={`h-10 rounded-lg px-3 font-bold ${filter === f.id ? "bg-primary text-primary-foreground" : "bg-secondary hover:bg-accent"}`}>
+                {f.label}
+              </button>
+            ))}
+            <span className="mr-auto text-muted-foreground">{visible.length} من {products.length}</span>
+          </div>
+        </div>
+
         <div className="overflow-hidden rounded-2xl border border-border bg-card">
           <table className="w-full text-sm">
             <thead className="bg-secondary text-muted-foreground">
@@ -158,7 +227,10 @@ function ProductsPage() {
               </tr>
             </thead>
             <tbody>
-              {products.map((p) => (
+              {visible.length === 0 && (
+                <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">لا توجد منتجات مطابقة</td></tr>
+              )}
+              {visible.map((p) => (
                 <tr key={p.id} className="border-t border-border">
                   <td className="p-3 font-bold">
                     <div className="flex items-center gap-2">
