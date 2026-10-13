@@ -180,7 +180,7 @@ export function returnSale(saleId: string, userName: string): boolean {
 export function getHeldCarts(): HeldCart[] { return read<HeldCart[]>("heldCarts", []); }
 export function saveHeldCarts(items: HeldCart[]) { write("heldCarts", items); }
 export function holdCart(items: HeldCart["items"], userName: string, note?: string): HeldCart {
-  const held: HeldCart = { id: uid(), items, heldAt: new Date().toISOString(), userName, note };
+  const held: HeldCart = { id: uid(), items, heldAt: new Date().toISOString(), userName, ...(note ? { note } : {}) };
   saveHeldCarts([...getHeldCarts(), held]);
   return held;
 }
