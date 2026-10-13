@@ -68,6 +68,10 @@ function PosPage() {
   }, [user]);
   const endShift = async () => {
     if (!shift || ending) return;
+    if (getHeldCarts().length > 0) {
+      toast.error("توجد فواتير معلّقة — أنهِها أو احذفها قبل غلق الوردية");
+      return;
+    }
     setEnding(true);
     const { shift: closed, sales } = doCloseShift(shift.id, Number(endCash) || 0);
     window.dispatchEvent(new Event("grocery-pos:shift-closed"));
@@ -588,6 +592,78 @@ function PosPage() {
               <button onClick={saveQuickPrice} className="h-12 flex-1 rounded-xl bg-primary font-bold text-primary-foreground">حفظ السعر</button>
               <button onClick={() => { setPriceEdit(null); setPriceMode(false); }} className="h-12 flex-1 rounded-xl bg-secondary font-bold">إلغاء</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Discount modal */}
+      {discountOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6">
+            <h3 className="mb-4 text-xl font-bold">خصم على الفاتورة</h3>
+            <input
+              autoFocus
+              type="number"
+              value={discountDraft}
+              onChange={(e) => setDiscountDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const v = Number(discountDraft);
+                  if (v > 0 && v <= itemsTotal) { setDiscount(v); setDiscountOpen(false); }
+                  else toast.error("أدخل مبلغ خصم صحيحاً");
+                }
+              }}
+              placeholder="مبلغ الخصم"
+              className="mb-4 h-14 w-full rounded-xl border border-border bg-secondary px-4 text-center text-2xl font-bold outline-none focus:border-primary"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  const v = Number(discountDraft);
+                  if (v > 0 && v <= itemsTotal) { setDiscount(v); setDiscountOpen(false); }
+                  else toast.error("أدخل مبلغ خصم صحيحاً");
+                }}
+                className="h-12 flex-1 rounded-xl bg-primary font-bold text-primary-foreground"
+              >
+                تطبيق
+              </button>
+              <button onClick={() => { setDiscount(0); setDiscountOpen(false); }} className="h-12 flex-1 rounded-xl bg-secondary font-bold">إزالة الخصم</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Held carts modal */}
+      {heldOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6">
+            <h3 className="mb-4 text-xl font-bold">الفواتير المعلّقة</h3>
+            {held.length === 0 && <p className="py-6 text-center text-muted-foreground">لا توجد فواتير معلّقة</p>}
+            <div className="max-h-80 space-y-2 overflow-auto">
+              {held.map((h) => (
+                <button
+                  key={h.id}
+                  onClick={() => {
+                    if (cart.length > 0) { toast.error("علّق أو أنهِ الفاتورة الحالية أولاً"); return; }
+                    const taken = takeHeldCart(h.id);
+                    if (taken) {
+                      setCart(taken.items);
+                      setHeld(getHeldCarts());
+                      setHeldOpen(false);
+                      toast.success("رجعت الفاتورة المعلّقة");
+                    }
+                  }}
+                  className="flex w-full items-center justify-between rounded-xl bg-secondary p-3 text-right transition hover:border-primary"
+                >
+                  <div>
+                    <div className="font-bold">{h.items.length} صنف — {formatMoney(h.items.reduce((s, i) => s + i.total, 0))}</div>
+                    <div className="text-xs text-muted-foreground">{new Date(h.heldAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} — {h.userName}</div>
+                  </div>
+                  <Undo2 className="h-5 w-5 text-primary" />
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setHeldOpen(false)} className="mt-4 h-12 w-full rounded-xl bg-secondary font-bold">رجوع</button>
           </div>
         </div>
       )}
