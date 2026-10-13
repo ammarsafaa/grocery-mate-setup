@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Server, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getSettings, saveSettings } from "@/lib/db";
-import { testSqlConnection, syncNow, isSyncLinked, setSyncLinked } from "@/lib/sync";
+import { testSqlConnection, syncNow, isSyncLinked, setSyncLinked, isMainCashier } from "@/lib/sync";
 import { native } from "@/lib/native";
 
 export const Route = createFileRoute("/db-setup")({
@@ -24,7 +24,7 @@ function DbSetupPage() {
   const navigate = useNavigate();
   const init = getSettings();
   const [f, setF] = useState({
-    sqlIsMain: init.sqlIsMain ?? true,
+    sqlIsMain: isMainCashier(init),
     sqlHost: init.sqlHost ?? "",
     sqlPort: init.sqlPort ?? 1433,
     sqlDatabase: init.sqlDatabase || "GroceryPOS",
