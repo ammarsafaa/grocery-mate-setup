@@ -367,15 +367,15 @@ function PosPage() {
             {selectedGroup && <button onClick={() => setSelectedGroup(null)} className="flex min-w-24 items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-3 font-bold"><ArrowRight className={pic ? "h-10 w-10" : "h-4 w-4"}/>{!pic && "رجوع"}</button>}
             {!selectedGroup && groups.map((group) => <button key={group.id} onClick={() => setSelectedGroup(group.id)} className="flex min-w-32 flex-col items-center gap-2 rounded-lg border border-border bg-card px-5 py-4 font-bold hover:border-primary">{group.image ? <img src={group.image} alt={group.name} className={pic ? "h-28 w-28 rounded-xl object-cover" : "h-16 w-16 rounded-xl object-cover"}/> : <FolderOpen className={pic ? "h-16 w-16 text-primary" : "h-7 w-7 text-primary"}/>}<span className={pic ? "text-xs" : ""}>{group.name}</span></button>)}
           </div>}
-          <div className="grid flex-1 grid-cols-2 content-start gap-3 overflow-auto lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid min-h-0 flex-1 auto-rows-max grid-cols-2 content-start gap-3 overflow-auto lg:grid-cols-3 xl:grid-cols-4">
             {(!settings.useProductGroups || selectedGroup || search ? filtered : []).map((p) => (
               <button
                 key={p.id}
                 onClick={() => addProduct(p)}
-                className="flex min-h-28 flex-col items-center justify-center gap-1 rounded-2xl border border-border bg-card p-3 transition hover:border-primary hover:bg-accent active:scale-95"
+                className="flex min-h-28 min-w-0 shrink-0 flex-col items-center justify-start gap-1 overflow-hidden rounded-2xl border border-border bg-card p-3 transition hover:border-primary hover:bg-accent active:scale-95"
               >
                 {p.image ? (
-                  <img src={p.image} alt={p.name} className={pic ? "h-32 w-32 rounded-xl object-cover" : "h-20 w-20 rounded-xl object-cover"} />
+                  <img src={p.image} alt={p.name} className={pic ? "aspect-square w-full max-w-32 shrink-0 rounded-xl object-cover" : "aspect-square w-full max-w-20 shrink-0 rounded-xl object-cover"} />
                 ) : (
                   p.unit === "kg" && <Scale className="h-5 w-5 text-primary" />
                 )}
