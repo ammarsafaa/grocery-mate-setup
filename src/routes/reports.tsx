@@ -78,6 +78,7 @@ function ReportsPage() {
         cur.total += i.total;
         map.set(i.productId, cur);
       }
+    }
     return [...map.values()].sort((a, b) => b.total - a.total).slice(0, 10);
   }, [filtered]);
 
