@@ -66,11 +66,12 @@ function ReportsPage() {
     inPeriod(s, period) &&
     (isAdmin ? (seller === "all" || s.userId === seller) : s.userId === user?.id) &&
     (terminal === "all" || s.terminal === terminal)), [sales, period, terminal, seller, isAdmin, user?.id]);
-  const total = filtered.reduce((t, s) => t + s.total, 0);
+  const total = filtered.filter((s) => !s.returnedAt).reduce((t, s) => t + s.total, 0);
 
   const topProducts = useMemo(() => {
     const map = new Map<string, { name: string; qty: number; total: number }>();
-    for (const s of filtered)
+    for (const s of filtered) {
+      if (s.returnedAt) continue;
       for (const i of s.items) {
         const cur = map.get(i.productId) ?? { name: i.name, qty: 0, total: 0 };
         cur.qty += i.qty;
@@ -182,7 +183,7 @@ function ReportsPage() {
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                    <td colSpan={7} className="p-8 text-center text-muted-foreground">
                       لا توجد مبيعات في هذه الفترة
                     </td>
                   </tr>
