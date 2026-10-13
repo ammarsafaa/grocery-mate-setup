@@ -328,7 +328,7 @@ function PosPage() {
       )}
       <div className="flex h-screen">
         {/* Products grid */}
-        <div className="flex flex-1 flex-col p-4">
+        <div className="flex min-w-0 flex-1 flex-col p-4">
           <div className="mb-4 flex gap-2">
             <input
               value={search}
@@ -390,7 +390,7 @@ function PosPage() {
         </div>
 
         {/* Cart */}
-        <div className="flex w-96 flex-col border-r border-border bg-card">
+        <div className="flex w-80 shrink-0 flex-col border-r border-border bg-card xl:w-96">
           <div className="flex items-center gap-2 border-b border-border p-4">
             <ShoppingBasket className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-bold">الفاتورة الحالية</h2>
