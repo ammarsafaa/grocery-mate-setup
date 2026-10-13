@@ -73,11 +73,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <aside className="flex w-20 flex-col items-center border-l border-border bg-sidebar py-4 md:w-56 md:items-stretch md:px-3">
-        <div className="mb-6 flex items-center gap-2 px-2">
-          <img src={zerosLogo} alt="شعار زيروس" className="h-11 w-11 shrink-0 object-contain" />
-          <div className="hidden min-w-0 md:block">
-            <div className="text-base font-bold text-foreground">زيروس</div>
+      {!hidden && (
+        <aside className="flex w-20 shrink-0 flex-col items-center border-l border-border bg-sidebar py-4 md:w-56 md:items-stretch md:px-3">
+          <div className="mb-6 flex items-center gap-2 px-2">
+            <img src={zerosLogo} alt="شعار زيروس" className="h-11 w-11 shrink-0 object-contain" />
+            <div className="hidden min-w-0 flex-1 md:block">
+              <div className="text-base font-bold text-foreground">زيروس</div>
             <div className="truncate text-xs text-muted-foreground">{storeName}</div>
           </div>
         </div>
