@@ -279,6 +279,7 @@ function PosPage() {
       paid: paidAmount && paidAmount > total ? paidAmount : total,
       change: paidAmount && paidAmount > total ? paidAmount - total : 0,
       terminal: currentTerminal(),
+      discount: discount > 0 ? discount : undefined,
     };
     addSale(sale);
     if (settings.speakTotals && !pic) speakArabic(`المبلغ ${total} دينار`);
@@ -293,6 +294,7 @@ function PosPage() {
     recordSaleMovements(sale);
     setProducts(all.filter((p) => p.active));
     setCart([]);
+    setDiscount(0);
     toast.success(`تم حفظ الفاتورة رقم ${saleLabel(sale)}`);
     if (settings.autoPrint) {
       const n = native();
