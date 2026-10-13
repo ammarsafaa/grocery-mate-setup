@@ -283,7 +283,7 @@ function PosPage() {
       paid: paidAmount && paidAmount > total ? paidAmount : total,
       change: paidAmount && paidAmount > total ? paidAmount - total : 0,
       terminal: currentTerminal(),
-      discount: discount > 0 ? discount : undefined,
+      ...(discount > 0 ? { discount } : {}),
     };
     addSale(sale);
     if (settings.speakTotals && !pic) speakArabic(`المبلغ ${total} دينار`);
