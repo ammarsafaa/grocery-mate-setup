@@ -395,6 +395,31 @@ function PosPage() {
               <Pencil className="h-4 w-4" />
               {priceMode ? "اضغط على منتج لتغيير سعره" : "تغيير سعر"}
             </button>
+            <button
+              onClick={() => setWholesale((v) => !v)}
+              title="تفعيل سعر الجملة للمنتجات التي لها سعر جملة"
+              className={`flex h-12 items-center gap-2 rounded-xl px-4 font-bold transition ${wholesale ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
+            >
+              <Layers className="h-4 w-4" />
+              جملة
+            </button>
+            <button
+              onClick={() => setCartonMode((v) => !v)}
+              title="إضافة المنتج ككرتونة كاملة"
+              className={`flex h-12 items-center gap-2 rounded-xl px-4 font-bold transition ${cartonMode ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
+            >
+              <Package className="h-4 w-4" />
+              كرتونة
+            </button>
+            {settings.discountEnabled && (
+              <button
+                onClick={() => { setDiscountDraft(discount ? String(discount) : ""); setDiscountOpen(true); }}
+                className={`flex h-12 items-center gap-2 rounded-xl px-4 font-bold transition ${discount > 0 ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
+              >
+                <Percent className="h-4 w-4" />
+                خصم
+              </button>
+            )}
           </div>
           <div className="grid min-h-0 flex-1 auto-rows-max grid-cols-2 content-start gap-3 overflow-auto lg:grid-cols-3 xl:grid-cols-4">
             {settings.useProductGroups && selectedGroup && !search && (
