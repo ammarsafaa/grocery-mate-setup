@@ -5,7 +5,7 @@
  * Products' stock is synced as deltas so concurrent sales never overwrite each other.
  */
 import { native, type SqlConfig } from "./native";
-import { getSettings, saveSettings, readCollection, writeCollection, readMeta, writeMeta } from "./db";
+import { getSettings, readCollection, writeCollection, readMeta, writeMeta } from "./db";
 
 const COLLECTIONS = ["products", "groups", "users", "suppliers", "sales", "stockMovements", "shifts", "expenses", "purchases", "supplierPayments"] as const;
 /* eslint-disable @typescript-eslint/no-explicit-any */

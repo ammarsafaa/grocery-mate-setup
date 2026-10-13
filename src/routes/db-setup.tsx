@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Server, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getSettings, saveSettings } from "@/lib/db";
-import { testSqlConnection, syncNow } from "@/lib/sync";
+import { testSqlConnection, syncNow, isSyncLinked, setSyncLinked } from "@/lib/sync";
 import { native } from "@/lib/native";
 
 export const Route = createFileRoute("/db-setup")({
@@ -40,10 +40,13 @@ function DbSetupPage() {
     if (!f.sqlIsMain && !f.sqlHost.trim()) { setError("اكتب عنوان الجهاز الرئيسي (IP)"); return; }
     setBusy(true); setError("");
     const prev = getSettings();
+    const prevLinked = isSyncLinked();
     saveSettings({ ...prev, ...f, sqlPort: Number(f.sqlPort) || 1433, syncEnabled: true });
+    setSyncLinked(true);
     const r = await testSqlConnection();
     if (!r.ok) {
       saveSettings({ ...getSettings(), syncEnabled: !!prev.syncEnabled });
+      setSyncLinked(prevLinked);
       setError(r.error || "فشل الاتصال");
       setBusy(false);
       return;
