@@ -305,7 +305,7 @@ export function saveExpenses(items: Expense[]) { write("expenses", items); }
 // ---------- Factory reset ----------
 /** Clears all business data and settings; keeps the license so the device stays activated. */
 export function resetAllData() {
-  for (const k of ["users","products","groups","sales","shifts","suppliers","purchases","supplierPayments","stockMovements","expenses"]) write(k, []);
+  for (const k of ["users","products","groups","sales","shifts","suppliers","purchases","supplierPayments","stockMovements","expenses","heldCarts"]) write(k, []);
   write("settings", {});
   write("receiptDesign:58", null);
   write("receiptDesign:80", null);
@@ -352,6 +352,7 @@ const DEFAULT_SETTINGS: Settings = {
   autoCut: true,
   openDrawer: false,
   labelBarcodeEnabled: false,
+  discountEnabled: true,
   useScale: true,
   labelPrefixes: "20,21,22",
   labelPluLength: 5,
@@ -444,6 +445,7 @@ export function importBackup(json: string): boolean {
     if (data.stockMovements) write("stockMovements", data.stockMovements);
     if (data.receipt58) write("receiptDesign:58", data.receipt58);
     if (data.expenses) write("expenses", data.expenses);
+    if (data.heldCarts) write("heldCarts", data.heldCarts);
     if (data.receipt80) write("receiptDesign:80", data.receipt80);
     if (data.layouts) for (const [k, v] of Object.entries(data.layouts as Record<string, unknown>)) write(`layout:${k}`, v);
     return true;

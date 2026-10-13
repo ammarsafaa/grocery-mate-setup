@@ -71,7 +71,7 @@ export function receiptContent(sale: Sale, design: ReceiptDesign = getReceiptDes
       case "date": return new Date(sale.createdAt).toLocaleString("en-GB");
       case "cashier": return `الكاشير: ${esc(sale.userName)}`;
       case "items": return `<table class="${tb}"><thead><tr><th>المنتج</th><th>الكمية/الوزن</th><th>سعر الوحدة</th><th>المبلغ</th></tr></thead><tbody>${sale.items.map((i) => `<tr><td>${esc(i.name)}</td><td>${i.unit === "kg" ? `${i.qty.toFixed(3)} كغم` : `${i.qty} قطعة`}</td><td>${n(i.price)}${i.unit === "kg" ? "/كغم" : ""}</td><td>${n(i.total)}</td></tr>`).join("")}</tbody></table>`;
-      case "totals": return line("الإجمالي", formatMoney(sale.total, st.currency)) + (sale.paid !== undefined ? line("المدفوع", formatMoney(sale.paid, st.currency)) + line("الباقي", formatMoney(sale.change ?? 0, st.currency)) : "");
+      case "totals": return (sale.discount ? line("الإجمالي قبل الخصم", formatMoney(sale.total + sale.discount, st.currency)) + line("الخصم", formatMoney(sale.discount, st.currency)) : "") + line("الإجمالي", formatMoney(sale.total, st.currency)) + (sale.paid !== undefined ? line("المدفوع", formatMoney(sale.paid, st.currency)) + line("الباقي", formatMoney(sale.change ?? 0, st.currency)) : "");
       case "footer": return esc(design.footer);
       default: return "";
     }
