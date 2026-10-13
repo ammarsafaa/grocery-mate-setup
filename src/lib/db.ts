@@ -425,6 +425,7 @@ export function exportBackup(): string {
     receipt58: getReceiptDesign(58),
     receipt80: getReceiptDesign(80),
     expenses: getExpenses(),
+    heldCarts: getHeldCarts(),
     layouts: Object.fromEntries(["receipt:58", "receipt:80", "shift:58", "shift:80"].map((k) => [k, readLayoutRaw(k)]).filter(([, v]) => v)),
   };
   return JSON.stringify(data, null, 2);
