@@ -68,46 +68,121 @@ ipcMain.on("db-set", (e, key, value) => {
 // ---------- SQL Server (multi-cashier sync) ----------
 // One connection pool per server config; queries come from the UI sync module.
 const sqlPools = new Map();
-function sqlConn(cfg, database) {
-  const mssql = require("mssql");
-  // Named instance support: ".\SQLEXPRESS" or "HOST\SQLEXPRESS" → server + instanceName (no port).
-  let server = String(cfg.server || "");
-  let instanceName;
+const sqlChosen = new Map(); // cfg key -> working connection target
+// Builds every reasonable way to reach the server, so one disabled service never blocks the connection.
+function sqlTargets(cfg) {
+  let server = String(cfg.server || "").trim();
+  let instanceName = "";
   const bs = server.indexOf("\\");
-  if (bs >= 0) {
-    instanceName = server.slice(bs + 1);
-    server = server.slice(0, bs) || "localhost";
-    if (server === ".") server = "localhost";
+  if (bs >= 0) { instanceName = server.slice(bs + 1); server = server.slice(0, bs); }
+  if (!server || server === "." || /^\(local\)$/i.test(server)) server = "localhost";
+  const local = /^(localhost|127\.0\.0\.1)$/i.test(server);
+  const port = Number(cfg.port) || 1433;
+  const list = [];
+  if (local) {
+    list.push({ server: "127.0.0.1", port });
+    if (port !== 1433) list.push({ server: "127.0.0.1", port: 1433 });
+    list.push({ server: "localhost", instanceName: instanceName || "SQLEXPRESS" });
+    if (instanceName && instanceName.toUpperCase() !== "SQLEXPRESS") list.push({ server: "localhost", instanceName: "SQLEXPRESS" });
+  } else {
+    list.push({ server, port });
+    if (instanceName) list.push({ server, instanceName });
   }
+  return list;
+}
+function sqlConn(target, cfg, database) {
+  const mssql = require("mssql");
   return new mssql.ConnectionPool({
-    server, database,
-    ...(instanceName ? {} : { port: Number(cfg.port) || 1433 }),
+    server: target.server, database,
+    ...(target.instanceName ? {} : { port: target.port }),
     user: cfg.user || undefined, password: cfg.password || undefined,
-    options: { encrypt: false, trustServerCertificate: true, ...(instanceName ? { instanceName } : {}) },
+    options: { encrypt: false, trustServerCertificate: true, ...(target.instanceName ? { instanceName: target.instanceName } : {}) },
     connectionTimeout: 5000, requestTimeout: 30000, pool: { max: 4, min: 0, idleTimeoutMillis: 30000 },
   });
 }
-// Creates the database on the server if it doesn't exist yet (connects via master).
-async function ensureDatabase(cfg) {
+function targetLabel(t) { return t.instanceName ? `${t.server}\\${t.instanceName}` : `${t.server}:${t.port}`; }
+// Tries each target via master; creates the database if missing; remembers the target that worked.
+async function ensureDatabase(cfg, key) {
   const name = String(cfg.database || "");
   if (!/^[A-Za-z0-9_]{1,100}$/.test(name)) throw new Error("BADNAME");
-  const master = await sqlConn(cfg, "master").connect();
-  try {
-    await master.request().query(`IF DB_ID(N'${name}') IS NULL CREATE DATABASE [${name}]`);
-  } finally { await master.close().catch(() => {}); }
+  const errors = [];
+  const prev = sqlChosen.get(key);
+  const targets = prev ? [prev, ...sqlTargets(cfg).filter((t) => targetLabel(t) !== targetLabel(prev))] : sqlTargets(cfg);
+  for (const t of targets) {
+    let master;
+    try {
+      master = await sqlConn(t, cfg, "master").connect();
+      await master.request().query(`IF DB_ID(N'${name}') IS NULL CREATE DATABASE [${name}]`);
+      sqlChosen.set(key, t);
+      return t;
+    } catch (err) {
+      const msg = String((err && err.message) || err);
+      if (/Login failed/i.test(msg) || /permission/i.test(msg)) throw err; // server reached; wrong credentials
+      errors.push(`${targetLabel(t)} ← ${msg}`);
+    } finally { if (master) await master.close().catch(() => {}); }
+  }
+  throw new Error("Failed to connect. " + errors.join(" | "));
 }
 async function sqlPool(cfg) {
   const key = JSON.stringify(cfg);
   let p = sqlPools.get(key);
   if (!p) {
     p = (async () => {
-      await ensureDatabase(cfg);
-      return sqlConn(cfg, cfg.database).connect();
+      const t = await ensureDatabase(cfg, key);
+      return sqlConn(t, cfg, cfg.database).connect();
     })().catch((err) => { sqlPools.delete(key); throw err; });
     sqlPools.set(key, p);
   }
   return p;
 }
+
+// Enables TCP/IP on port 1433, mixed login, firewall rule, and restarts SQL Server (asks Windows for admin).
+ipcMain.handle("sql-fix-local", async () => {
+  if (process.platform !== "win32") return { ok: false, error: "متاح على ويندوز فقط" };
+  const os = require("os");
+  const script = path.join(os.tmpdir(), "zeros-sqlfix.ps1");
+  const result = path.join(os.tmpdir(), "zeros-sqlfix.txt");
+  try { fs.unlinkSync(result); } catch { /* none */ }
+  const ps = `
+$ErrorActionPreference = 'Continue'
+$out = @()
+$base = 'HKLM:\\SOFTWARE\\Microsoft\\Microsoft SQL Server'
+$names = Get-ItemProperty "$base\\Instance Names\\SQL" -ErrorAction SilentlyContinue
+if (-not $names) { 'NOSQL' | Out-File -Encoding utf8 '${result.replace(/'/g, "''")}'; exit 2 }
+foreach ($p in $names.PSObject.Properties) {
+  if ($p.Name -like 'PS*') { continue }
+  $inst = $p.Name; $id = $p.Value
+  $net = "$base\\$id\\MSSQLServer\\SuperSocketNetLib\\Tcp"
+  Set-ItemProperty $net -Name Enabled -Value 1 -ErrorAction SilentlyContinue
+  Set-ItemProperty "$net\\IPAll" -Name TcpPort -Value '1433' -ErrorAction SilentlyContinue
+  Set-ItemProperty "$net\\IPAll" -Name TcpDynamicPorts -Value '' -ErrorAction SilentlyContinue
+  Set-ItemProperty "$base\\$id\\MSSQLServer" -Name LoginMode -Value 2 -ErrorAction SilentlyContinue
+  $svc = if ($inst -eq 'MSSQLSERVER') { 'MSSQLSERVER' } else { 'MSSQL$' + $inst }
+  Set-Service $svc -StartupType Automatic -ErrorAction SilentlyContinue
+  Restart-Service $svc -Force -ErrorAction SilentlyContinue
+  $out += "OK:$inst"
+}
+Set-Service SQLBrowser -StartupType Automatic -ErrorAction SilentlyContinue
+Start-Service SQLBrowser -ErrorAction SilentlyContinue
+netsh advfirewall firewall delete rule name="Zeros SQL Server" | Out-Null
+netsh advfirewall firewall add rule name="Zeros SQL Server" dir=in action=allow protocol=TCP localport=1433 | Out-Null
+netsh advfirewall firewall add rule name="Zeros SQL Server" dir=in action=allow protocol=UDP localport=1434 | Out-Null
+($out -join ',') | Out-File -Encoding utf8 '${result.replace(/'/g, "''")}'
+`;
+  fs.writeFileSync(script, "\ufeff" + ps, "utf8");
+  return await new Promise((resolve) => {
+    const { execFile } = require("child_process");
+    const cmd = `Start-Process powershell -Verb RunAs -Wait -WindowStyle Hidden -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','"${script}"'`;
+    execFile("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", cmd], { windowsHide: true, timeout: 120000 }, (err) => {
+      let txt = "";
+      try { txt = fs.readFileSync(result, "utf8").replace(/^\ufeff/, "").trim(); } catch { /* none */ }
+      sqlPools.clear(); sqlChosen.clear();
+      if (txt.startsWith("NOSQL")) return resolve({ ok: false, error: "SQL Server غير منصّب على هذا الجهاز" });
+      if (txt.includes("OK:")) return resolve({ ok: true });
+      resolve({ ok: false, error: err ? "تم رفض صلاحية المدير أو فشل التنفيذ" : "لم يتم تطبيق الإصلاح" });
+    });
+  });
+});
 ipcMain.handle("sql-query", async (_e, cfg, sqlText, params) => {
   try {
     const pool = await sqlPool(cfg);

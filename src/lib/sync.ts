@@ -37,8 +37,13 @@ export function friendlySqlError(msg: string): string {
   if (/BADNAME/.test(m)) return "اسم القاعدة يجب أن يكون بأحرف إنجليزية وأرقام فقط بدون مسافات (مثل GroceryPOS)";
   if (/Login failed/i.test(m)) return "اسم المستخدم أو كلمة المرور لخادم SQL غير صحيحة";
   if (/CREATE DATABASE permission|permission denied/i.test(m)) return "المستخدم لا يملك صلاحية إنشاء قاعدة البيانات — استخدم المستخدم sa";
-  if (/ETIMEOUT|timeout|Failed to connect|ECONNREFUSED|ESOCKET|getaddrinfo|ENOTFOUND/i.test(m))
-    return "لا يمكن الوصول للجهاز الرئيسي — تأكد من IP، وتشغيل SQL Server، وتفعيل TCP/IP والمنفذ 1433، والسماح به في جدار الحماية";
+  if (/ETIMEOUT|timeout|Failed to connect|ECONNREFUSED|ESOCKET|getaddrinfo|ENOTFOUND/i.test(m)) {
+    const main = getSettings().sqlIsMain !== false;
+    const hint = main
+      ? "لا يمكن الاتصال بـ SQL Server على هذا الجهاز — اضغط زر «إصلاح إعدادات SQL Server تلقائياً» ثم أعد المحاولة"
+      : "لا يمكن الوصول للجهاز الرئيسي — تأكد من IP، وأن البرنامج على الجهاز الرئيسي ضغط «إصلاح إعدادات SQL Server تلقائياً»";
+    return `${hint}\nالتفاصيل: ${m.slice(0, 400)}`;
+  }
   return m;
 }
 

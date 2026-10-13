@@ -425,25 +425,39 @@ function SettingsPage() {
             <button
               onClick={async () => {
                 if (!native()) { toast.info("الربط متاح في نسخة الويندوز"); return; }
-                const s = { ...settings, syncEnabled: true };
-                setSettings(s);
-                save(s);
+                const before = !!settings.syncEnabled;
+                saveSettings({ ...settings, syncEnabled: true });
                 const r = await testSqlConnection();
-                if (r.ok) toast.success("قاعدة البيانات جاهزة — تم الاتصال وإنشاء الجداول"); else toast.error(`فشل الاتصال: ${r.error}`);
+                const s = { ...settings, syncEnabled: r.ok ? true : before };
+                setSettings(s); saveSettings(s);
+                if (r.ok) toast.success("قاعدة البيانات جاهزة — تم الاتصال وإنشاء الجداول"); else toast.error(`فشل الاتصال: ${r.error}`, { duration: 15000 });
               }}
               className="rounded-xl bg-secondary px-6 py-3 font-bold"
             >تجهيز قاعدة البيانات واختبار الاتصال</button>
             <button
               onClick={async () => {
                 if (!native()) { toast.info("الربط متاح في نسخة الويندوز"); return; }
-                const s = { ...settings, syncEnabled: true };
-                setSettings(s);
-                save(s);
+                const before = !!settings.syncEnabled;
+                saveSettings({ ...settings, syncEnabled: true });
                 const ok = await syncNow();
-                if (ok) toast.success("تمت المزامنة"); else toast.error(`تعذرت المزامنة: ${getSyncStatus().error ?? "الربط غير مفعّل"}`);
+                const s = { ...settings, syncEnabled: ok ? true : before };
+                setSettings(s); saveSettings(s);
+                if (ok) toast.success("تمت المزامنة"); else toast.error(`تعذرت المزامنة: ${getSyncStatus().error ?? "الربط غير مفعّل"}`, { duration: 15000 });
               }}
               className="rounded-xl bg-secondary px-6 py-3 font-bold"
             >مزامنة الآن</button>
+            {settings.sqlIsMain !== false && (
+              <button
+                onClick={async () => {
+                  const n = native();
+                  if (!n?.sqlFixLocal) { toast.info("متاح في نسخة الويندوز الجديدة"); return; }
+                  toast.info("وافق على رسالة صلاحية المدير من ويندوز...");
+                  const r = await n.sqlFixLocal();
+                  if (r.ok) toast.success("تم إصلاح إعدادات SQL Server — اضغط الآن «تجهيز قاعدة البيانات»"); else toast.error(r.error || "فشل الإصلاح");
+                }}
+                className="rounded-xl bg-secondary px-6 py-3 font-bold"
+              >إصلاح إعدادات SQL Server تلقائياً</button>
+            )}
           </div>
           <details className="mt-4 rounded-xl bg-secondary/50 p-4 text-sm leading-7">
             <summary className="cursor-pointer font-bold">طريقة تجهيز الجهاز الرئيسي (مرة واحدة)</summary>

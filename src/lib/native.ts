@@ -20,6 +20,7 @@ export interface PosNative {
   installUpdate?: () => void;
   onUpdateStatus?: (cb: (s: UpdateStatus) => void) => () => void;
   sqlQuery?: (cfg: SqlConfig, sql: string, params: Record<string, unknown>) => Promise<{ ok: boolean; rows?: Array<Record<string, unknown>>; error?: string }>;
+  sqlFixLocal?: () => Promise<{ ok: boolean; error?: string }>;
   aclasExec?: (ip: string, op: "test" | "send", content: string) => Promise<{ ok: boolean; code?: number; error?: string }>;
 }
 
