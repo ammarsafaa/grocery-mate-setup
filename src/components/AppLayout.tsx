@@ -135,13 +135,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
       )}
 
       {hidden && (
-        <button
-          onClick={() => setHidden(false)}
-          title="إظهار القائمة"
-          className="fixed top-3 right-3 z-50 flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-sidebar text-sidebar-foreground shadow-lg transition hover:bg-sidebar-accent"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
+        <div className="flex w-11 shrink-0 flex-col items-center border-l border-border bg-sidebar py-3">
+          <button
+            onClick={() => setHidden(false)}
+            title="إظهار القائمة"
+            aria-label="إظهار القائمة"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-sidebar-foreground transition hover:bg-sidebar-accent"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        </div>
       )}
 
       <main className="flex-1 overflow-auto">{children}</main>
