@@ -71,8 +71,10 @@ function read<T>(key: string, fallback: T): T {
 function write<T>(key: string, value: T) {
   const json = JSON.stringify(value);
   const n = native();
-  if (n && sqliteCache) {
-    sqliteCache[key] = json;
+  if (n) {
+    // Load the SQLite mirror first so an early write never falls back to browser storage and gets lost.
+    const cache = store();
+    cache[key] = json;
     n.dbSet(key, json);
     return;
   }

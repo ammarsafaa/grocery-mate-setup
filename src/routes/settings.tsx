@@ -2,7 +2,7 @@ import { native } from "@/lib/native";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Download, Upload, Plus, Trash2, Scale, HardDrive, Palette, Printer, Layers3, ReceiptText, Server } from "lucide-react";
-import { testSqlConnection, syncNow, getSyncStatus, isSyncLinked, setSyncLinked } from "@/lib/sync";
+import { testSqlConnection, syncNow, getSyncStatus, isSyncLinked, setSyncLinked, isMainCashier } from "@/lib/sync";
 import { testAclas, sendToAclas, aclasErrorText } from "@/lib/aclas";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
@@ -381,7 +381,7 @@ function SettingsPage() {
             <button
               type="button"
               onClick={() => setSettings({ ...settings, sqlIsMain: true })}
-              className={`rounded-xl border px-4 py-3 text-sm font-bold ${settings.sqlIsMain !== false ? "border-primary bg-primary/10 text-primary" : "border-border bg-secondary"}`}
+              className={`rounded-xl border px-4 py-3 text-sm font-bold ${isMainCashier(settings) ? "border-primary bg-primary/10 text-primary" : "border-border bg-secondary"}`}
             >
               هذا الجهاز هو الرئيسي
               <span className="mt-1 block text-xs font-normal text-muted-foreground">SQL Server على نفس الجهاز — بدون IP</span>
@@ -389,7 +389,7 @@ function SettingsPage() {
             <button
               type="button"
               onClick={() => setSettings({ ...settings, sqlIsMain: false })}
-              className={`rounded-xl border px-4 py-3 text-sm font-bold ${settings.sqlIsMain === false ? "border-primary bg-primary/10 text-primary" : "border-border bg-secondary"}`}
+              className={`rounded-xl border px-4 py-3 text-sm font-bold ${!isMainCashier(settings) ? "border-primary bg-primary/10 text-primary" : "border-border bg-secondary"}`}
             >
               كاشير ثانوي
               <span className="mt-1 block text-xs font-normal text-muted-foreground">يتصل بجهاز رئيسي آخر — يحتاج IP</span>
@@ -397,7 +397,7 @@ function SettingsPage() {
           </div>
           <div className="mb-4 grid gap-3 md:grid-cols-2">
             {([
-              ...(settings.sqlIsMain === false
+              ...(!isMainCashier(settings)
                 ? ([
                     ["sqlHost", "عنوان الجهاز الرئيسي (IP)", "192.168.1.10"],
                     ["sqlPort", "المنفذ", "1433"],
@@ -445,7 +445,7 @@ function SettingsPage() {
               }}
               className="rounded-xl bg-secondary px-6 py-3 font-bold"
             >مزامنة الآن</button>
-            {settings.sqlIsMain !== false && (
+            {isMainCashier(settings) && (
               <button
                 onClick={async () => {
                   const n = native();

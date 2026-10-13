@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { getSyncStatus, startSyncLoop, type SyncStatus } from "@/lib/sync";
+import { getSyncStatus, startSyncLoop, syncNow, type SyncStatus } from "@/lib/sync";
+import { toast } from "sonner";
 import { startTelegramQueue } from "@/lib/telegram";
 import { startAclasAutoSync } from "@/lib/aclas";
 import { isLicensed } from "@/lib/license";
@@ -112,10 +113,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
         <div className="mt-4 border-t border-sidebar-border pt-3">
           {sync.state !== "off" && (
-            <div title={sync.error || ""} className="mb-2 flex items-center justify-center gap-2 px-3 text-xs md:justify-start">
+            <button
+              type="button"
+              title={sync.error || ""}
+              onClick={async () => {
+                if (sync.state === "error") toast.error(`سبب عدم الاتصال: ${sync.error ?? "غير معروف"}`, { duration: 20000 });
+                const ok = await syncNow();
+                if (ok) toast.success("تم الاتصال بالخادم");
+              }}
+              className="mb-2 flex w-full items-center justify-center gap-2 px-3 text-xs md:justify-start"
+            >
               <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${sync.state === "error" ? "bg-destructive" : "bg-primary"}`} />
-              <span className="hidden text-muted-foreground md:block">{sync.state === "error" ? "الخادم غير متصل — البيع مستمر" : "متصل بالخادم"}</span>
-            </div>
+              <span className="hidden text-start text-muted-foreground md:block">{sync.state === "error" ? "الخادم غير متصل — يعيد المحاولة تلقائياً (اضغط لمعرفة السبب)" : "متصل بالخادم"}</span>
+            </button>
           )}
           <div className="mb-2 hidden px-3 text-xs text-muted-foreground md:block">
             {user?.name} — {user?.role === "admin" ? "مدير" : "كاشير"}

@@ -37,13 +37,23 @@ export function setSyncLinked(on: boolean) {
   if (!on) setStatus({ state: "off", pending: 0 });
 }
 
+/**
+ * Main cashier = SQL Server on this same device. When the choice was never saved explicitly,
+ * a device without a server IP is the main one (matches what the settings screen shows).
+ */
+export function isMainCashier(s = getSettings()): boolean {
+  if (s.sqlIsMain === true) return true;
+  if (s.sqlIsMain === false) return false;
+  return !(s.sqlHost ?? "").trim();
+}
+
 function config(): SqlConfig | null {
   const s = getSettings();
-  if (!isSyncLinked() || !s.sqlDatabase) return null;
-  // Main cashier: SQL Server runs on this same device — no IP/port needed.
-  const server = s.sqlIsMain ? ".\\SQLEXPRESS" : (s.sqlHost ?? "").trim();
+  if (!isSyncLinked()) return null;
+  const main = isMainCashier(s);
+  const server = main ? ".\\SQLEXPRESS" : (s.sqlHost ?? "").trim();
   if (!server) return null;
-  return { server, port: s.sqlIsMain ? 1433 : Number(s.sqlPort) || 1433, database: s.sqlDatabase, user: s.sqlUser ?? "", password: s.sqlPassword ?? "" };
+  return { server, port: main ? 1433 : Number(s.sqlPort) || 1433, database: (s.sqlDatabase || "GroceryPOS").trim(), user: s.sqlUser || "sa", password: s.sqlPassword ?? "" };
 }
 function terminal() { return (getSettings().terminalCode || "1").trim(); }
 
@@ -54,7 +64,7 @@ export function friendlySqlError(msg: string): string {
   if (/Login failed/i.test(m)) return "اسم المستخدم أو كلمة المرور لخادم SQL غير صحيحة";
   if (/CREATE DATABASE permission|permission denied/i.test(m)) return "المستخدم لا يملك صلاحية إنشاء قاعدة البيانات — استخدم المستخدم sa";
   if (/ETIMEOUT|timeout|Failed to connect|ECONNREFUSED|ESOCKET|getaddrinfo|ENOTFOUND/i.test(m)) {
-    const main = getSettings().sqlIsMain !== false;
+    const main = isMainCashier();
     const hint = main
       ? "لا يمكن الاتصال بـ SQL Server على هذا الجهاز — اضغط زر «إصلاح إعدادات SQL Server تلقائياً» ثم أعد المحاولة"
       : "لا يمكن الوصول للجهاز الرئيسي — تأكد من IP، وأن البرنامج على الجهاز الرئيسي ضغط «إصلاح إعدادات SQL Server تلقائياً»";
@@ -66,7 +76,11 @@ export function friendlySqlError(msg: string): string {
 async function q(cfg: SqlConfig, sql: string, params: Record<string, unknown> = {}) {
   const n = native();
   if (!n?.sqlQuery) throw new Error("متاح في نسخة Windows فقط");
-  const r = await n.sqlQuery(cfg, sql, params);
+  // Never wait forever: a hung call would block every later automatic retry.
+  const r = await Promise.race([
+    n.sqlQuery(cfg, sql, params),
+    new Promise<{ ok: false; error: string }>((res) => setTimeout(() => res({ ok: false, error: "ETIMEOUT: no answer from SQL Server" }), 60000)),
+  ]);
   if (!r.ok) throw new Error(friendlySqlError(r.error || "SQL error"));
   return (r.rows ?? []) as Row[];
 }
@@ -190,9 +204,14 @@ export async function syncNow(): Promise<boolean> {
 }
 
 let timer: number | null = null;
+/** Starts automatic connection on app start; keeps retrying (every 3 s) until SQL Server answers, then syncs every 5 s. */
 export function startSyncLoop() {
   if (timer !== null || typeof window === "undefined") return;
-  const tick = () => { if (config()) void syncNow(); else if (status.state !== "off") setStatus({ state: "off", pending: 0 }); };
-  tick();
-  timer = window.setInterval(tick, 5000);
+  const tick = async () => {
+    if (config()) await syncNow(); else if (status.state !== "off") setStatus({ state: "off", pending: 0 });
+    timer = window.setTimeout(tick, status.state === "ok" ? 5000 : 3000);
+  };
+  timer = window.setTimeout(tick, 0);
+  window.addEventListener("online", () => { if (config()) void syncNow(); });
+  window.addEventListener("grocery-pos:settings-updated", () => { if (config() && status.state !== "ok") void syncNow(); });
 }
