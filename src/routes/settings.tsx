@@ -426,10 +426,10 @@ function SettingsPage() {
               onClick={async () => {
                 if (!native()) { toast.info("الربط متاح في نسخة الويندوز"); return; }
                 const before = !!settings.syncEnabled;
-                save({ ...settings, syncEnabled: true });
+                saveSettings({ ...settings, syncEnabled: true });
                 const r = await testSqlConnection();
                 const s = { ...settings, syncEnabled: r.ok ? true : before };
-                setSettings(s); save(s);
+                setSettings(s); saveSettings(s);
                 if (r.ok) toast.success("قاعدة البيانات جاهزة — تم الاتصال وإنشاء الجداول"); else toast.error(`فشل الاتصال: ${r.error}`, { duration: 15000 });
               }}
               className="rounded-xl bg-secondary px-6 py-3 font-bold"
@@ -438,10 +438,10 @@ function SettingsPage() {
               onClick={async () => {
                 if (!native()) { toast.info("الربط متاح في نسخة الويندوز"); return; }
                 const before = !!settings.syncEnabled;
-                save({ ...settings, syncEnabled: true });
+                saveSettings({ ...settings, syncEnabled: true });
                 const ok = await syncNow();
                 const s = { ...settings, syncEnabled: ok ? true : before };
-                setSettings(s); save(s);
+                setSettings(s); saveSettings(s);
                 if (ok) toast.success("تمت المزامنة"); else toast.error(`تعذرت المزامنة: ${getSyncStatus().error ?? "الربط غير مفعّل"}`, { duration: 15000 });
               }}
               className="rounded-xl bg-secondary px-6 py-3 font-bold"

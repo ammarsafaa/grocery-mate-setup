@@ -116,11 +116,26 @@ function DbSetupPage() {
             </div>
           ))}
         </div>
-        {error && <div className="mb-4 rounded-xl bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+        {error && <div className="mb-4 whitespace-pre-line break-words rounded-xl bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
         <div className="flex flex-wrap gap-2">
           <button disabled={busy} onClick={connect} className="flex items-center gap-2 rounded-xl bg-primary px-6 py-3 font-bold text-primary-foreground disabled:opacity-60">
             {busy && <Loader2 className="h-4 w-4 animate-spin" />} إنشاء القاعدة والاتصال
           </button>
+          {f.sqlIsMain && (
+            <button
+              disabled={busy}
+              onClick={async () => {
+                const n = native();
+                if (!n?.sqlFixLocal) { toast.info("متاح في نسخة الويندوز"); return; }
+                setBusy(true);
+                toast.info("وافق على رسالة صلاحية المدير من ويندوز...");
+                const r = await n.sqlFixLocal();
+                setBusy(false);
+                if (r.ok) { setError(""); toast.success("تم إصلاح إعدادات SQL Server — اضغط الآن «إنشاء القاعدة والاتصال»"); } else setError(r.error || "فشل الإصلاح");
+              }}
+              className="rounded-xl bg-secondary px-6 py-3 font-bold"
+            >إصلاح إعدادات SQL Server تلقائياً</button>
+          )}
           <button disabled={busy} onClick={skip} className="rounded-xl bg-secondary px-6 py-3 font-bold">تخطي والعمل بدون خادم</button>
         </div>
         <details className="mt-4 rounded-xl bg-secondary/50 p-4 text-sm leading-7">
