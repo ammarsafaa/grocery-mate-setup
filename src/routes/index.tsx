@@ -363,11 +363,29 @@ function PosPage() {
               {priceMode ? "اضغط على منتج لتغيير سعره" : "تغيير سعر"}
             </button>
           </div>
-          {settings.useProductGroups && !search && <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
-            {selectedGroup && <button onClick={() => setSelectedGroup(null)} className="flex min-w-24 items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-3 font-bold"><ArrowRight className={pic ? "h-10 w-10" : "h-4 w-4"}/>{!pic && "رجوع"}</button>}
-            {!selectedGroup && groups.map((group) => <button key={group.id} onClick={() => setSelectedGroup(group.id)} className="flex min-w-32 flex-col items-center gap-2 rounded-lg border border-border bg-card px-5 py-4 font-bold hover:border-primary">{group.image ? <img src={group.image} alt={group.name} className={pic ? "h-28 w-28 rounded-xl object-cover" : "h-16 w-16 rounded-xl object-cover"}/> : <FolderOpen className={pic ? "h-16 w-16 text-primary" : "h-7 w-7 text-primary"}/>}<span className={pic ? "text-xs" : ""}>{group.name}</span></button>)}
-          </div>}
           <div className="grid min-h-0 flex-1 auto-rows-max grid-cols-2 content-start gap-3 overflow-auto lg:grid-cols-3 xl:grid-cols-4">
+            {settings.useProductGroups && selectedGroup && !search && (
+              <button onClick={() => setSelectedGroup(null)} className="flex min-h-28 min-w-0 shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-secondary p-3 font-bold transition hover:border-primary active:scale-95">
+                <ArrowRight className={pic ? "h-12 w-12" : "h-6 w-6"} />
+                رجوع
+              </button>
+            )}
+            {settings.useProductGroups && !selectedGroup && !search && groups.map((group) => (
+              <button
+                key={group.id}
+                onClick={() => setSelectedGroup(group.id)}
+                className="flex min-h-28 min-w-0 shrink-0 flex-col items-center justify-start gap-1 overflow-hidden rounded-2xl border border-border bg-card p-3 transition hover:border-primary hover:bg-accent active:scale-95"
+              >
+                {group.image ? (
+                  <img src={group.image} alt={group.name} className={pic ? "aspect-square w-full max-w-32 shrink-0 rounded-xl object-cover" : "aspect-square w-full max-w-20 shrink-0 rounded-xl object-cover"} />
+                ) : (
+                  <div className={pic ? "flex aspect-square w-full max-w-32 shrink-0 items-center justify-center rounded-xl bg-primary/15" : "flex aspect-square w-full max-w-20 shrink-0 items-center justify-center rounded-xl bg-primary/15"}>
+                    <FolderOpen className={pic ? "h-16 w-16 text-primary" : "h-8 w-8 text-primary"} />
+                  </div>
+                )}
+                <span className={pic ? "text-xs text-muted-foreground" : "product-name font-bold text-foreground"}>{group.name}</span>
+              </button>
+            ))}
             {(!settings.useProductGroups || selectedGroup || search ? filtered : []).map((p) => (
               <button
                 key={p.id}
