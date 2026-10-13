@@ -5,7 +5,7 @@
  * Products' stock is synced as deltas so concurrent sales never overwrite each other.
  */
 import { native, type SqlConfig } from "./native";
-import { getSettings, readCollection, writeCollection, readMeta, writeMeta } from "./db";
+import { getSettings, saveSettings, readCollection, writeCollection, readMeta, writeMeta } from "./db";
 
 const COLLECTIONS = ["products", "groups", "users", "suppliers", "sales", "stockMovements", "shifts", "expenses", "purchases", "supplierPayments"] as const;
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -23,7 +23,10 @@ function recHash(col: string, r: Rec) { if (col === "products") { const { stock:
 
 function config(): SqlConfig | null {
   const s = getSettings();
-  if (!s.syncEnabled || !s.sqlDatabase) return null;
+  // The link stays active once the setup succeeded (db-setup page or the test button),
+  // so the app reconnects automatically after every restart without touching settings.
+  const enabled = s.syncEnabled || s.sqlSetup === "done";
+  if (!enabled || !s.sqlDatabase) return null;
   // Main cashier: SQL Server runs on this same device — no IP/port needed.
   const server = s.sqlIsMain ? ".\\SQLEXPRESS" : (s.sqlHost ?? "").trim();
   if (!server) return null;
@@ -160,6 +163,9 @@ export async function syncNow(): Promise<boolean> {
     }
     meta.lastVer = maxVer;
     writeMeta("sync", meta);
+    // Persist the link as enabled after the first successful sync so it reconnects after restart.
+    const st = getSettings();
+    if (!st.syncEnabled) saveSettings({ ...st, syncEnabled: true });
     setStatus({ state: "ok", pending: 0, lastAt: new Date().toISOString() });
     void pending;
     return true;
