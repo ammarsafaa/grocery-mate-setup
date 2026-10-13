@@ -2,7 +2,7 @@ import { native } from "@/lib/native";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Download, Upload, Plus, Trash2, Scale, HardDrive, Palette, Printer, Layers3, ReceiptText, Server } from "lucide-react";
-import { testSqlConnection, syncNow, getSyncStatus } from "@/lib/sync";
+import { testSqlConnection, syncNow, getSyncStatus, isSyncLinked, setSyncLinked } from "@/lib/sync";
 import { testAclas, sendToAclas, aclasErrorText } from "@/lib/aclas";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
@@ -40,6 +40,7 @@ function SettingsPage() {
   const { user, ready, logout } = useAuth();
   const navigate = useNavigate();
   const [settings, setSettings] = useState<Settings>(getSettings());
+  const [linked, setLinked] = useState<boolean>(() => isSyncLinked());
   const [users, setUsers] = useState<PosUser[]>([]);
   const [newUser, setNewUser] = useState({ name: "", pin: "", role: "cashier" as const });
   const fileRef = useRef<HTMLInputElement>(null);
@@ -373,7 +374,7 @@ function SettingsPage() {
           </h2>
           <p className="mb-4 text-sm text-muted-foreground">كل كاشير يبيع حتى لو انقطعت الشبكة، والبيانات تُرسل للخادم تلقائياً عند رجوع الاتصال.</p>
           <label className="mb-4 flex items-center gap-3">
-            <input type="checkbox" checked={!!settings.syncEnabled} onChange={(e) => setSettings({ ...settings, syncEnabled: e.target.checked })} className="h-5 w-5 accent-primary" />
+            <input type="checkbox" checked={linked} onChange={(e) => { const on = e.target.checked; setLinked(on); setSyncLinked(on); const s = { ...settings, syncEnabled: on }; setSettings(s); saveSettings({ ...getSettings(), syncEnabled: on }); }} className="h-5 w-5 accent-primary" />
             <span className="text-sm font-semibold">تشغيل الربط مع الخادم</span>
           </label>
           <div className="mb-4 grid grid-cols-2 gap-2">
@@ -425,11 +426,11 @@ function SettingsPage() {
             <button
               onClick={async () => {
                 if (!native()) { toast.info("الربط متاح في نسخة الويندوز"); return; }
-                const before = !!settings.syncEnabled;
-                saveSettings({ ...settings, syncEnabled: true });
+                // Pressing the button means "use the server": keep the link on so it retries by itself.
+                const s = { ...settings, syncEnabled: true };
+                setSettings(s); saveSettings(s); setSyncLinked(true); setLinked(true);
                 const r = await testSqlConnection();
-                const s = { ...settings, syncEnabled: r.ok ? true : before };
-                setSettings(s); saveSettings(s);
+                if (r.ok) void syncNow();
                 if (r.ok) toast.success("قاعدة البيانات جاهزة — تم الاتصال وإنشاء الجداول"); else toast.error(`فشل الاتصال: ${r.error}`, { duration: 15000 });
               }}
               className="rounded-xl bg-secondary px-6 py-3 font-bold"
@@ -437,11 +438,9 @@ function SettingsPage() {
             <button
               onClick={async () => {
                 if (!native()) { toast.info("الربط متاح في نسخة الويندوز"); return; }
-                const before = !!settings.syncEnabled;
-                saveSettings({ ...settings, syncEnabled: true });
+                const s = { ...settings, syncEnabled: true };
+                setSettings(s); saveSettings(s); setSyncLinked(true); setLinked(true);
                 const ok = await syncNow();
-                const s = { ...settings, syncEnabled: ok ? true : before };
-                setSettings(s); saveSettings(s);
                 if (ok) toast.success("تمت المزامنة"); else toast.error(`تعذرت المزامنة: ${getSyncStatus().error ?? "الربط غير مفعّل"}`, { duration: 15000 });
               }}
               className="rounded-xl bg-secondary px-6 py-3 font-bold"
