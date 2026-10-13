@@ -16,6 +16,8 @@ import {
   Boxes,
   ReceiptText,
   Wallet,
+  Menu,
+  X,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useAuth } from "@/lib/auth";
