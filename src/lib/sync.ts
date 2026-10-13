@@ -163,6 +163,9 @@ export async function syncNow(): Promise<boolean> {
     }
     meta.lastVer = maxVer;
     writeMeta("sync", meta);
+    // Persist the link as enabled after the first successful sync so it reconnects after restart.
+    const st = getSettings();
+    if (!st.syncEnabled) saveSettings({ ...st, syncEnabled: true });
     setStatus({ state: "ok", pending: 0, lastAt: new Date().toISOString() });
     void pending;
     return true;
