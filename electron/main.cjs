@@ -127,10 +127,13 @@ async function sqlPool(cfg) {
   const key = JSON.stringify(cfg);
   let p = sqlPools.get(key);
   if (!p) {
-    p = (async () => {
+    // A connection attempt that never answers (SQL Server still starting after boot) must not block forever.
+    const attempt = (async () => {
       const t = await ensureDatabase(cfg, key);
       return sqlConn(t, cfg, cfg.database).connect();
-    })().catch((err) => { sqlPools.delete(key); throw err; });
+    })();
+    const limit = new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error("ETIMEOUT: SQL Server did not answer"), { code: "ETIMEOUT" })), 45000));
+    p = Promise.race([attempt, limit]).catch((err) => { sqlPools.delete(key); attempt.then((pool) => pool.close()).catch(() => {}); throw err; });
     sqlPools.set(key, p);
   }
   return p;
@@ -192,7 +195,11 @@ ipcMain.handle("sql-query", async (_e, cfg, sqlText, params) => {
     return { ok: true, rows: r.recordset || [] };
   } catch (err) {
     const key = JSON.stringify(cfg);
-    if (err && /ECONN|ETIMEOUT|ESOCKET|ELOGIN/.test(String(err.code))) sqlPools.delete(key);
+    // Any connection-level failure drops the cached pool so the next automatic retry reconnects from scratch.
+    if (err && (/ECONN|ETIMEOUT|ESOCKET|ELOGIN|ENOTOPEN|EINSTLOOKUP/.test(String(err.code)) || err.name === "ConnectionError")) {
+      const old = sqlPools.get(key); sqlPools.delete(key);
+      if (old) old.then((pool) => pool.close()).catch(() => {});
+    }
     return { ok: false, error: String((err && err.message) || err) };
   }
 });
