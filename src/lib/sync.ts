@@ -23,7 +23,10 @@ function recHash(col: string, r: Rec) { if (col === "products") { const { stock:
 
 function config(): SqlConfig | null {
   const s = getSettings();
-  if (!s.syncEnabled || !s.sqlDatabase) return null;
+  // The link stays active once the setup succeeded (db-setup page or the test button),
+  // so the app reconnects automatically after every restart without touching settings.
+  const enabled = s.syncEnabled || s.sqlSetup === "done";
+  if (!enabled || !s.sqlDatabase) return null;
   // Main cashier: SQL Server runs on this same device — no IP/port needed.
   const server = s.sqlIsMain ? ".\\SQLEXPRESS" : (s.sqlHost ?? "").trim();
   if (!server) return null;
