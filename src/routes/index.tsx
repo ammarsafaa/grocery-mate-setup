@@ -148,7 +148,7 @@ function PosPage() {
   );
 
   const itemsTotal = cart.reduce((sum, item) => sum + item.total, 0);
-  const total = roundToCash250(itemsTotal);
+  const total = roundToCash250(Math.max(0, itemsTotal - discount));
 
   // Poll the scale continuously so the live weight is always visible in the top bar
   useEffect(() => {
@@ -202,17 +202,31 @@ function PosPage() {
       setWeightModal(p);
       return;
     }
+    if (cartonMode) {
+      if (!p.cartonPrice || !p.cartonQty) {
+        toast.error("هذا المنتج بدون سعر كرتونة");
+        return;
+      }
+      setCart((c) => [
+        ...c,
+        { productId: p.id, name: `${p.name} (كرتونة)`, unit: "piece", price: p.cartonPrice! / p.cartonQty!, qty: p.cartonQty!, total: p.cartonPrice! },
+      ]);
+      toast.success(`${p.name} — كرتونة (${p.cartonQty} قطعة)`);
+      return;
+    }
     setCart((c) => {
-      const ex = c.find((i) => i.productId === p.id);
+      const ex = c.find((i) => i.productId === p.id && !i.name.includes("كرتونة"));
+      const newQty = (ex?.qty ?? 0) + 1;
+      const price = piecePrice(p, newQty);
       if (ex)
         return c.map((i) =>
-          i.productId === p.id
-            ? { ...i, qty: i.qty + 1, total: (i.qty + 1) * i.price }
+          i === ex
+            ? { ...i, qty: newQty, price, total: lineTotalWithOffer(p, newQty, price) }
             : i,
         );
       return [
         ...c,
-        { productId: p.id, name: p.name, unit: p.unit, price: p.price, qty: 1, total: p.price },
+        { productId: p.id, name: p.name, unit: p.unit, price, qty: 1, total: lineTotalWithOffer(p, 1, price) },
       ];
     });
   };
