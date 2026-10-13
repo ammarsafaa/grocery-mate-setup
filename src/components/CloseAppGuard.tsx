@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { StopCircle, Printer, DatabaseBackup, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { getOpenShift, getSales, formatMoney, getSettings, saveSettings } from "@/lib/db";
+import { getOpenShift, getSales, formatMoney, getSettings, saveSettings, getHeldCarts } from "@/lib/db";
 import { native } from "@/lib/native";
 import { buildShiftReportHtml, closeShift, printHtml, summarize } from "@/lib/shiftReport";
 
@@ -52,6 +52,7 @@ export function CloseAppGuard() {
   const finishShift = async () => {
     if (!open) return runBackup();
     if (cash === "") { toast.error("أدخل النقد الموجود في الصندوق"); return; }
+    if (getHeldCarts().length > 0) { toast.error("توجد فواتير معلّقة — أنهِها من نقطة البيع قبل غلق الوردية"); return; }
     setBusy(true);
     const { shift, sales } = closeShift(open.id, Number(cash) || 0);
     const ok = await printHtml(buildShiftReportHtml(shift, sales));

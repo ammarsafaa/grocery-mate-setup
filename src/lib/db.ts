@@ -12,6 +12,7 @@ import type {
   StockMovement,
   ReceiptDesign,
   Expense,
+  HeldCart,
 } from "./types";
 
 /**
@@ -153,6 +154,54 @@ export function addSale(sale: Sale) {
   write("sales", sales);
 }
 
+/** إرجاع فاتورة: يعيد الكميات للمخزون ويسجل حركة مرتجع، ويبقي الفاتورة محفوظة للتدقيق. */
+export function returnSale(saleId: string, userName: string): boolean {
+  const sales = getSales();
+  const sale = sales.find((s) => s.id === saleId && !s.returnedAt);
+  if (!sale) return false;
+  const quantities = new Map<string, number>();
+  for (const item of sale.items) quantities.set(item.productId, (quantities.get(item.productId) ?? 0) + item.qty);
+  const movements = getStockMovements();
+  const now = new Date().toISOString();
+  const products = getProducts().map((product) => {
+    const qty = quantities.get(product.id);
+    if (!qty) return product;
+    const stock = product.stock + qty;
+    movements.push({ id: uid(), productId: product.id, productName: product.name, type: "return", qty, balanceAfter: stock, referenceId: sale.id, note: `إرجاع فاتورة ${saleLabel(sale)}`, userName, createdAt: now });
+    return { ...product, stock };
+  });
+  saveProducts(products);
+  saveStockMovements(movements);
+  write("sales", sales.map((s) => (s.id === saleId ? { ...s, returnedAt: now, returnedBy: userName } : s)));
+  return true;
+}
+
+// ---------- Held carts (تعليق الفواتير) ----------
+export function getHeldCarts(): HeldCart[] { return read<HeldCart[]>("heldCarts", []); }
+export function saveHeldCarts(items: HeldCart[]) { write("heldCarts", items); }
+export function holdCart(items: HeldCart["items"], userName: string, note?: string): HeldCart {
+  const held: HeldCart = { id: uid(), items, heldAt: new Date().toISOString(), userName, ...(note ? { note } : {}) };
+  saveHeldCarts([...getHeldCarts(), held]);
+  return held;
+}
+export function takeHeldCart(id: string): HeldCart | undefined {
+  const all = getHeldCarts();
+  const held = all.find((h) => h.id === id);
+  if (held) saveHeldCarts(all.filter((h) => h.id !== id));
+  return held;
+}
+
+/** سعر خط البيع مع عرض «2 بسعر X» إن وُجد على المنتج. */
+export function lineTotalWithOffer(p: Product, qty: number, price?: number): number {
+  const unitPrice = price ?? p.price;
+  if (p.unit === "piece" && p.offerQty && p.offerPrice && p.offerQty > 1 && p.offerPrice > 0) {
+    const bundles = Math.floor(qty / p.offerQty);
+    const rest = qty - bundles * p.offerQty;
+    return bundles * p.offerPrice + rest * unitPrice;
+  }
+  return qty * unitPrice;
+}
+
 // ---------- Suppliers, purchases and stock ----------
 export function getSuppliers(): Supplier[] { return read<Supplier[]>("suppliers", []); }
 export function saveSuppliers(items: Supplier[]) { write("suppliers", items); }
@@ -256,7 +305,7 @@ export function saveExpenses(items: Expense[]) { write("expenses", items); }
 // ---------- Factory reset ----------
 /** Clears all business data and settings; keeps the license so the device stays activated. */
 export function resetAllData() {
-  for (const k of ["users","products","groups","sales","shifts","suppliers","purchases","supplierPayments","stockMovements","expenses"]) write(k, []);
+  for (const k of ["users","products","groups","sales","shifts","suppliers","purchases","supplierPayments","stockMovements","expenses","heldCarts"]) write(k, []);
   write("settings", {});
   write("receiptDesign:58", null);
   write("receiptDesign:80", null);
@@ -303,6 +352,7 @@ const DEFAULT_SETTINGS: Settings = {
   autoCut: true,
   openDrawer: false,
   labelBarcodeEnabled: false,
+  discountEnabled: true,
   useScale: true,
   labelPrefixes: "20,21,22",
   labelPluLength: 5,
@@ -375,6 +425,7 @@ export function exportBackup(): string {
     receipt58: getReceiptDesign(58),
     receipt80: getReceiptDesign(80),
     expenses: getExpenses(),
+    heldCarts: getHeldCarts(),
     layouts: Object.fromEntries(["receipt:58", "receipt:80", "shift:58", "shift:80"].map((k) => [k, readLayoutRaw(k)]).filter(([, v]) => v)),
   };
   return JSON.stringify(data, null, 2);
@@ -395,6 +446,7 @@ export function importBackup(json: string): boolean {
     if (data.stockMovements) write("stockMovements", data.stockMovements);
     if (data.receipt58) write("receiptDesign:58", data.receipt58);
     if (data.expenses) write("expenses", data.expenses);
+    if (data.heldCarts) write("heldCarts", data.heldCarts);
     if (data.receipt80) write("receiptDesign:80", data.receipt80);
     if (data.layouts) for (const [k, v] of Object.entries(data.layouts as Record<string, unknown>)) write(`layout:${k}`, v);
     return true;

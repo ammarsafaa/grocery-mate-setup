@@ -7,14 +7,15 @@ import type { Sale, Shift } from "./types";
 export interface ProductLine { name: string; unit: "piece" | "kg"; qty: number; total: number; }
 
 export function summarize(sales: Sale[]) {
+  const active = sales.filter((s) => !s.returnedAt);
   const map = new Map<string, ProductLine>();
-  for (const s of sales) for (const i of s.items) {
+  for (const s of active) for (const i of s.items) {
     const cur = map.get(i.productId) ?? { name: i.name, unit: i.unit, qty: 0, total: 0 };
     cur.qty += i.qty; cur.total += i.total; map.set(i.productId, cur);
   }
   const products = [...map.values()].sort((a, b) => b.total - a.total);
-  const total = sales.reduce((t, s) => t + s.total, 0);
-  const count = sales.length;
+  const total = active.reduce((t, s) => t + s.total, 0);
+  const count = active.length;
   const pieces = products.filter((p) => p.unit === "piece").reduce((t, p) => t + p.qty, 0);
   const kg = products.filter((p) => p.unit === "kg").reduce((t, p) => t + p.qty, 0);
   const times = sales.map((s) => s.createdAt).sort();
@@ -24,10 +25,11 @@ export function summarize(sales: Sale[]) {
 /** Closes the open shift and returns it with its sales. */
 export function closeShift(shiftId: string, closingCash: number): { shift: Shift; sales: Sale[] } {
   const sales = getSales().filter((s) => s.shiftId === shiftId);
+  const active = sales.filter((s) => !s.returnedAt);
   let closed!: Shift;
   const updated = getShifts().map((s) => {
     if (s.id !== shiftId) return s;
-    closed = { ...s, closedAt: new Date().toISOString(), closingCash, salesTotal: sales.reduce((t, x) => t + x.total, 0), salesCount: sales.length };
+    closed = { ...s, closedAt: new Date().toISOString(), closingCash, salesTotal: active.reduce((t, x) => t + x.total, 0), salesCount: active.length };
     return closed;
   });
   saveShifts(updated);

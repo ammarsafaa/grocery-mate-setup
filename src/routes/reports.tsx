@@ -2,9 +2,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/AppLayout";
-import { getSales, formatMoney } from "@/lib/db";
+import { getSales, formatMoney, returnSale, getOpenShift } from "@/lib/db";
 import type { Sale } from "@/lib/types";
-import { Printer } from "lucide-react";
+import { Printer, Undo2 } from "lucide-react";
 import { native } from "@/lib/native";
 import { buildReceiptHtml } from "@/lib/receipt";
 import { getSettings } from "@/lib/db";
@@ -66,17 +66,19 @@ function ReportsPage() {
     inPeriod(s, period) &&
     (isAdmin ? (seller === "all" || s.userId === seller) : s.userId === user?.id) &&
     (terminal === "all" || s.terminal === terminal)), [sales, period, terminal, seller, isAdmin, user?.id]);
-  const total = filtered.reduce((t, s) => t + s.total, 0);
+  const total = filtered.filter((s) => !s.returnedAt).reduce((t, s) => t + s.total, 0);
 
   const topProducts = useMemo(() => {
     const map = new Map<string, { name: string; qty: number; total: number }>();
-    for (const s of filtered)
+    for (const s of filtered) {
+      if (s.returnedAt) continue;
       for (const i of s.items) {
         const cur = map.get(i.productId) ?? { name: i.name, qty: 0, total: 0 };
         cur.qty += i.qty;
         cur.total += i.total;
         map.set(i.productId, cur);
       }
+    }
     return [...map.values()].sort((a, b) => b.total - a.total).slice(0, 10);
   }, [filtered]);
 
@@ -148,7 +150,7 @@ function ReportsPage() {
                   <th className="p-3 text-right font-semibold">الوقت</th>
                   <th className="p-3 text-right font-semibold">الكاشير</th>
                   <th className="p-3 text-right font-semibold">المواد</th>
-                  <th className="p-3 text-right font-semibold">الإجمالي</th><th className="p-3">طباعة</th>
+                  <th className="p-3 text-right font-semibold">الإجمالي</th><th className="p-3">طباعة</th><th className="p-3">إرجاع</th>
                 </tr>
               </thead>
               <tbody>
@@ -160,12 +162,29 @@ function ReportsPage() {
                     <td className="p-3 text-muted-foreground">
                       {s.items.map((i) => i.name).join("، ")}
                     </td>
-                    <td className="p-3 font-bold text-primary">{formatMoney(s.total)}</td><td className="p-3 text-center"><button title="إعادة طباعة" onClick={async () => { const n = native(); if (!n) { toast.info("الطباعة متاحة في نسخة Windows"); return; } const settings = getSettings(); const result = await n.printReceipt(buildReceiptHtml(s), settings.printerName, settings.printCopies); if (result.ok) toast.success("تم إرسال الفاتورة للطابعة"); else toast.error("تعذرت الطباعة"); }} className="rounded-lg p-2 hover:bg-accent"><Printer className="h-4 w-4"/></button></td>
+                    <td className="p-3 font-bold text-primary">{formatMoney(s.total)}{s.returnedAt && <span className="mr-2 rounded bg-destructive/15 px-1.5 py-0.5 text-[10px] font-bold text-destructive">مرتجعة</span>}</td><td className="p-3 text-center"><button title="إعادة طباعة" onClick={async () => { const n = native(); if (!n) { toast.info("الطباعة متاحة في نسخة Windows"); return; } const settings = getSettings(); const result = await n.printReceipt(buildReceiptHtml(s), settings.printerName, settings.printCopies); if (result.ok) toast.success("تم إرسال الفاتورة للطابعة"); else toast.error("تعذرت الطباعة"); }} className="rounded-lg p-2 hover:bg-accent"><Printer className="h-4 w-4"/></button></td>
+                    <td className="p-3 text-center">
+                      {!s.returnedAt && (isAdmin || s.shiftId === getOpenShift()?.id) && (
+                        <button
+                          title="إرجاع الفاتورة"
+                          onClick={() => {
+                            if (!window.confirm(`إرجاع الفاتورة #${s.terminal ? `${s.terminal}-${s.number}` : s.number}؟ ترجع الكميات للمخزون وينخصم مبلغها من الصندوق.`)) return;
+                            if (returnSale(s.id, user?.name ?? "")) {
+                              setSales(getSales().slice().reverse());
+                              toast.success("تم إرجاع الفاتورة وتحديث المخزون");
+                            } else toast.error("تعذر إرجاع الفاتورة");
+                          }}
+                          className="rounded-lg p-2 text-destructive hover:bg-accent"
+                        >
+                          <Undo2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                    <td colSpan={7} className="p-8 text-center text-muted-foreground">
                       لا توجد مبيعات في هذه الفترة
                     </td>
                   </tr>

@@ -22,6 +22,13 @@ export interface Product {
   costPrice?: number;
   minStock?: number;
   plu?: string; // scale product code (PLU)
+  // Extra prices (piece products)
+  wholesalePrice?: number; // سعر الجملة للقطعة
+  wholesaleMinQty?: number; // أقل كمية يتفعل عندها سعر الجملة تلقائياً
+  cartonPrice?: number; // سعر الكرتونة الكاملة
+  cartonQty?: number; // عدد القطع داخل الكرتونة
+  offerQty?: number; // عرض: مثلاً 2
+  offerPrice?: number; // عرض: بسعر 1500
 }
 
 export interface ProductGroup {
@@ -55,6 +62,18 @@ export interface Sale {
   paid?: number;
   change?: number;
   terminal?: string | undefined; // cashier device code when multi-cashier sync is on
+  discount?: number; // خصم ثابت على الفاتورة
+  returnedAt?: string; // ISO — الفاتورة أُرجعت
+  returnedBy?: string;
+}
+
+/** فاتورة معلّقة: تبقى محفوظة حتى لو انسد البرنامج */
+export interface HeldCart {
+  id: string;
+  items: CartItem[];
+  heldAt: string; // ISO
+  userName: string;
+  note?: string;
 }
 
 export interface Supplier {
@@ -197,6 +216,7 @@ export interface Settings {
   labelPluLength: number;
   labelValueType: "weight" | "price";
   labelWeightDecimals: number;
+  discountEnabled?: boolean; // زر خصم على الفاتورة في نقطة البيع
   telegramEnabled?: boolean;
   telegramToken?: string;
   telegramChatIds?: string; // comma separated

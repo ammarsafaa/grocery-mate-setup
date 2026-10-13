@@ -1,7 +1,7 @@
 import { native } from "@/lib/native";
 import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, FolderOpen, Printer, Scale, Trash2, ShoppingBasket, PlayCircle, Pencil } from "lucide-react";
+import { ArrowRight, FolderOpen, Printer, Scale, Trash2, ShoppingBasket, PlayCircle, Pencil, Percent, Package, Layers, PauseCircle, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/AppLayout";
@@ -23,6 +23,10 @@ import {
   roundToCash250,
   parseScaleLabel,
   uid,
+  getHeldCarts,
+  holdCart,
+  takeHeldCart,
+  lineTotalWithOffer,
 } from "@/lib/db";
 import { speakArabic } from "@/lib/image";
 import { buildReceiptHtml } from "@/lib/receipt";
@@ -64,6 +68,10 @@ function PosPage() {
   }, [user]);
   const endShift = async () => {
     if (!shift || ending) return;
+    if (getHeldCarts().length > 0) {
+      toast.error("توجد فواتير معلّقة — أنهِها أو احذفها قبل غلق الوردية");
+      return;
+    }
     setEnding(true);
     const { shift: closed, sales } = doCloseShift(shift.id, Number(endCash) || 0);
     window.dispatchEvent(new Event("grocery-pos:shift-closed"));
@@ -83,7 +91,20 @@ function PosPage() {
   const [priceDraft, setPriceDraft] = useState("");
   const [payOpen, setPayOpen] = useState(false);
   const [paidDraft, setPaidDraft] = useState(0);
+  const [wholesale, setWholesale] = useState(false);
+  const [cartonMode, setCartonMode] = useState(false);
+  const [discount, setDiscount] = useState(0);
+  const [discountOpen, setDiscountOpen] = useState(false);
+  const [discountDraft, setDiscountDraft] = useState("");
+  const [held, setHeld] = useState(getHeldCarts());
+  const [heldOpen, setHeldOpen] = useState(false);
   const pic = !!settings.pictureMode;
+
+  /** سعر القطعة الفعلي: جملة إذا كان وضع الجملة فعّالاً أو الكمية وصلت حد الجملة. */
+  const piecePrice = (p: Product, qty: number) =>
+    p.wholesalePrice && p.wholesalePrice > 0 && (wholesale || ((p.wholesaleMinQty ?? 0) > 0 && qty >= (p.wholesaleMinQty ?? 0)))
+      ? p.wholesalePrice
+      : p.price;
 
   const saveQuickPrice = () => {
     const value = Number(priceDraft);
@@ -131,7 +152,7 @@ function PosPage() {
   );
 
   const itemsTotal = cart.reduce((sum, item) => sum + item.total, 0);
-  const total = roundToCash250(itemsTotal);
+  const total = roundToCash250(Math.max(0, itemsTotal - discount));
 
   // Poll the scale continuously so the live weight is always visible in the top bar
   useEffect(() => {
@@ -185,17 +206,31 @@ function PosPage() {
       setWeightModal(p);
       return;
     }
+    if (cartonMode) {
+      if (!p.cartonPrice || !p.cartonQty) {
+        toast.error("هذا المنتج بدون سعر كرتونة");
+        return;
+      }
+      setCart((c) => [
+        ...c,
+        { productId: p.id, name: `${p.name} (كرتونة)`, unit: "piece", price: p.cartonPrice! / p.cartonQty!, qty: p.cartonQty!, total: p.cartonPrice! },
+      ]);
+      toast.success(`${p.name} — كرتونة (${p.cartonQty} قطعة)`);
+      return;
+    }
     setCart((c) => {
-      const ex = c.find((i) => i.productId === p.id);
+      const ex = c.find((i) => i.productId === p.id && !i.name.includes("كرتونة"));
+      const newQty = (ex?.qty ?? 0) + 1;
+      const price = piecePrice(p, newQty);
       if (ex)
         return c.map((i) =>
-          i.productId === p.id
-            ? { ...i, qty: i.qty + 1, total: (i.qty + 1) * i.price }
+          i === ex
+            ? { ...i, qty: newQty, price, total: lineTotalWithOffer(p, newQty, price) }
             : i,
         );
       return [
         ...c,
-        { productId: p.id, name: p.name, unit: p.unit, price: p.price, qty: 1, total: p.price },
+        { productId: p.id, name: p.name, unit: p.unit, price, qty: 1, total: lineTotalWithOffer(p, 1, price) },
       ];
     });
   };
@@ -248,6 +283,7 @@ function PosPage() {
       paid: paidAmount && paidAmount > total ? paidAmount : total,
       change: paidAmount && paidAmount > total ? paidAmount - total : 0,
       terminal: currentTerminal(),
+      ...(discount > 0 ? { discount } : {}),
     };
     addSale(sale);
     if (settings.speakTotals && !pic) speakArabic(`المبلغ ${total} دينار`);
@@ -262,6 +298,7 @@ function PosPage() {
     recordSaleMovements(sale);
     setProducts(all.filter((p) => p.active));
     setCart([]);
+    setDiscount(0);
     toast.success(`تم حفظ الفاتورة رقم ${saleLabel(sale)}`);
     if (settings.autoPrint) {
       const n = native();
@@ -362,6 +399,31 @@ function PosPage() {
               <Pencil className="h-4 w-4" />
               {priceMode ? "اضغط على منتج لتغيير سعره" : "تغيير سعر"}
             </button>
+            <button
+              onClick={() => setWholesale((v) => !v)}
+              title="تفعيل سعر الجملة للمنتجات التي لها سعر جملة"
+              className={`flex h-12 items-center gap-2 rounded-xl px-4 font-bold transition ${wholesale ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
+            >
+              <Layers className="h-4 w-4" />
+              جملة
+            </button>
+            <button
+              onClick={() => setCartonMode((v) => !v)}
+              title="إضافة المنتج ككرتونة كاملة"
+              className={`flex h-12 items-center gap-2 rounded-xl px-4 font-bold transition ${cartonMode ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
+            >
+              <Package className="h-4 w-4" />
+              كرتونة
+            </button>
+            {settings.discountEnabled && (
+              <button
+                onClick={() => { setDiscountDraft(discount ? String(discount) : ""); setDiscountOpen(true); }}
+                className={`flex h-12 items-center gap-2 rounded-xl px-4 font-bold transition ${discount > 0 ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
+              >
+                <Percent className="h-4 w-4" />
+                خصم
+              </button>
+            )}
           </div>
           <div className="grid min-h-0 flex-1 auto-rows-max grid-cols-2 content-start gap-3 overflow-auto lg:grid-cols-3 xl:grid-cols-4">
             {settings.useProductGroups && selectedGroup && !search && (
@@ -447,7 +509,33 @@ function PosPage() {
               <span>الإجمالي</span>
               <span className={pic ? "text-4xl font-black text-primary" : "text-primary"}>{formatMoney(total)}</span>
             </div>
-            {itemsTotal !== total && <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground"><span>تقريب نقدي</span><span>{formatMoney(total - itemsTotal)}</span></div>}
+            {discount > 0 && <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground"><span>الخصم</span><span>-{formatMoney(discount)}</span></div>}
+            {itemsTotal - discount !== total && <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground"><span>تقريب نقدي</span><span>{formatMoney(total - (itemsTotal - discount))}</span></div>}
+            <div className="mb-3 flex gap-2">
+              <button
+                onClick={() => {
+                  if (cart.length === 0) return;
+                  holdCart(cart, user?.name ?? "");
+                  setCart([]);
+                  setDiscount(0);
+                  setHeld(getHeldCarts());
+                  toast.success("تم تعليق الفاتورة");
+                }}
+                disabled={cart.length === 0}
+                className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-secondary font-bold disabled:opacity-40"
+              >
+                <PauseCircle className="h-4 w-4" />
+                تعليق
+              </button>
+              <button
+                onClick={() => { setHeld(getHeldCarts()); setHeldOpen(true); }}
+                className="relative flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-secondary font-bold"
+              >
+                <Undo2 className="h-4 w-4" />
+                المعلّقة
+                {held.length > 0 && <span className="absolute -top-2 -left-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-black text-primary-foreground">{held.length}</span>}
+              </button>
+            </div>
             <button
               onClick={() => { if (pic) { setPaidDraft(0); setPayOpen(true); if (settings.speakTotals) speakArabic(`المبلغ ${total} دينار`); } else checkout(); }}
               disabled={cart.length === 0}
@@ -504,6 +592,78 @@ function PosPage() {
               <button onClick={saveQuickPrice} className="h-12 flex-1 rounded-xl bg-primary font-bold text-primary-foreground">حفظ السعر</button>
               <button onClick={() => { setPriceEdit(null); setPriceMode(false); }} className="h-12 flex-1 rounded-xl bg-secondary font-bold">إلغاء</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Discount modal */}
+      {discountOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6">
+            <h3 className="mb-4 text-xl font-bold">خصم على الفاتورة</h3>
+            <input
+              autoFocus
+              type="number"
+              value={discountDraft}
+              onChange={(e) => setDiscountDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const v = Number(discountDraft);
+                  if (v > 0 && v <= itemsTotal) { setDiscount(v); setDiscountOpen(false); }
+                  else toast.error("أدخل مبلغ خصم صحيحاً");
+                }
+              }}
+              placeholder="مبلغ الخصم"
+              className="mb-4 h-14 w-full rounded-xl border border-border bg-secondary px-4 text-center text-2xl font-bold outline-none focus:border-primary"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  const v = Number(discountDraft);
+                  if (v > 0 && v <= itemsTotal) { setDiscount(v); setDiscountOpen(false); }
+                  else toast.error("أدخل مبلغ خصم صحيحاً");
+                }}
+                className="h-12 flex-1 rounded-xl bg-primary font-bold text-primary-foreground"
+              >
+                تطبيق
+              </button>
+              <button onClick={() => { setDiscount(0); setDiscountOpen(false); }} className="h-12 flex-1 rounded-xl bg-secondary font-bold">إزالة الخصم</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Held carts modal */}
+      {heldOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6">
+            <h3 className="mb-4 text-xl font-bold">الفواتير المعلّقة</h3>
+            {held.length === 0 && <p className="py-6 text-center text-muted-foreground">لا توجد فواتير معلّقة</p>}
+            <div className="max-h-80 space-y-2 overflow-auto">
+              {held.map((h) => (
+                <button
+                  key={h.id}
+                  onClick={() => {
+                    if (cart.length > 0) { toast.error("علّق أو أنهِ الفاتورة الحالية أولاً"); return; }
+                    const taken = takeHeldCart(h.id);
+                    if (taken) {
+                      setCart(taken.items);
+                      setHeld(getHeldCarts());
+                      setHeldOpen(false);
+                      toast.success("رجعت الفاتورة المعلّقة");
+                    }
+                  }}
+                  className="flex w-full items-center justify-between rounded-xl bg-secondary p-3 text-right transition hover:border-primary"
+                >
+                  <div>
+                    <div className="font-bold">{h.items.length} صنف — {formatMoney(h.items.reduce((s, i) => s + i.total, 0))}</div>
+                    <div className="text-xs text-muted-foreground">{new Date(h.heldAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} — {h.userName}</div>
+                  </div>
+                  <Undo2 className="h-5 w-5 text-primary" />
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setHeldOpen(false)} className="mt-4 h-12 w-full rounded-xl bg-secondary font-bold">رجوع</button>
           </div>
         </div>
       )}

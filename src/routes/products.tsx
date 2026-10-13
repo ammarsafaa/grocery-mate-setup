@@ -337,10 +337,26 @@ function ProductsPage() {
                 </select>
                  <select value={editing.groupId ?? ""} onChange={(e) => { const group = groups.find((g) => g.id === e.target.value); setEditing({ ...editing, groupId: e.target.value || undefined, category: group?.name ?? "عام" }); }} className="h-12 rounded-xl border border-border bg-secondary px-4 outline-none"><option value="">بدون مجموعة</option>{groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}</select>
               </div>
-               <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                  <input type="number" value={editing.costPrice || ""} onChange={(e) => setEditing({ ...editing, costPrice: Number(e.target.value) })} placeholder="سعر الشراء" className="h-12 rounded-xl border border-border bg-secondary px-4"/>
                  <input type="number" value={editing.minStock ?? ""} onChange={(e) => setEditing({ ...editing, minStock: Number(e.target.value) })} placeholder="حد تنبيه المخزون" className="h-12 rounded-xl border border-border bg-secondary px-4"/>
                </div>
+              {editing.unit === "piece" && (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <input type="number" value={editing.wholesalePrice || ""} onChange={(e) => { const v = Number(e.target.value); const next = { ...editing }; if (v > 0) next.wholesalePrice = v; else delete next.wholesalePrice; setEditing(next); }} placeholder="سعر الجملة (اختياري)" className="h-12 rounded-xl border border-border bg-secondary px-4"/>
+                    <input type="number" value={editing.wholesaleMinQty || ""} onChange={(e) => { const v = Number(e.target.value); const next = { ...editing }; if (v > 0) next.wholesaleMinQty = v; else delete next.wholesaleMinQty; setEditing(next); }} placeholder="يتفعل الجملة من كمية" className="h-12 rounded-xl border border-border bg-secondary px-4"/>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <input type="number" value={editing.cartonPrice || ""} onChange={(e) => { const v = Number(e.target.value); const next = { ...editing }; if (v > 0) next.cartonPrice = v; else delete next.cartonPrice; setEditing(next); }} placeholder="سعر الكرتونة (اختياري)" className="h-12 rounded-xl border border-border bg-secondary px-4"/>
+                    <input type="number" value={editing.cartonQty || ""} onChange={(e) => { const v = Number(e.target.value); const next = { ...editing }; if (v > 0) next.cartonQty = v; else delete next.cartonQty; setEditing(next); }} placeholder="عدد القطع بالكرتونة" className="h-12 rounded-xl border border-border bg-secondary px-4"/>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <input type="number" value={editing.offerQty || ""} onChange={(e) => { const v = Number(e.target.value); const next = { ...editing }; if (v > 0) next.offerQty = v; else delete next.offerQty; setEditing(next); }} placeholder="عرض: الكمية (مثلاً 2)" className="h-12 rounded-xl border border-border bg-secondary px-4"/>
+                    <input type="number" value={editing.offerPrice || ""} onChange={(e) => { const v = Number(e.target.value); const next = { ...editing }; if (v > 0) next.offerPrice = v; else delete next.offerPrice; setEditing(next); }} placeholder="عرض: بسعر (مثلاً 1500)" className="h-12 rounded-xl border border-border bg-secondary px-4"/>
+                  </div>
+                </>
+              )}
               <input
                 value={editing.barcode || ""}
                 onChange={(e) => setEditing({ ...editing, barcode: e.target.value })}
