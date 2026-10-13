@@ -160,7 +160,24 @@ function ReportsPage() {
                     <td className="p-3 text-muted-foreground">
                       {s.items.map((i) => i.name).join("، ")}
                     </td>
-                    <td className="p-3 font-bold text-primary">{formatMoney(s.total)}</td><td className="p-3 text-center"><button title="إعادة طباعة" onClick={async () => { const n = native(); if (!n) { toast.info("الطباعة متاحة في نسخة Windows"); return; } const settings = getSettings(); const result = await n.printReceipt(buildReceiptHtml(s), settings.printerName, settings.printCopies); if (result.ok) toast.success("تم إرسال الفاتورة للطابعة"); else toast.error("تعذرت الطباعة"); }} className="rounded-lg p-2 hover:bg-accent"><Printer className="h-4 w-4"/></button></td>
+                    <td className="p-3 font-bold text-primary">{formatMoney(s.total)}{s.returnedAt && <span className="mr-2 rounded bg-destructive/15 px-1.5 py-0.5 text-[10px] font-bold text-destructive">مرتجعة</span>}</td><td className="p-3 text-center"><button title="إعادة طباعة" onClick={async () => { const n = native(); if (!n) { toast.info("الطباعة متاحة في نسخة Windows"); return; } const settings = getSettings(); const result = await n.printReceipt(buildReceiptHtml(s), settings.printerName, settings.printCopies); if (result.ok) toast.success("تم إرسال الفاتورة للطابعة"); else toast.error("تعذرت الطباعة"); }} className="rounded-lg p-2 hover:bg-accent"><Printer className="h-4 w-4"/></button></td>
+                    <td className="p-3 text-center">
+                      {!s.returnedAt && (isAdmin || s.shiftId === getOpenShift()?.id) && (
+                        <button
+                          title="إرجاع الفاتورة"
+                          onClick={() => {
+                            if (!window.confirm(`إرجاع الفاتورة #${s.terminal ? `${s.terminal}-${s.number}` : s.number}؟ ترجع الكميات للمخزون وينخصم مبلغها من الصندوق.`)) return;
+                            if (returnSale(s.id, user?.name ?? "")) {
+                              setSales(getSales().slice().reverse());
+                              toast.success("تم إرجاع الفاتورة وتحديث المخزون");
+                            } else toast.error("تعذر إرجاع الفاتورة");
+                          }}
+                          className="rounded-lg p-2 text-destructive hover:bg-accent"
+                        >
+                          <Undo2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
                 {filtered.length === 0 && (
