@@ -12,6 +12,7 @@ import type {
   StockMovement,
   ReceiptDesign,
   Expense,
+  HeldCart,
 } from "./types";
 
 /**
@@ -151,6 +152,54 @@ export function addSale(sale: Sale) {
   const sales = getSales();
   sales.push(sale);
   write("sales", sales);
+}
+
+/** إرجاع فاتورة: يعيد الكميات للمخزون ويسجل حركة مرتجع، ويبقي الفاتورة محفوظة للتدقيق. */
+export function returnSale(saleId: string, userName: string): boolean {
+  const sales = getSales();
+  const sale = sales.find((s) => s.id === saleId && !s.returnedAt);
+  if (!sale) return false;
+  const quantities = new Map<string, number>();
+  for (const item of sale.items) quantities.set(item.productId, (quantities.get(item.productId) ?? 0) + item.qty);
+  const movements = getStockMovements();
+  const now = new Date().toISOString();
+  const products = getProducts().map((product) => {
+    const qty = quantities.get(product.id);
+    if (!qty) return product;
+    const stock = product.stock + qty;
+    movements.push({ id: uid(), productId: product.id, productName: product.name, type: "return", qty, balanceAfter: stock, referenceId: sale.id, note: `إرجاع فاتورة ${saleLabel(sale)}`, userName, createdAt: now });
+    return { ...product, stock };
+  });
+  saveProducts(products);
+  saveStockMovements(movements);
+  write("sales", sales.map((s) => (s.id === saleId ? { ...s, returnedAt: now, returnedBy: userName } : s)));
+  return true;
+}
+
+// ---------- Held carts (تعليق الفواتير) ----------
+export function getHeldCarts(): HeldCart[] { return read<HeldCart[]>("heldCarts", []); }
+export function saveHeldCarts(items: HeldCart[]) { write("heldCarts", items); }
+export function holdCart(items: HeldCart["items"], userName: string, note?: string): HeldCart {
+  const held: HeldCart = { id: uid(), items, heldAt: new Date().toISOString(), userName, note };
+  saveHeldCarts([...getHeldCarts(), held]);
+  return held;
+}
+export function takeHeldCart(id: string): HeldCart | undefined {
+  const all = getHeldCarts();
+  const held = all.find((h) => h.id === id);
+  if (held) saveHeldCarts(all.filter((h) => h.id !== id));
+  return held;
+}
+
+/** سعر خط البيع مع عرض «2 بسعر X» إن وُجد على المنتج. */
+export function lineTotalWithOffer(p: Product, qty: number, price?: number): number {
+  const unitPrice = price ?? p.price;
+  if (p.unit === "piece" && p.offerQty && p.offerPrice && p.offerQty > 1 && p.offerPrice > 0) {
+    const bundles = Math.floor(qty / p.offerQty);
+    const rest = qty - bundles * p.offerQty;
+    return bundles * p.offerPrice + rest * unitPrice;
+  }
+  return qty * unitPrice;
 }
 
 // ---------- Suppliers, purchases and stock ----------
