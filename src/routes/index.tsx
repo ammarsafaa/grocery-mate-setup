@@ -505,7 +505,33 @@ function PosPage() {
               <span>الإجمالي</span>
               <span className={pic ? "text-4xl font-black text-primary" : "text-primary"}>{formatMoney(total)}</span>
             </div>
-            {itemsTotal !== total && <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground"><span>تقريب نقدي</span><span>{formatMoney(total - itemsTotal)}</span></div>}
+            {discount > 0 && <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground"><span>الخصم</span><span>-{formatMoney(discount)}</span></div>}
+            {itemsTotal - discount !== total && <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground"><span>تقريب نقدي</span><span>{formatMoney(total - (itemsTotal - discount))}</span></div>}
+            <div className="mb-3 flex gap-2">
+              <button
+                onClick={() => {
+                  if (cart.length === 0) return;
+                  holdCart(cart, user?.name ?? "");
+                  setCart([]);
+                  setDiscount(0);
+                  setHeld(getHeldCarts());
+                  toast.success("تم تعليق الفاتورة");
+                }}
+                disabled={cart.length === 0}
+                className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-secondary font-bold disabled:opacity-40"
+              >
+                <PauseCircle className="h-4 w-4" />
+                تعليق
+              </button>
+              <button
+                onClick={() => { setHeld(getHeldCarts()); setHeldOpen(true); }}
+                className="relative flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-secondary font-bold"
+              >
+                <Undo2 className="h-4 w-4" />
+                المعلّقة
+                {held.length > 0 && <span className="absolute -top-2 -left-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-black text-primary-foreground">{held.length}</span>}
+              </button>
+            </div>
             <button
               onClick={() => { if (pic) { setPaidDraft(0); setPayOpen(true); if (settings.speakTotals) speakArabic(`المبلغ ${total} دينار`); } else checkout(); }}
               disabled={cart.length === 0}
