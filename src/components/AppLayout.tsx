@@ -79,9 +79,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <img src={zerosLogo} alt="شعار زيروس" className="h-11 w-11 shrink-0 object-contain" />
             <div className="hidden min-w-0 flex-1 md:block">
               <div className="text-base font-bold text-foreground">زيروس</div>
-            <div className="truncate text-xs text-muted-foreground">{storeName}</div>
+              <div className="truncate text-xs text-muted-foreground">{storeName}</div>
+            </div>
+            <button
+              onClick={() => setHidden(true)}
+              title="إخفاء القائمة"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-sidebar-accent hover:text-foreground"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
-        </div>
 
         <nav className="flex flex-1 flex-col gap-1">
           {NAV.filter((item) => !("admin" in item) || !item.admin || user?.role === "admin").map(({ to, label, icon: Icon }) => {
