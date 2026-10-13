@@ -1,7 +1,7 @@
 import { native } from "@/lib/native";
 import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, FolderOpen, Printer, Scale, Trash2, ShoppingBasket, PlayCircle, Pencil } from "lucide-react";
+import { ArrowRight, FolderOpen, Printer, Scale, Trash2, ShoppingBasket, PlayCircle, Pencil, Percent, Package, Layers, PauseCircle, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/AppLayout";
@@ -23,6 +23,10 @@ import {
   roundToCash250,
   parseScaleLabel,
   uid,
+  getHeldCarts,
+  holdCart,
+  takeHeldCart,
+  lineTotalWithOffer,
 } from "@/lib/db";
 import { speakArabic } from "@/lib/image";
 import { buildReceiptHtml } from "@/lib/receipt";
@@ -83,7 +87,20 @@ function PosPage() {
   const [priceDraft, setPriceDraft] = useState("");
   const [payOpen, setPayOpen] = useState(false);
   const [paidDraft, setPaidDraft] = useState(0);
+  const [wholesale, setWholesale] = useState(false);
+  const [cartonMode, setCartonMode] = useState(false);
+  const [discount, setDiscount] = useState(0);
+  const [discountOpen, setDiscountOpen] = useState(false);
+  const [discountDraft, setDiscountDraft] = useState("");
+  const [held, setHeld] = useState(getHeldCarts());
+  const [heldOpen, setHeldOpen] = useState(false);
   const pic = !!settings.pictureMode;
+
+  /** سعر القطعة الفعلي: جملة إذا كان وضع الجملة فعّالاً أو الكمية وصلت حد الجملة. */
+  const piecePrice = (p: Product, qty: number) =>
+    p.wholesalePrice && p.wholesalePrice > 0 && (wholesale || ((p.wholesaleMinQty ?? 0) > 0 && qty >= (p.wholesaleMinQty ?? 0)))
+      ? p.wholesalePrice
+      : p.price;
 
   const saveQuickPrice = () => {
     const value = Number(priceDraft);
