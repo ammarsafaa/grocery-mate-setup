@@ -21,12 +21,25 @@ function setStatus(s: SyncStatus) { status = s; window.dispatchEvent(new CustomE
 function hash(s: string): number { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return h; }
 function recHash(col: string, r: Rec) { if (col === "products") { const { stock: _s, ...rest } = r; return hash(JSON.stringify(rest)); } return hash(JSON.stringify(r)); }
 
+/**
+ * The on/off state of the link lives in its own record (not inside the settings object),
+ * so saving any other setting from a stale settings screen can never switch the link off.
+ * It turns on after any successful connection and only turns off when the admin unticks it.
+ */
+export function isSyncLinked(): boolean {
+  const v = readMeta<boolean | null>("syncLinked", null);
+  if (v !== null) return v;
+  const s = getSettings();
+  return !!s.syncEnabled || s.sqlSetup === "done";
+}
+export function setSyncLinked(on: boolean) {
+  writeMeta("syncLinked", on);
+  if (!on) setStatus({ state: "off", pending: 0 });
+}
+
 function config(): SqlConfig | null {
   const s = getSettings();
-  // The link stays active once the setup succeeded (db-setup page or the test button),
-  // so the app reconnects automatically after every restart without touching settings.
-  const enabled = s.syncEnabled || s.sqlSetup === "done";
-  if (!enabled || !s.sqlDatabase) return null;
+  if (!isSyncLinked() || !s.sqlDatabase) return null;
   // Main cashier: SQL Server runs on this same device — no IP/port needed.
   const server = s.sqlIsMain ? ".\\SQLEXPRESS" : (s.sqlHost ?? "").trim();
   if (!server) return null;
@@ -68,7 +81,7 @@ let schemaReady = "";
 export async function testSqlConnection(): Promise<{ ok: boolean; error?: string }> {
   const cfg = config();
   if (!cfg) return { ok: false, error: "فعّل الربط واكتب عنوان الخادم واسم القاعدة" };
-  try { await q(cfg, SCHEMA); schemaReady = JSON.stringify(cfg); return { ok: true }; } catch (e) { return { ok: false, error: (e as Error).message }; }
+  try { await q(cfg, SCHEMA); schemaReady = JSON.stringify(cfg); writeMeta("syncLinked", true); return { ok: true }; } catch (e) { return { ok: false, error: (e as Error).message }; }
 }
 
 let running = false;
@@ -163,9 +176,8 @@ export async function syncNow(): Promise<boolean> {
     }
     meta.lastVer = maxVer;
     writeMeta("sync", meta);
-    // Persist the link as enabled after the first successful sync so it reconnects after restart.
-    const st = getSettings();
-    if (!st.syncEnabled) saveSettings({ ...st, syncEnabled: true });
+    // Persist the link as enabled after a successful sync so it reconnects after restart.
+    writeMeta("syncLinked", true);
     setStatus({ state: "ok", pending: 0, lastAt: new Date().toISOString() });
     void pending;
     return true;
