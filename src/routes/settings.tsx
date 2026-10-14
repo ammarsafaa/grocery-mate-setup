@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/AppLayout";
 import { UpdatePanel } from "@/components/UpdatePanel";
+import { SettingsNavigation, type SettingsSection } from "@/components/SettingsNavigation";
+import { MIN_POS_TILE_WIDTH, MAX_POS_TILE_WIDTH, posTileWidth } from "@/lib/posTileSize";
 import {
   getSettings,
   saveSettings,
@@ -40,6 +42,7 @@ function SettingsPage() {
   const { user, ready, logout } = useAuth();
   const navigate = useNavigate();
   const [settings, setSettings] = useState<Settings>(getSettings());
+  const [activeSection, setActiveSection] = useState<SettingsSection>("store");
   const [linked, setLinked] = useState<boolean>(() => isSyncLinked());
   const [users, setUsers] = useState<PosUser[]>([]);
   const [newUser, setNewUser] = useState({ name: "", pin: "", role: "cashier" as const });
@@ -130,11 +133,12 @@ function SettingsPage() {
 
   return (
     <AppLayout>
-      <div className="space-y-6 p-6">
+      <div className="min-w-0 space-y-6 p-4 md:p-6">
         <h1 className="text-2xl font-bold">الإعدادات</h1>
+        <SettingsNavigation active={activeSection} onSelect={setActiveSection} />
 
         {/* Store */}
-        <section className="rounded-2xl border border-border bg-card p-6">
+        <section id="settings-store" hidden={activeSection !== "store"} aria-label="store" className="rounded-2xl border border-border bg-card p-6">
           <h2 className="mb-4 text-lg font-bold">المتجر</h2>
           <div className="grid gap-4 md:grid-cols-2">
             <div>
@@ -162,7 +166,7 @@ function SettingsPage() {
           </button>
         </section>
 
-        <section className="rounded-lg border border-border bg-card p-6">
+        <section id="settings-groups" hidden={activeSection !== "groups"} aria-label="groups" className="rounded-lg border border-border bg-card p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-bold"><Layers3 className="h-5 w-5 text-primary"/>عرض المجموعات</h2>
           <label className="flex items-center justify-between gap-4 rounded-lg bg-secondary p-4"><div><div className="font-bold">عرض المجموعات أولاً في نقطة البيع</div><div className="text-sm text-muted-foreground">عند تعطيله تظهر جميع المنتجات مباشرة</div></div><input type="checkbox" checked={settings.useProductGroups} onChange={(e) => setSettings({ ...settings, useProductGroups: e.target.checked })} className="h-5 w-5 accent-primary"/></label>
           <label className="mt-3 flex items-center justify-between gap-4 rounded-lg bg-secondary p-4"><div><div className="font-bold">وضع الصور (لكاشير لا يقرأ)</div><div className="text-sm text-muted-foreground">صور كبيرة، أزرار ملوّنة كبيرة، ودفع بصور فئات العملة مع عرض الباقي</div></div><input type="checkbox" checked={!!settings.pictureMode} onChange={(e) => setSettings({ ...settings, pictureMode: e.target.checked })} className="h-5 w-5 accent-primary"/></label>
@@ -172,18 +176,23 @@ function SettingsPage() {
           <div className="mt-4 flex gap-2"><button onClick={() => save(settings)} className="rounded-lg bg-primary px-6 py-3 font-bold text-primary-foreground">حفظ</button><Link to="/groups" className="rounded-lg bg-secondary px-6 py-3 font-bold">إدارة المجموعات</Link></div>
         </section>
 
-        <section className="rounded-lg border border-border bg-card p-6">
+        <section id="settings-appearance" hidden={activeSection !== "appearance"} aria-label="appearance" className="rounded-lg border border-border bg-card p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-bold"><Palette className="h-5 w-5 text-primary"/>ألوان النظام وخط المنتجات</h2>
           <div className="grid gap-4 md:grid-cols-2">
             <div><label className="mb-1 block text-sm text-muted-foreground">نظام الألوان</label><select value={settings.colorPreset} onChange={(e) => setSettings({ ...settings, colorPreset: e.target.value as Settings["colorPreset"] })} className="h-12 w-full rounded-lg border border-border bg-secondary px-4"><option value="emerald">أخضر</option><option value="blue">أزرق</option><option value="red">أحمر</option><option value="amber">ذهبي</option><option value="custom">لون مخصص</option></select></div>
             <div><label className="mb-1 block text-sm text-muted-foreground">المظهر</label><select value={settings.colorMode} onChange={(e) => setSettings({ ...settings, colorMode: e.target.value as Settings["colorMode"] })} className="h-12 w-full rounded-lg border border-border bg-secondary px-4"><option value="dark">داكن</option><option value="light">فاتح</option></select></div>
             {settings.colorPreset === "custom" && <div><label className="mb-1 block text-sm text-muted-foreground">اللون المخصص</label><input type="color" value={settings.customColor} onChange={(e) => setSettings({ ...settings, customColor: e.target.value })} className="h-12 w-full rounded-lg border border-border bg-secondary p-2"/></div>}
             <div><label className="mb-1 block text-sm text-muted-foreground">خط أسماء المنتجات</label><select value={settings.productFont} onChange={(e) => setSettings({ ...settings, productFont: e.target.value as Settings["productFont"] })} className="h-12 w-full rounded-lg border border-border bg-secondary px-4"><option>Cairo</option><option>Tajawal</option><option>Noto Kufi Arabic</option><option>Arial</option></select></div>
+            <div className="md:col-span-2">
+              <label htmlFor="product-tile-width" className="mb-2 block text-sm text-muted-foreground">حجم مربعات المنتجات: <span dir="ltr">{posTileWidth(settings.productTileWidth)}</span></label>
+              <input id="product-tile-width" type="range" min={MIN_POS_TILE_WIDTH} max={MAX_POS_TILE_WIDTH} step={8} value={posTileWidth(settings.productTileWidth)} onChange={(e) => setSettings({ ...settings, productTileWidth: Number(e.target.value) })} className="w-full accent-primary" />
+              <div className="flex justify-between text-xs text-muted-foreground"><span>أصغر</span><span>أكبر</span></div>
+            </div>
             <div><label className="mb-1 block text-sm text-muted-foreground">حجم خط المنتجات: {settings.productFontSize}</label><input type="range" min="12" max="28" value={settings.productFontSize} onChange={(e) => setSettings({ ...settings, productFontSize: Number(e.target.value) })} className="w-full accent-primary"/></div>
           </div><button onClick={() => save(settings)} className="mt-4 rounded-lg bg-primary px-6 py-3 font-bold text-primary-foreground">حفظ وتطبيق</button>
         </section>
 
-        <section className="rounded-lg border border-border bg-card p-6">
+        <section id="settings-printer" hidden={activeSection !== "printer"} aria-label="printer" className="rounded-lg border border-border bg-card p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-bold"><Printer className="h-5 w-5 text-primary"/>الطابعة والفاتورة</h2>
           <div className="grid gap-4 md:grid-cols-2">
             <div><label className="mb-1 block text-sm text-muted-foreground">الطابعة</label><select value={settings.printerName} onChange={(e) => setSettings({ ...settings, printerName: e.target.value })} className="h-12 w-full rounded-lg border border-border bg-secondary px-4"><option value="">الطابعة الافتراضية</option>{printers.map((p) => <option key={p.name} value={p.name}>{p.displayName || p.name}{p.isDefault ? " — الافتراضية" : ""}</option>)}</select>{!native() && <p className="mt-1 text-xs text-muted-foreground">تظهر طابعات Windows بعد تثبيت البرنامج</p>}</div>
@@ -195,7 +204,7 @@ function SettingsPage() {
         </section>
 
         {/* Scale */}
-        <section className="rounded-2xl border border-border bg-card p-6">
+        <section id="settings-rongta" hidden={activeSection !== "rongta"} aria-label="rongta" className="rounded-2xl border border-border bg-card p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
             <Scale className="h-5 w-5 text-primary" /> ميزان رونكتا RLS1100 (جلب الوزن المباشر)
           </h2>
@@ -363,13 +372,13 @@ function SettingsPage() {
           </button>
         </section>
 
-        <AclasSection settings={settings} setSettings={setSettings} save={save} />
+        <div id="settings-aclas" hidden={activeSection !== "aclas"}><AclasSection settings={settings} setSettings={setSettings} save={save} /></div>
 
-        <TelegramSection settings={settings} save={save} />
+        <div id="settings-telegram" hidden={activeSection !== "telegram"}><TelegramSection settings={settings} save={save} /></div>
 
         {/* Multi-cashier SQL Server sync */}
         {user?.role === "admin" && (
-        <section className="rounded-2xl border border-border bg-card p-6">
+        <section id="settings-server" hidden={activeSection !== "server"} aria-label="server" className="rounded-2xl border border-border bg-card p-6">
           <h2 className="mb-2 flex items-center gap-2 text-lg font-bold">
             <Server className="h-5 w-5 text-primary" /> الربط مع الخادم (SQL Server) — لأكثر من كاشير
           </h2>
@@ -474,7 +483,7 @@ function SettingsPage() {
         )}
 
         {/* Scale label barcode */}
-        <section className="rounded-2xl border border-border bg-card p-6">
+        <section id="settings-barcode" hidden={activeSection !== "barcode"} aria-label="barcode" className="rounded-2xl border border-border bg-card p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
             <Scale className="h-5 w-5 text-primary" /> البيع بملصق باركود الميزان
           </h2>
@@ -526,9 +535,9 @@ function SettingsPage() {
           <button onClick={() => save(settings)} className="mt-4 rounded-xl bg-primary px-6 py-3 font-bold text-primary-foreground">حفظ</button>
         </section>
 
-        <UpdatePanel />
+        <div id="settings-updates" hidden={activeSection !== "updates"}><UpdatePanel /></div>
 
-        <section className="rounded-2xl border border-destructive/50 bg-card p-6">
+        <section id="settings-reset" hidden={activeSection !== "reset"} aria-label="reset" className="rounded-2xl border border-destructive/50 bg-card p-6">
           <h2 className="mb-2 flex items-center gap-2 text-lg font-bold text-destructive"><Trash2 className="h-5 w-5" /> تصفير كل شيء</h2>
           <p className="mb-4 text-sm text-muted-foreground">يحذف كل المنتجات والمبيعات والورديات والمشتريات والمصاريف والمستخدمين والإعدادات، ويبقى التفعيل. يعود رقم الدخول إلى 1234. ننصح بتنزيل نسخة احتياطية قبل ذلك.</p>
           <button
@@ -545,7 +554,7 @@ function SettingsPage() {
         </section>
 
         {/* Backup */}
-        <section className="rounded-2xl border border-border bg-card p-6">
+        <section id="settings-backup" hidden={activeSection !== "backup"} aria-label="backup" className="rounded-2xl border border-border bg-card p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
             <HardDrive className="h-5 w-5 text-primary" /> النسخ الاحتياطي
           </h2>
@@ -625,7 +634,7 @@ function SettingsPage() {
         </section>
 
         {/* Users */}
-        <section className="rounded-2xl border border-border bg-card p-6">
+        <section id="settings-users" hidden={activeSection !== "users"} aria-label="users" className="rounded-2xl border border-border bg-card p-6">
           <h2 className="mb-4 text-lg font-bold">المستخدمون</h2>
           <div className="mb-4 grid gap-3 md:grid-cols-4">
             <input
