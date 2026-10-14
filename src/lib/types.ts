@@ -200,6 +200,7 @@ export interface Settings {
   customColor: string;
   productFont: "Cairo" | "Tajawal" | "Noto Kufi Arabic" | "Arial";
   productFontSize: number;
+  productTileWidth?: number;
   printerName: string;
   paperWidth: 58 | 80;
   autoPrint: boolean;

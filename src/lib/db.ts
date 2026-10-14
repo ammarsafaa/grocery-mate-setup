@@ -14,6 +14,7 @@ import type {
   Expense,
   HeldCart,
 } from "./types";
+import { posTileWidth } from "./posTileSize";
 
 /**
  * Local data layer. In the browser preview it persists to localStorage.
@@ -345,6 +346,7 @@ const DEFAULT_SETTINGS: Settings = {
   customColor: "#10b981",
   productFont: "Cairo",
   productFontSize: 16,
+  productTileWidth: posTileWidth(),
   printerName: "",
   paperWidth: 80,
   autoPrint: false,
@@ -361,7 +363,8 @@ const DEFAULT_SETTINGS: Settings = {
 };
 
 export function getSettings(): Settings {
-  return { ...DEFAULT_SETTINGS, ...read<Partial<Settings>>("settings", {}) };
+  const settings = { ...DEFAULT_SETTINGS, ...read<Partial<Settings>>("settings", {}) };
+  return { ...settings, productTileWidth: posTileWidth(settings.productTileWidth) };
 }
 
 export function saveSettings(s: Settings) {

@@ -112,6 +112,38 @@
 
 .product-name { font-family: var(--product-font); font-size: var(--product-font-size); }
 
+.pos-products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--pos-tile-width)), 1fr));
+  grid-auto-rows: max-content;
+}
+.pos-products-grid .pos-tile {
+  white-space: normal;
+  height: auto;
+  min-width: 0;
+  border-radius: var(--radius-lg);
+}
+.pos-tile-image {
+  width: 50%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+}
+.pos-tile-picture .pos-tile-image { width: 65%; }
+.pos-tile-name {
+  width: 100%;
+  min-height: 2.8em;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-align: center;
+}
+.pos-tile-price { max-width: 100%; overflow-wrap: anywhere; text-align: center; }
+
 @layer base {
   * {
     border-color: var(--color-border);
