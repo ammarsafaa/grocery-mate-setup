@@ -133,7 +133,7 @@ function SettingsPage() {
 
   return (
     <AppLayout>
-      <div className="min-w-0 space-y-6 p-4 md:p-6">
+      <div className="h-screen min-w-0 space-y-6 overflow-y-auto p-4 md:p-6">
         <h1 className="text-2xl font-bold">الإعدادات</h1>
         <SettingsNavigation active={activeSection} onSelect={setActiveSection} />
 
