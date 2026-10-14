@@ -1,6 +1,8 @@
 import { native } from "@/lib/native";
 import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { Button } from "@/components/ui/button";
+import { posTileWidth } from "@/lib/posTileSize";
 import { ArrowRight, FolderOpen, Printer, Scale, Trash2, ShoppingBasket, PlayCircle, Pencil, Percent, Package, Layers, PauseCircle, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
@@ -425,45 +427,45 @@ function PosPage() {
               </button>
             )}
           </div>
-          <div className="grid min-h-0 flex-1 auto-rows-max grid-cols-2 content-start gap-3 overflow-auto lg:grid-cols-3 xl:grid-cols-4">
+          <div className="pos-products-grid min-h-0 flex-1 content-start gap-2 overflow-auto" style={{ "--pos-tile-width": `${posTileWidth(settings.productTileWidth)}px` } as CSSProperties}>
             {settings.useProductGroups && selectedGroup && !search && (
-              <button onClick={() => setSelectedGroup(null)} className="flex min-h-28 min-w-0 shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-secondary p-3 font-bold transition hover:border-primary active:scale-95">
+              <Button variant="outline" onClick={() => setSelectedGroup(null)} className="pos-tile flex min-h-28 flex-col items-center justify-center gap-2 bg-secondary p-2 font-bold hover:border-primary active:scale-95">
                 <ArrowRight className={pic ? "h-12 w-12" : "h-6 w-6"} />
                 رجوع
-              </button>
+              </Button>
             )}
             {settings.useProductGroups && !selectedGroup && !search && groups.map((group) => (
-              <button
+              <Button variant="outline"
                 key={group.id}
                 onClick={() => setSelectedGroup(group.id)}
-                className="flex min-h-28 min-w-0 shrink-0 flex-col items-center justify-start gap-1 overflow-hidden rounded-2xl border border-border bg-card p-3 transition hover:border-primary hover:bg-accent active:scale-95"
+                title={group.name} className={`pos-tile flex min-h-28 flex-col items-center justify-start gap-1 overflow-hidden bg-card p-2 hover:border-primary hover:bg-accent active:scale-95 ${pic ? "pos-tile-picture" : ""}`} 
               >
                 {group.image ? (
-                  <img src={group.image} alt={group.name} className={pic ? "aspect-square w-full max-w-32 shrink-0 rounded-xl object-cover" : "aspect-square w-full max-w-20 shrink-0 rounded-xl object-cover"} />
+                  <img src={group.image} alt={group.name} className="pos-tile-image" />
                 ) : (
-                  <div className={pic ? "flex aspect-square w-full max-w-32 shrink-0 items-center justify-center rounded-xl bg-primary/15" : "flex aspect-square w-full max-w-20 shrink-0 items-center justify-center rounded-xl bg-primary/15"}>
+                  <div className="pos-tile-image flex items-center justify-center bg-primary/15">
                     <FolderOpen className={pic ? "h-16 w-16 text-primary" : "h-8 w-8 text-primary"} />
                   </div>
                 )}
-                <span className={pic ? "text-xs text-muted-foreground" : "product-name font-bold text-foreground"}>{group.name}</span>
-              </button>
+                <span className={pic ? "pos-tile-name text-xs text-muted-foreground" : "pos-tile-name product-name font-bold text-foreground"}>{group.name}</span>
+              </Button>
             ))}
             {(!settings.useProductGroups || selectedGroup || search ? filtered : []).map((p) => (
-              <button
+              <Button variant="outline"
                 key={p.id}
                 onClick={() => addProduct(p)}
-                className="flex min-h-28 min-w-0 shrink-0 flex-col items-center justify-start gap-1 overflow-hidden rounded-2xl border border-border bg-card p-3 transition hover:border-primary hover:bg-accent active:scale-95"
+                title={p.name} className={`pos-tile flex min-h-28 flex-col items-center justify-start gap-1 overflow-hidden bg-card p-2 hover:border-primary hover:bg-accent active:scale-95 ${pic ? "pos-tile-picture" : ""}`} 
               >
                 {p.image ? (
-                  <img src={p.image} alt={p.name} className={pic ? "aspect-square w-full max-w-32 shrink-0 rounded-xl object-cover" : "aspect-square w-full max-w-20 shrink-0 rounded-xl object-cover"} />
+                  <img src={p.image} alt={p.name} className="pos-tile-image" />
                 ) : (
                   p.unit === "kg" && <Scale className="h-5 w-5 text-primary" />
                 )}
-                 <span className={pic ? "text-xs text-muted-foreground" : "product-name font-bold text-foreground"}>{p.name}</span>
-                <span className={pic ? "text-lg font-black text-primary" : "text-sm text-muted-foreground"}>
+                 <span className={pic ? "pos-tile-name text-xs text-muted-foreground" : "pos-tile-name product-name font-bold text-foreground"}>{p.name}</span>
+                <span className={pic ? "pos-tile-price text-lg font-black text-primary" : "pos-tile-price text-sm text-muted-foreground"}>
                   {formatMoney(p.price)} {p.unit === "kg" ? "/ كغم" : ""}
                 </span>
-              </button>
+              </Button>
             ))}
             {settings.useProductGroups && !selectedGroup && !search && groups.length === 0 && <p className="col-span-full p-8 text-center text-muted-foreground">أضف مجموعات أو عطّل عرض المجموعات من الإعدادات</p>}
           </div>
