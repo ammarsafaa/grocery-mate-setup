@@ -48,7 +48,11 @@ describe("proportional weighed offers", () => {
   it("1 kg potatoes is 625 before cash rounding", () => expect(lineTotalWithOffer(potato, 1)).toBe(625));
   it("rounds 625 to nearest 250 after weighing", () => expect(roundToCash250(lineTotalWithOffer(potato, 1))).toBe(750));
   it("keeps the unrounded unit rate for tomatoes", () => expect(weightedUnitPrice(tomato)).toBe(2000 / 3));
-  it("uses normal kg price without a complete offer", () => expect(lineTotalWithOffer({ ...tomato, offerPrice: undefined }, 1.5)).toBe(1500));
+  it("uses normal kg price without a complete offer", () => {
+    const incomplete = { ...tomato };
+    delete incomplete.offerPrice;
+    expect(lineTotalWithOffer(incomplete, 1.5)).toBe(1500);
+  });
   it("weight barcode uses the proportional offer", () => {
     const settings = { ...getSettings(), labelBarcodeEnabled: true, labelPrefixes: "20", labelPluLength: 5, labelValueType: "weight" as const, labelWeightDecimals: 3 };
     const result = parseScaleLabel("2000001015000", settings, [tomato]);
