@@ -114,26 +114,42 @@
 
 .pos-products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--pos-tile-width)), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(0, min(100%, var(--pos-tile-width))));
   grid-auto-rows: max-content;
+  align-items: start;
 }
 .pos-products-grid .pos-tile {
   white-space: normal;
+  width: 100%;
   height: auto;
+  aspect-ratio: 1;
+  min-height: 0;
   min-width: 0;
   border-radius: var(--radius-lg);
+  justify-content: center;
+  gap: 4px;
+  padding: 8px;
+  overflow: hidden;
 }
 .pos-tile-image {
-  width: 50%;
+  width: auto;
+  height: auto;
+  min-height: 0;
+  min-width: 0;
+  max-width: 50%;
+  max-height: 50%;
+  flex: 0 1 auto;
   aspect-ratio: 1;
-  object-fit: cover;
-  flex-shrink: 0;
+  object-fit: contain;
   border-radius: var(--radius-md);
 }
-.pos-tile-picture .pos-tile-image { width: 65%; }
+.pos-tile-picture .pos-tile-image { max-width: 65%; max-height: 65%; }
+.pos-tile-image svg { width: 70%; height: 70%; }
 .pos-tile-name {
   width: 100%;
-  min-height: 2.8em;
+  min-height: 0;
+  flex: 0 1 auto;
+  max-height: 2.8em;
   line-height: 1.4;
   overflow-wrap: anywhere;
   display: -webkit-box;
@@ -142,7 +158,13 @@
   overflow: hidden;
   text-align: center;
 }
-.pos-tile-price { max-width: 100%; overflow-wrap: anywhere; text-align: center; }
+.pos-tile-price {
+  flex-shrink: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: center;
+  line-height: 1.4;
+}
 
 @layer base {
   * {

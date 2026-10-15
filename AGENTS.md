@@ -21,4 +21,4 @@
 - Licensing accepts two key types: legacy ECDSA P-256 signatures and ZEROS License Center keys (ZEROS1.payload.signature, Ed25519 via @noble/curves); only public keys live in src/lib/license.ts so activation stays offline.
 - Aclas LS6 scales are driven over LAN by running the bundled official electron/aclas/AclasSDKConsole.exe (PLU download as UTF-16 tab file) from src/lib/aclas.ts; the SDK has no live-weight call, so sales use the weight-barcode label.
 - Settings sections remain mounted while hidden behind top navigation so switching sections preserves unsaved inputs and device-operation state.
-- POS product and group grids share a persisted, bounded tile-width option with a CSS custom property so density adapts to available space without changing sales logic.
+- POS product and group grids use fixed-width square tiles driven by the same persisted, bounded size option; unused row space stays outside tiles so the chosen size controls the actual box, not just its image.
