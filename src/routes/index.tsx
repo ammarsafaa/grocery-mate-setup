@@ -429,7 +429,7 @@ function PosPage() {
           </div>
           <div className="pos-products-grid min-h-0 flex-1 content-start gap-2 overflow-auto" style={{ "--pos-tile-width": `${posTileWidth(settings.productTileWidth)}px` } as CSSProperties}>
             {settings.useProductGroups && selectedGroup && !search && (
-              <Button variant="outline" onClick={() => setSelectedGroup(null)} className="pos-tile flex min-h-28 flex-col items-center justify-center gap-2 bg-secondary p-2 font-bold hover:border-primary active:scale-95">
+              <Button variant="outline" onClick={() => setSelectedGroup(null)} className="pos-tile flex flex-col items-center justify-center gap-2 bg-secondary p-2 font-bold hover:border-primary active:scale-95">
                 <ArrowRight className={pic ? "h-12 w-12" : "h-6 w-6"} />
                 رجوع
               </Button>
@@ -438,7 +438,7 @@ function PosPage() {
               <Button variant="outline"
                 key={group.id}
                 onClick={() => setSelectedGroup(group.id)}
-                title={group.name} className={`pos-tile flex min-h-28 flex-col items-center justify-start gap-1 overflow-hidden bg-card p-2 hover:border-primary hover:bg-accent active:scale-95 ${pic ? "pos-tile-picture" : ""}`} 
+                title={group.name} className={`pos-tile flex flex-col items-center justify-start gap-1 overflow-hidden bg-card p-2 hover:border-primary hover:bg-accent active:scale-95 ${pic ? "pos-tile-picture" : ""}`} 
               >
                 {group.image ? (
                   <img src={group.image} alt={group.name} className="pos-tile-image" />
@@ -454,7 +454,7 @@ function PosPage() {
               <Button variant="outline"
                 key={p.id}
                 onClick={() => addProduct(p)}
-                title={p.name} className={`pos-tile flex min-h-28 flex-col items-center justify-start gap-1 overflow-hidden bg-card p-2 hover:border-primary hover:bg-accent active:scale-95 ${pic ? "pos-tile-picture" : ""}`} 
+                title={p.name} className={`pos-tile flex flex-col items-center justify-start gap-1 overflow-hidden bg-card p-2 hover:border-primary hover:bg-accent active:scale-95 ${pic ? "pos-tile-picture" : ""}`} 
               >
                 {p.image ? (
                   <img src={p.image} alt={p.name} className="pos-tile-image" />
