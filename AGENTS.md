@@ -22,3 +22,4 @@
 - Aclas LS6 scales are driven over LAN by running the bundled official electron/aclas/AclasSDKConsole.exe (PLU download as UTF-16 tab file) from src/lib/aclas.ts; the SDK has no live-weight call, so sales use the weight-barcode label.
 - Settings sections remain mounted while hidden behind top navigation so switching sections preserves unsaved inputs and device-operation state.
 - POS product and group grids use fixed-width square tiles driven by the same persisted, bounded size option; unused row space stays outside tiles so the chosen size controls the actual box, not just its image.
+- Weighted offers reuse product offer quantity/price fields as weight and total price; shared pricing applies proportionally before cash rounding across live weight, manual entry and weight barcodes, while price-encoded labels retain their encoded amount.

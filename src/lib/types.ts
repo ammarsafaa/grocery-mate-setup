@@ -27,8 +27,8 @@ export interface Product {
   wholesaleMinQty?: number; // أقل كمية يتفعل عندها سعر الجملة تلقائياً
   cartonPrice?: number; // سعر الكرتونة الكاملة
   cartonQty?: number; // عدد القطع داخل الكرتونة
-  offerQty?: number; // عرض: مثلاً 2
-  offerPrice?: number; // عرض: بسعر 1500
+   offerQty?: number; // Piece bundle quantity or kg offer weight
+   offerPrice?: number; // Total bundle/weight price, not per-unit price
 }
 
 export interface ProductGroup {
