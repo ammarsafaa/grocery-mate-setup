@@ -192,8 +192,17 @@ export function takeHeldCart(id: string): HeldCart | undefined {
   return held;
 }
 
-/** سعر خط البيع مع عرض «2 بسعر X» إن وُجد على المنتج. */
+/** Proportional kg offer rate; piece offers continue to use whole bundles. */
+export function weightedUnitPrice(p: Product): number {
+  if (p.unit === "kg" && p.offerQty && p.offerPrice && Number.isFinite(p.offerQty) && Number.isFinite(p.offerPrice) && p.offerQty > 0 && p.offerPrice > 0) {
+    return p.offerPrice / p.offerQty;
+  }
+  return p.price;
+}
+
+/** Raw line amount; cash rounding is applied once by the weighted-sale caller. */
 export function lineTotalWithOffer(p: Product, qty: number, price?: number): number {
+  if (p.unit === "kg") return qty * weightedUnitPrice(p);
   const unitPrice = price ?? p.price;
   if (p.unit === "piece" && p.offerQty && p.offerPrice && p.offerQty > 1 && p.offerPrice > 0) {
     const bundles = Math.floor(qty / p.offerQty);
@@ -511,5 +520,5 @@ export function parseScaleLabel(code: string, s: Settings, products: Product[]) 
   }
   const qty = raw / Math.pow(10, s.labelWeightDecimals ?? 3);
   if (qty <= 0) return { error: "الوزن في الملصق غير صحيح" } as const;
-  return { product, qty, total: roundToCash250(qty * product.price) } as const;
+  return { product, qty, total: roundToCash250(lineTotalWithOffer(product, qty)) } as const;
 }

@@ -299,7 +299,7 @@ function ProductsPage() {
 
       {editing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4">
-          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6">
+          <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-6">
             <h3 className="mb-4 text-xl font-bold">{isNew ? "منتج جديد" : "تعديل منتج"}</h3>
             <div className="space-y-3">
               <input
@@ -363,6 +363,18 @@ function ProductsPage() {
                 placeholder="الباركود (اختياري)"
                 className="h-12 w-full rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary"
               />
+              {editing.unit === "kg" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="min-w-0 text-sm text-muted-foreground">
+                    وزن العرض (كغم)
+                    <input aria-label="وزن العرض (كغم)" type="number" min="0" step="any" value={editing.offerQty || ""} onChange={(e) => { const v = Number(e.target.value); const next = { ...editing }; if (v > 0) next.offerQty = v; else delete next.offerQty; setEditing(next); }} placeholder="3" className="mt-1 h-12 w-full rounded-xl border border-border bg-secondary px-4 text-foreground" />
+                  </label>
+                  <label className="min-w-0 text-sm text-muted-foreground">
+                    سعر العرض الكامل
+                    <input aria-label="سعر العرض الكامل" type="number" min="0" value={editing.offerPrice || ""} onChange={(e) => { const v = Number(e.target.value); const next = { ...editing }; if (v > 0) next.offerPrice = v; else delete next.offerPrice; setEditing(next); }} placeholder="2000" className="mt-1 h-12 w-full rounded-xl border border-border bg-secondary px-4 text-foreground" />
+                  </label>
+                </div>
+              )}
               {editing.unit === "kg" && (
                 <input
                   inputMode="numeric"

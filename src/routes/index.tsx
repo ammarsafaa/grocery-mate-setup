@@ -29,6 +29,7 @@ import {
   holdCart,
   takeHeldCart,
   lineTotalWithOffer,
+  weightedUnitPrice,
 } from "@/lib/db";
 import { speakArabic } from "@/lib/image";
 import { buildReceiptHtml } from "@/lib/receipt";
@@ -199,7 +200,7 @@ function PosPage() {
         const w = liveWeight;
         setCart((c) => [
           ...c,
-          { productId: p.id, name: p.name, unit: "kg", price: p.price, qty: w, total: roundToCash250(w * p.price) },
+          { productId: p.id, name: p.name, unit: "kg", price: weightedUnitPrice(p), qty: w, total: roundToCash250(lineTotalWithOffer(p, w)) },
         ]);
         toast.success(`${p.name} — ${w.toFixed(3)} كغم`);
         return;
@@ -244,7 +245,8 @@ function PosPage() {
     if (label) {
       if ("error" in label) { toast.error(label.error); setSearch(""); return; }
       const { product: p, qty, total: lineTotal } = label;
-      setCart((c) => [...c, { productId: p.id, name: p.name, unit: p.unit, price: p.price, qty, total: lineTotal }]);
+      const price = getSettings().labelValueType === "weight" ? weightedUnitPrice(p) : p.price;
+      setCart((c) => [...c, { productId: p.id, name: p.name, unit: p.unit, price, qty, total: lineTotal }]);
       toast.success(`${p.name} — ${qty.toFixed(3)} كغم`);
       setSearch("");
       return;
@@ -263,9 +265,9 @@ function PosPage() {
         productId: p.id,
         name: p.name,
         unit: "kg",
-        price: p.price,
+        price: weightedUnitPrice(p),
         qty: w,
-        total: roundToCash250(w * p.price),
+        total: roundToCash250(lineTotalWithOffer(p, w)),
       },
     ]);
     setWeightModal(null);
@@ -463,7 +465,9 @@ function PosPage() {
                 )}
                  <span className={pic ? "pos-tile-name text-xs text-muted-foreground" : "pos-tile-name product-name font-bold text-foreground"}>{p.name}</span>
                 <span className={pic ? "pos-tile-price text-lg font-black text-primary" : "pos-tile-price text-sm text-muted-foreground"}>
-                  {formatMoney(p.price)} {p.unit === "kg" ? "/ كغم" : ""}
+                  {p.unit === "kg" && weightedUnitPrice(p) !== p.price
+                    ? `${p.offerQty} كغم بـ ${formatMoney(p.offerPrice ?? 0)}`
+                    : `${formatMoney(p.price)} ${p.unit === "kg" ? "/ كغم" : ""}`}
                 </span>
               </Button>
             ))}
@@ -700,7 +704,7 @@ function PosPage() {
             </p>
             {parseFloat(weight) > 0 && (
               <p className="mb-4 text-center text-lg font-bold text-primary">
-                {formatMoney(roundToCash250(parseFloat(weight) * weightModal.price))}
+                {formatMoney(roundToCash250(lineTotalWithOffer(weightModal, parseFloat(weight))))}
               </p>
             )}
             <div className="flex gap-2">
