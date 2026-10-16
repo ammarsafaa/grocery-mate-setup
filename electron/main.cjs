@@ -521,13 +521,11 @@ ipcMain.handle("print-receipt", async (_event, html, printerName, copies) => {
 let updater = null;
 try { updater = require("electron-updater").autoUpdater; updater.autoDownload = false; } catch { updater = null; }
 // Private feed: the build writes update-config.json (feed URL + limited download key, never a GitHub token).
-let updateConfigured = false;
 try {
-  const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, "update-config.json"), "utf8"));
+  const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, "update-config.json"), "utf8").replace(/^\uFEFF/, ""));
   if (updater && cfg.url && cfg.key) {
     updater.setFeedURL({ provider: "generic", url: cfg.url });
     updater.requestHeaders = { "x-zeros-update-key": cfg.key };
-    updateConfigured = true;
   }
 } catch { /* public GitHub feed fallback */ }
 let updWin = null;
