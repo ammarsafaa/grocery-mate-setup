@@ -218,7 +218,7 @@ export interface Settings {
   labelValueType: "weight" | "price";
   labelWeightDecimals: number;
   discountEnabled?: boolean; // زر خصم على الفاتورة في نقطة البيع
-  cashRounding?: boolean; // تقريب المبالغ لأقرب 250 دينار (افتراضياً مفعّل)
+  cashRounding?: boolean; // تقريب مجموع الفاتورة فقط لأقرب 250 دينار (افتراضياً مفعّل)
   telegramEnabled?: boolean;
   telegramToken?: string;
   telegramChatIds?: string; // comma separated

@@ -200,7 +200,7 @@ export function weightedUnitPrice(p: Product): number {
   return p.price;
 }
 
-/** Raw line amount; cash rounding is applied once by the weighted-sale caller. */
+/** Exact line amount; cash rounding belongs only to the final invoice total. */
 export function lineTotalWithOffer(p: Product, qty: number, price?: number): number {
   if (p.unit === "kg") return qty * weightedUnitPrice(p);
   const unitPrice = price ?? p.price;
@@ -496,7 +496,7 @@ export function formatMoney(n: number, currency?: string): string {
   return `${n.toLocaleString("en-GB")} ${unit}`.trim();
 }
 
-/** Cash denominations start at 250 IQD, so sale amounts settle to the nearest 250. */
+/** Settle the final invoice total to the nearest 250 IQD when enabled. */
 export function roundToCash250(amount: number): number {
   return Math.round(amount / 250) * 250;
 }
@@ -505,6 +505,11 @@ export function roundToCash250(amount: number): number {
 export function roundCash(amount: number, rounding?: boolean): number {
   const on = rounding ?? getSettings().cashRounding !== false;
   return on ? roundToCash250(amount) : amount;
+}
+
+/** Sum exact line amounts, apply the invoice discount, then optionally round once. */
+export function saleTotal(items: ReadonlyArray<{ total: number }>, discount: number, rounding: boolean): number {
+  return roundCash(Math.max(0, items.reduce((sum, item) => sum + item.total, 0) - discount), rounding);
 }
 
 /** Parse an EAN-13 scale label barcode. Returns null when it isn't a scale label. */
@@ -527,5 +532,5 @@ export function parseScaleLabel(code: string, s: Settings, products: Product[]) 
   }
   const qty = raw / Math.pow(10, s.labelWeightDecimals ?? 3);
   if (qty <= 0) return { error: "الوزن في الملصق غير صحيح" } as const;
-  return { product, qty, total: roundCash(lineTotalWithOffer(product, qty)) } as const;
+  return { product, qty, total: lineTotalWithOffer(product, qty) } as const;
 }

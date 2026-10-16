@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lineTotalWithOffer, weightedUnitPrice, roundToCash250, roundCash, parseScaleLabel, getSettings } from "./db";
+import { lineTotalWithOffer, weightedUnitPrice, roundCash, saleTotal, parseScaleLabel, getSettings } from "./db";
 import type { Product } from "./types";
 
 const base: Product = { id: "1", name: "شاي", price: 1000, unit: "piece", category: "عام", stock: 100, active: true };
@@ -46,7 +46,6 @@ describe("proportional weighed offers", () => {
   it("2 kg potatoes cost 1250", () => expect(lineTotalWithOffer(potato, 2)).toBe(1250));
   it("4 kg potatoes cost 2500", () => expect(lineTotalWithOffer(potato, 4)).toBe(2500));
   it("1 kg potatoes is 625 before cash rounding", () => expect(lineTotalWithOffer(potato, 1)).toBe(625));
-  it("rounds 625 to nearest 250 after weighing", () => expect(roundToCash250(lineTotalWithOffer(potato, 1))).toBe(750));
   it("keeps the unrounded unit rate for tomatoes", () => expect(weightedUnitPrice(tomato)).toBe(2000 / 3));
   it("uses normal kg price without a complete offer", () => {
     const incomplete = { ...tomato };
@@ -57,6 +56,30 @@ describe("proportional weighed offers", () => {
     const settings = { ...getSettings(), labelBarcodeEnabled: true, labelPrefixes: "20", labelPluLength: 5, labelValueType: "weight" as const, labelWeightDecimals: 3 };
     const result = parseScaleLabel("2000001015000", settings, [tomato]);
     expect(result).toMatchObject({ qty: 1.5, total: 1000 });
+  });
+});
+
+describe("invoice-only optional rounding", () => {
+  const tomato: Product = { ...base, name: "طماطة", unit: "kg", price: 1000, plu: "1" };
+  const potato: Product = { ...base, name: "بطاطا", unit: "kg", offerQty: 2, offerPrice: 1250 };
+  const items = [{ total: lineTotalWithOffer(tomato, 1.1) }, { total: lineTotalWithOffer(potato, 1) }];
+
+  it("keeps 1.100 kg tomatoes at 1100 and 1 kg offer potatoes at 625", () => {
+    expect(items.map((item) => item.total)).toEqual([1100, 625]);
+  });
+  it("rounds the 1725 invoice once to 1750, not its individual lines", () => {
+    expect(saleTotal(items, 0, true)).toBe(1750);
+  });
+  it("keeps the 1725 invoice exact when the option is off", () => {
+    expect(saleTotal(items, 0, false)).toBe(1725);
+  });
+  it("applies rounding after the discount", () => {
+    expect(saleTotal(items, 100, true)).toBe(1750);
+    expect(saleTotal(items, 100, false)).toBe(1625);
+  });
+  it.each([true, false])("weight barcode keeps 1100 regardless of rounding=%s", (cashRounding) => {
+    const settings = { ...getSettings(), cashRounding, labelBarcodeEnabled: true, labelPrefixes: "20", labelPluLength: 5, labelValueType: "weight" as const, labelWeightDecimals: 3 };
+    expect(parseScaleLabel("2000001011000", settings, [tomato])).toMatchObject({ qty: 1.1, total: 1100 });
   });
 });
 

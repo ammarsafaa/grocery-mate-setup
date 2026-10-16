@@ -22,7 +22,7 @@ import {
   getSettings,
   getGroups,
   recordSaleMovements,
-  roundCash,
+  saleTotal,
   parseScaleLabel,
   uid,
   getHeldCarts,
@@ -140,11 +140,13 @@ function PosPage() {
     window.addEventListener("focus", load);
     window.addEventListener("storage", load);
     window.addEventListener("grocery-pos:products-updated", load);
+    window.addEventListener("grocery-pos:settings-updated", load);
     document.addEventListener("visibilitychange", load);
     return () => {
       window.removeEventListener("focus", load);
       window.removeEventListener("storage", load);
       window.removeEventListener("grocery-pos:products-updated", load);
+      window.removeEventListener("grocery-pos:settings-updated", load);
       document.removeEventListener("visibilitychange", load);
     };
   }, []);
@@ -155,7 +157,7 @@ function PosPage() {
   );
 
   const itemsTotal = cart.reduce((sum, item) => sum + item.total, 0);
-  const total = roundCash(Math.max(0, itemsTotal - discount));
+  const total = saleTotal(cart, discount, settings.cashRounding !== false);
 
   // Poll the scale continuously so the live weight is always visible in the top bar
   useEffect(() => {
@@ -200,7 +202,7 @@ function PosPage() {
         const w = liveWeight;
         setCart((c) => [
           ...c,
-          { productId: p.id, name: p.name, unit: "kg", price: weightedUnitPrice(p), qty: w, total: roundCash(lineTotalWithOffer(p, w)) },
+          { productId: p.id, name: p.name, unit: "kg", price: weightedUnitPrice(p), qty: w, total: lineTotalWithOffer(p, w) },
         ]);
         toast.success(`${p.name} — ${w.toFixed(3)} كغم`);
         return;
@@ -267,7 +269,7 @@ function PosPage() {
         unit: "kg",
         price: weightedUnitPrice(p),
         qty: w,
-        total: roundCash(lineTotalWithOffer(p, w)),
+        total: lineTotalWithOffer(p, w),
       },
     ]);
     setWeightModal(null);
@@ -706,7 +708,7 @@ function PosPage() {
             </p>
             {parseFloat(weight) > 0 && (
               <p className="mb-4 text-center text-lg font-bold text-primary">
-                {formatMoney(roundCash(lineTotalWithOffer(weightModal, parseFloat(weight))))}
+                {formatMoney(lineTotalWithOffer(weightModal, parseFloat(weight)))}
               </p>
             )}
             <div className="flex gap-2">
