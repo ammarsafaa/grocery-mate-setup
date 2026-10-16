@@ -519,7 +519,7 @@ ipcMain.handle("print-receipt", async (_event, html, printerName, copies) => {
 
 // ---- Auto updates (GitHub Releases). Only needs internet while updating ----
 let updater = null;
-try { updater = require("electron-updater").autoUpdater; updater.autoDownload = false; } catch { updater = null; }
+try { updater = require("electron-updater").autoUpdater; updater.autoDownload = false; updater.autoInstallOnAppQuit = false; } catch { updater = null; }
 // Private feed: the build writes update-config.json (feed URL + limited download key, never a GitHub token).
 try {
   const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, "update-config.json"), "utf8").replace(/^\uFEFF/, ""));
@@ -544,21 +544,22 @@ ipcMain.handle("update-check", async () => {
 });
 ipcMain.handle("update-download", async () => { try { await updater.downloadUpdate(); return { ok: true }; } catch (e) { return { ok: false, error: String(e.message || e) }; } });
 ipcMain.on("update-install", async () => {
-  // Safety copy of the local database before installing.
+  if (!updater || !db || !dbPath) return;
   try {
-    if (db && dbPath) {
-      const dir = path.join(path.dirname(dbPath), "Backups");
-      fs.mkdirSync(dir, { recursive: true });
-      await db.backup(path.join(dir, `before-update-${Date.now()}.db`));
-    }
-  } catch { /* still allow update */ }
+    const readRows = (key) => JSON.parse(db.prepare("SELECT value FROM kv WHERE key = ?").get(key)?.value ?? "[]");
+    const { updateBlockReason } = require("./update-policy.cjs");
+    const reason = updateBlockReason(readRows("shifts"), readRows("heldCarts"));
+    if (reason) { sendUpd({ state: "error", error: reason }); return; }
+    const dir = path.join(path.dirname(dbPath), "Backups");
+    fs.mkdirSync(dir, { recursive: true });
+    await db.backup(path.join(dir, `before-update-${Date.now()}.db`));
+  } catch { sendUpd({ state: "error", error: "تعذر حفظ نسخة احتياطية قبل التحديث" }); return; }
   allowQuitGlobal = true; updater.quitAndInstall(false, true);
 });
 // Quiet background checks: shortly after start, then every 4 hours.
 function autoCheck() { if (updater && app.isPackaged) updater.checkForUpdates().catch(() => {}); }
 setTimeout(autoCheck, 20000);
 setInterval(autoCheck, 4 * 60 * 60 * 1000);
-void updateConfigured;
 let allowQuitGlobal = false;
 
 app.whenReady().then(async () => {
