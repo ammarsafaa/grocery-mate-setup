@@ -10,6 +10,7 @@ export function UpdateNotification() {
   const [message, setMessage] = useState("");
   useEffect(() => native()?.onUpdateStatus?.((s) => {
     if (["available", "downloading", "ready"].includes(s.state)) { setStatus(s); setHidden(false); }
+    if (s.state === "error") setMessage(s.error ?? "تعذر إكمال التحديث؛ حاول من الإعدادات.");
   }), []);
   if (hidden || !status) return null;
   const install = () => {
