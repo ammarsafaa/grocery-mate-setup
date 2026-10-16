@@ -63,20 +63,16 @@ describe("proportional weighed offers", () => {
 describe("roundCash — خيار التقريب لأقرب 250", () => {
   const plain: Product = { ...base, unit: "kg", price: 1000 }; // 1.1 kg = 1100 exactly
 
-  it("rounds to nearest 250 by default", () => {
-    saveSettings({ ...getSettings(), cashRounding: true });
-    expect(roundCash(lineTotalWithOffer(plain, 1.125))).toBe(1250); // 1125 → أقرب 250
+  it("rounds to nearest 250 when rounding is on", () => {
+    expect(roundCash(lineTotalWithOffer(plain, 1.125), true)).toBe(1250); // 1125 → أقرب 250
   });
 
   it("keeps the exact amount when rounding is off", () => {
-    saveSettings({ ...getSettings(), cashRounding: false });
-    expect(roundCash(lineTotalWithOffer(plain, 1.1))).toBeCloseTo(1100);
-    expect(roundCash(625)).toBe(625);
-    saveSettings({ ...getSettings(), cashRounding: true });
+    expect(roundCash(lineTotalWithOffer(plain, 1.1), false)).toBeCloseTo(1100);
+    expect(roundCash(625, false)).toBe(625);
   });
 
   it("rounds 625 up to 750 when rounding is on", () => {
-    saveSettings({ ...getSettings(), cashRounding: true });
-    expect(roundCash(625)).toBe(750);
+    expect(roundCash(625, true)).toBe(750);
   });
 });
