@@ -525,5 +525,5 @@ export function parseScaleLabel(code: string, s: Settings, products: Product[]) 
   }
   const qty = raw / Math.pow(10, s.labelWeightDecimals ?? 3);
   if (qty <= 0) return { error: "الوزن في الملصق غير صحيح" } as const;
-  return { product, qty, total: roundToCash250(lineTotalWithOffer(product, qty)) } as const;
+  return { product, qty, total: roundCash(lineTotalWithOffer(product, qty)) } as const;
 }
