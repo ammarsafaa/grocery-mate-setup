@@ -3,6 +3,7 @@ import { RefreshCw } from "lucide-react";
 import { native, type UpdateStatus } from "@/lib/native";
 import { getOpenShift } from "@/lib/db";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 export function UpdatePanel() {
   const [status, setStatus] = useState<UpdateStatus | null>(null);
@@ -30,7 +31,7 @@ export function UpdatePanel() {
   else if (status?.state === "available") msg = `يوجد تحديث جديد (النسخة ${status.version}).`;
   else if (status?.state === "downloading") msg = `جارِ التحميل... ${status.percent ?? 0}%`;
   else if (status?.state === "ready") msg = "تم تحميل التحديث. اضغط «تثبيت الآن» وسيُعاد تشغيل البرنامج.";
-  else if (status?.state === "error") msg = "تعذّر التحديث. تأكد من اتصال الإنترنت ثم حاول مرة أخرى." + (status.error ? " (" + status.error + ")" : "");
+  else if (status?.state === "error") msg = "تعذّر التحديث. حاول مرة أخرى، وإذا استمرت المشكلة تواصل مع الدعم.";
 
   return (
     <section className="rounded-2xl border border-border bg-card p-6">
@@ -45,11 +46,11 @@ export function UpdatePanel() {
       ) : (
         <div className="flex flex-wrap items-center gap-3">
           {status?.state === "available" ? (
-            <button onClick={() => n.downloadUpdate?.()} className="rounded-xl bg-primary px-6 py-3 font-bold text-primary-foreground">تحميل التحديث</button>
+            <Button onClick={() => n.downloadUpdate?.()} className="h-12 px-6 font-bold">تحميل التحديث</Button>
           ) : status?.state === "ready" ? (
-            <button onClick={() => { if (getOpenShift()) { toast.error("أغلق الوردية قبل تثبيت التحديث."); return; } n.installUpdate?.(); }} className="rounded-xl bg-primary px-6 py-3 font-bold text-primary-foreground">تثبيت الآن</button>
+            <Button onClick={() => { if (getOpenShift()) { toast.error("أغلق الوردية قبل تثبيت التحديث."); return; } n.installUpdate?.(); }} className="h-12 px-6 font-bold">تثبيت الآن</Button>
           ) : (
-            <button disabled={checking || status?.state === "downloading"} onClick={check} className="rounded-xl bg-primary px-6 py-3 font-bold text-primary-foreground disabled:opacity-50">البحث عن تحديث</button>
+            <Button disabled={checking || status?.state === "downloading"} onClick={check} className="h-12 px-6 font-bold">البحث عن تحديث</Button>
           )}
           {msg && <span className="text-sm font-semibold">{msg}</span>}
         </div>
