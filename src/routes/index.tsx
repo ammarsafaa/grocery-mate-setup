@@ -433,10 +433,10 @@ function PosPage() {
           </div>
           <div className="pos-products-grid min-h-0 flex-1 content-start gap-2 overflow-auto" style={{ "--pos-tile-width": `${posTileWidth(settings.productTileWidth)}px` } as CSSProperties}>
             {settings.useProductGroups && selectedGroup && !search && (
-              <Button variant="outline" onClick={() => setSelectedGroup(null)} className="pos-tile flex flex-col items-center justify-center gap-2 border-back bg-back p-2 font-black text-back-foreground hover:border-back hover:bg-back/90 active:scale-95">
-                <ArrowRight className={pic ? "h-14 w-14" : "h-9 w-9"} />
-                رجوع
-              </Button>
+              <button type="button" onClick={() => setSelectedGroup(null)} className="pos-tile flex cursor-pointer flex-col items-center justify-center gap-2 border-2 border-back bg-back p-2 font-black text-back-foreground hover:bg-back/90 active:scale-95">
+                <ArrowRight className={pic ? "h-14 w-14" : "h-10 w-10"} />
+                <span className="text-xl short:text-base">رجوع</span>
+              </button>
             )}
             {settings.useProductGroups && !selectedGroup && !search && groups.map((group) => (
               <Button variant="outline"
