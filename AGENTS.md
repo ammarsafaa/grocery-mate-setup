@@ -24,3 +24,5 @@
 - POS product and group grids use fixed-width square tiles driven by the same persisted, bounded size option; unused row space stays outside tiles so the chosen size controls the actual box, not just its image.
 - Weighted offers reuse product offer quantity/price fields as weight and total price; shared pricing applies proportionally before cash rounding across live weight, manual entry and weight barcodes, while price-encoded labels retain their encoded amount.
 - Cashier screens must stay usable at 1024x768, adapting with the `narrow`/`short` variants defined in src/styles.css instead of new ad-hoc breakpoints, so one layout serves every register size.
+- Windows private updates use a Cloud release proxy; GitHub credentials stay server-side and the installer carries only a restricted download key, so clients cannot access repository contents.
+- Update notifications mount once in the root; installation must wait for closed shifts and a successful SQLite backup, so updates cannot interrupt selling or lose the recovery copy.
