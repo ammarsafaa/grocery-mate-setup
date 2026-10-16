@@ -6,7 +6,8 @@ import { AppLayout } from "@/components/AppLayout";
 import { useAuth } from "@/lib/auth";
 import { cancelPurchase, formatMoney, getProducts, getPurchases, getSettings, getSupplierPayments, getSuppliers, postPurchase, saveSupplierPayments, saveSuppliers, uid } from "@/lib/db";
 import { native } from "@/lib/native";
-import type { Product, Purchase, PurchaseItem, Supplier, SupplierPayment } from "@/lib/types";
+import { PurchaseEditor } from "@/components/PurchaseEditor";
+import type { Product, Purchase, Supplier, SupplierPayment } from "@/lib/types";
 
 export const Route = createFileRoute("/purchases")({
   head: () => ({ meta: [
@@ -38,17 +39,12 @@ function PurchasesPage() {
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [paymentNote, setPaymentNote] = useState("");
   const [newSupplier, setNewSupplier] = useState({ name: "", phone: "", address: "" });
-  const [supplierId, setSupplierId] = useState("");
-  const [number, setNumber] = useState("");
-  const [paid, setPaid] = useState(0);
-  const [items, setItems] = useState<PurchaseItem[]>([]);
   const [search, setSearch] = useState("");
 
   const load = () => { setPurchases(getPurchases().slice().reverse()); setSuppliers(getSuppliers()); setPayments(getSupplierPayments().slice().reverse()); };
   useEffect(() => { if (ready && (!user || user.role !== "admin")) navigate({ to: user ? "/" : "/login" }); }, [ready, user, navigate]);
   useEffect(load, []);
 
-  const total = items.reduce((sum, item) => sum + item.total, 0);
   const shownPurchases = purchases.filter((purchase) => purchase.number.includes(search) || purchase.supplierName.includes(search));
   const balances = useMemo(() => new Map(suppliers.map((supplier) => [supplier.id,
     purchases.filter((purchase) => purchase.supplierId === supplier.id && purchase.status === "posted").reduce((sum, purchase) => sum + purchase.balance, 0)
@@ -57,16 +53,6 @@ function PurchasesPage() {
 
   if (!ready || !user || user.role !== "admin") return null;
 
-  const addLine = () => {
-    const product = products[0];
-    if (product) setItems([...items, { productId: product.id, name: product.name, unit: product.unit, qty: 1, cost: product.costPrice ?? 0, total: product.costPrice ?? 0 }]);
-  };
-  const saveInvoice = () => {
-    const supplier = suppliers.find((item) => item.id === supplierId);
-    if (!supplier || !number.trim() || !items.length || items.some((item) => item.qty <= 0 || item.cost < 0)) { toast.error("أكمل بيانات الفاتورة والمواد"); return; }
-    const purchase: Purchase = { id: uid(), number: number.trim(), supplierId, supplierName: supplier.name, items, total, paid: Math.min(Math.max(0, paid), total), balance: Math.max(0, total - paid), createdAt: new Date().toISOString(), status: "posted" };
-    postPurchase(purchase, user.name); setCreating(false); setItems([]); setNumber(""); setPaid(0); load(); toast.success("تم اعتماد فاتورة الشراء وزيادة المخزون");
-  };
   const printPurchase = async (purchase: Purchase) => {
     const bridge = native();
     if (!bridge) { toast.info("طباعة المشتريات متاحة في نسخة Windows"); return; }
