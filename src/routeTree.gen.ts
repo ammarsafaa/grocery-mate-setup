@@ -22,6 +22,7 @@ import { Route as ReceiptDesignerRouteImport } from './routes/receipt-designer'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ShiftsRouteImport } from './routes/shifts'
+import { Route as ApiPublicUpdatesSplatRouteImport } from './routes/api/public/updates/$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -88,6 +89,11 @@ const ShiftsRoute = ShiftsRouteImport.update({
   path: '/shifts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicUpdatesSplatRoute = ApiPublicUpdatesSplatRouteImport.update({
+  id: '/api/public/updates/$',
+  path: '/api/public/updates/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/shifts': typeof ShiftsRoute
+  '/api/public/updates/$': typeof ApiPublicUpdatesSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/shifts': typeof ShiftsRoute
+  '/api/public/updates/$': typeof ApiPublicUpdatesSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -134,6 +142,7 @@ export interface FileRoutesById {
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/shifts': typeof ShiftsRoute
+  '/api/public/updates/$': typeof ApiPublicUpdatesSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/shifts'
+    | '/api/public/updates/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/shifts'
+    | '/api/public/updates/$'
   id:
     | '__root__'
     | '/'
@@ -181,6 +192,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/shifts'
+    | '/api/public/updates/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -197,6 +209,7 @@ export interface RootRouteChildren {
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
   ShiftsRoute: typeof ShiftsRoute
+  ApiPublicUpdatesSplatRoute: typeof ApiPublicUpdatesSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -292,6 +305,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShiftsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/updates/$': {
+      id: '/api/public/updates/$'
+      path: '/api/public/updates/$'
+      fullPath: '/api/public/updates/$'
+      preLoaderRoute: typeof ApiPublicUpdatesSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -309,6 +329,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
   ShiftsRoute: ShiftsRoute,
+  ApiPublicUpdatesSplatRoute: ApiPublicUpdatesSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
