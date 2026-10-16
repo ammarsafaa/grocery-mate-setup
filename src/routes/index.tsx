@@ -478,8 +478,8 @@ function PosPage() {
         </div>
 
         {/* Cart */}
-        <div className="flex w-80 shrink-0 flex-col border-r border-border bg-card xl:w-96">
-          <div className="flex items-center gap-2 border-b border-border p-4">
+        <div className="flex w-80 shrink-0 flex-col border-r border-border bg-card narrow:w-64 xl:w-96">
+          <div className="flex items-center gap-2 border-b border-border p-4 short:p-2">
             <ShoppingBasket className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-bold">الفاتورة الحالية</h2>
           </div>
@@ -492,7 +492,7 @@ function PosPage() {
             {cart.map((i, idx) => (
               <div
                 key={idx}
-                className="mb-2 flex items-center justify-between rounded-xl bg-secondary p-3"
+                className="mb-2 flex items-center justify-between rounded-xl bg-secondary p-3 short:mb-1.5 short:p-2"
               >
                 <div>
                   <div className="font-bold text-foreground">{i.name}</div>
@@ -512,8 +512,8 @@ function PosPage() {
               </div>
             ))}
           </div>
-          <div className="border-t border-border p-4">
-            <div className="mb-3 flex items-center justify-between text-xl font-bold">
+          <div className="border-t border-border p-4 short:p-3">
+            <div className="mb-3 flex items-center justify-between text-xl font-bold short:mb-2 short:text-lg">
               <span>الإجمالي</span>
               <span className={pic ? "text-4xl font-black text-primary" : "text-primary"}>{formatMoney(total)}</span>
             </div>
@@ -530,14 +530,14 @@ function PosPage() {
                   toast.success("تم تعليق الفاتورة");
                 }}
                 disabled={cart.length === 0}
-                className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-secondary font-bold disabled:opacity-40"
+                className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-secondary font-bold disabled:opacity-40 short:h-9"
               >
                 <PauseCircle className="h-4 w-4" />
                 تعليق
               </button>
               <button
                 onClick={() => { setHeld(getHeldCarts()); setHeldOpen(true); }}
-                className="relative flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-secondary font-bold"
+                className="relative flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-secondary font-bold short:h-9"
               >
                 <Undo2 className="h-4 w-4" />
                 المعلّقة
@@ -547,7 +547,7 @@ function PosPage() {
             <button
               onClick={() => { if (pic) { setPaidDraft(0); setPayOpen(true); if (settings.speakTotals) speakArabic(`المبلغ ${total} دينار`); } else checkout(); }}
               disabled={cart.length === 0}
-              className={`${pic ? "h-24" : "h-14"} w-full rounded-xl bg-primary text-lg font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-40`}
+              className={`${pic ? "h-24 short:h-20" : "h-14 short:h-12"} w-full rounded-xl bg-primary text-lg font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-40`}
             >
               <Printer className={pic ? "inline h-12 w-12" : "ml-2 inline h-5 w-5"} />
               {!pic && "دفع وحفظ الفاتورة"}
@@ -573,7 +573,7 @@ function PosPage() {
             </div>
             <div className="flex gap-3">
               <button disabled={paidDraft > 0 && paidDraft < total} onClick={() => { const change = Math.max(0, paidDraft - total); if (settings.speakTotals && change > 0) speakArabic(`الباقي ${change} دينار`); setPayOpen(false); checkout(paidDraft); }} className="flex h-20 flex-1 items-center justify-center rounded-xl bg-primary text-primary-foreground disabled:opacity-40"><Printer className="h-10 w-10"/></button>
-              <button onClick={() => setPayOpen(false)} className="flex h-20 w-28 items-center justify-center rounded-xl bg-secondary"><ArrowRight className="h-10 w-10"/></button>
+              <button onClick={() => setPayOpen(false)} className="flex h-20 w-28 items-center justify-center rounded-xl bg-back text-back-foreground"><ArrowRight className="h-10 w-10"/></button>
             </div>
           </div>
         </div>
@@ -671,7 +671,7 @@ function PosPage() {
                 </button>
               ))}
             </div>
-            <button onClick={() => setHeldOpen(false)} className="mt-4 h-12 w-full rounded-xl bg-secondary font-bold">رجوع</button>
+            <button onClick={() => setHeldOpen(false)} className="mt-4 h-12 w-full rounded-xl bg-back font-bold text-back-foreground">رجوع</button>
           </div>
         </div>
       )}
