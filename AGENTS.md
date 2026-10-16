@@ -27,3 +27,4 @@
 - Cashier screens must stay usable at 1024x768, adapting with the `narrow`/`short` variants defined in src/styles.css instead of new ad-hoc breakpoints, so one layout serves every register size.
 - Windows private updates use a Cloud release proxy; GitHub credentials stay server-side and the installer carries only a restricted download key, so clients cannot access repository contents.
 - Update notifications mount once in the root; installation must wait for closed shifts and a successful SQLite backup, so updates cannot interrupt selling or lose the recovery copy.
+- POS displays pre-rounding and settlement amounts using saleTotal with rounding off/on respectively, so visible figures share the existing discount and nonnegative-total rules without changing posting logic.

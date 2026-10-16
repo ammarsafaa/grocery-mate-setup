@@ -157,7 +157,9 @@ function PosPage() {
   );
 
   const itemsTotal = cart.reduce((sum, item) => sum + item.total, 0);
-  const total = saleTotal(cart, discount, settings.cashRounding !== false);
+  const roundingEnabled = settings.cashRounding !== false;
+  const originalTotal = saleTotal(cart, discount, false);
+  const total = saleTotal(cart, discount, roundingEnabled);
 
   // Poll the scale continuously so the live weight is always visible in the top bar
   useEffect(() => {
@@ -515,12 +517,12 @@ function PosPage() {
             ))}
           </div>
           <div className="border-t border-border p-4 short:p-3">
-            <div className="mb-3 flex items-center justify-between text-xl font-bold short:mb-2 short:text-lg">
-              <span>الإجمالي</span>
-              <span className={pic ? "text-4xl font-black text-primary" : "text-primary"}>{formatMoney(total)}</span>
-            </div>
             {discount > 0 && <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground"><span>الخصم</span><span>-{formatMoney(discount)}</span></div>}
-            {itemsTotal - discount !== total && <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground"><span>تقريب نقدي</span><span>{formatMoney(total - (itemsTotal - discount))}</span></div>}
+            {roundingEnabled && <div className="mb-1 flex flex-wrap items-center justify-between gap-x-2 text-sm font-semibold text-muted-foreground" data-testid="original-sale-total"><span>المجموع الأصلي</span><span dir="ltr">{formatMoney(originalTotal)}</span></div>}
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-x-2 text-xl font-bold short:mb-2 short:text-lg" data-testid="final-sale-total">
+              <span className={roundingEnabled ? "text-base short:text-sm" : ""}>{roundingEnabled ? "المجموع بعد التقريب" : "الإجمالي"}</span>
+              <span dir="ltr" className={pic ? "text-3xl font-black text-primary short:text-2xl" : "text-primary"}>{formatMoney(total)}</span>
+            </div>
             <div className="mb-3 flex gap-2">
               <button
                 onClick={() => {
@@ -562,7 +564,10 @@ function PosPage() {
       {payOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4">
           <div className="w-full max-w-2xl rounded-2xl border border-border bg-card p-6">
-            <div className="mb-4 flex items-center justify-between text-4xl font-black"><ShoppingBasket className="h-10 w-10 text-primary"/><span className="text-primary">{formatMoney(total)}</span></div>
+            <div className="mb-4 flex items-center justify-between gap-3"><ShoppingBasket className="h-10 w-10 shrink-0 text-primary"/><div className="min-w-0 flex-1">
+              {roundingEnabled && <div className="mb-1 flex flex-wrap justify-between gap-x-2 text-sm font-semibold text-muted-foreground"><span>المجموع الأصلي</span><span dir="ltr">{formatMoney(originalTotal)}</span></div>}
+              <div className="flex flex-wrap items-center justify-between gap-x-2 font-black"><span className="text-base">{roundingEnabled ? "المجموع بعد التقريب" : "الإجمالي"}</span><span dir="ltr" className="text-3xl text-primary">{formatMoney(total)}</span></div>
+            </div></div>
             <div className="grid grid-cols-4 gap-3">
               {[250, 500, 1000, 5000, 10000, 25000, 50000].map((n) => (
                 <button key={n} onClick={() => setPaidDraft((v) => v + n)} className="h-20 rounded-xl border-2 border-primary/40 bg-secondary text-2xl font-black hover:border-primary active:scale-95">{formatMoney(n)}</button>

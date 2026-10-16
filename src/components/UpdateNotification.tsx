@@ -9,8 +9,10 @@ export function UpdateNotification() {
   const [hidden, setHidden] = useState(false);
   const [message, setMessage] = useState("");
   useEffect(() => native()?.onUpdateStatus?.((s) => {
+    if (s.state !== "error") setMessage("");
+    if (s.state === "none") setStatus(null);
     if (["available", "downloading", "ready"].includes(s.state)) { setStatus(s); setHidden(false); }
-    if (s.state === "error") setMessage(s.error ?? "تعذر إكمال التحديث؛ حاول من الإعدادات.");
+    if (s.state === "error") setMessage("تعذر إكمال التحديث؛ حاول مرة أخرى من الإعدادات.");
   }), []);
   if (hidden || !status) return null;
   const install = () => {
@@ -19,7 +21,7 @@ export function UpdateNotification() {
   };
   return <aside role="status" className="fixed bottom-3 right-3 z-50 flex max-w-[calc(100%-24px)] flex-wrap items-center gap-3 rounded-lg border border-border bg-card p-3 text-card-foreground shadow-lg">
     <RefreshCw className="h-5 w-5 text-primary" />
-    <div className="text-sm font-bold">{status.state === "downloading" ? `تحميل التحديث ${status.percent ?? 0}%` : status.state === "ready" ? "التحديث جاهز" : `تحديث جديد ${status.version ?? ""}`}{message && <p className="text-destructive">{message}</p>}</div>
+    <div className="min-w-0 text-sm font-bold">{status.state === "downloading" ? `تحميل التحديث ${status.percent ?? 0}%` : status.state === "ready" ? "التحديث جاهز" : `تحديث جديد ${status.version ?? ""}`}{message && <p className="max-w-sm break-words text-destructive">{message}</p>}</div>
     {status.state === "available" && <Button size="sm" onClick={() => native()?.downloadUpdate?.()}><Download />تنزيل</Button>}
     {status.state === "ready" && <Button size="sm" onClick={install}>تثبيت وإعادة تشغيل</Button>}
     <Button variant="ghost" size="icon" aria-label="لاحقاً" title="لاحقاً" onClick={() => setHidden(true)}><X /></Button>
