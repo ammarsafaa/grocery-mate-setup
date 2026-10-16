@@ -501,9 +501,10 @@ export function roundToCash250(amount: number): number {
   return Math.round(amount / 250) * 250;
 }
 
-/** Round to nearest 250 only when the cashRounding setting is on (default on). */
-export function roundCash(amount: number): number {
-  return getSettings().cashRounding === false ? amount : roundToCash250(amount);
+/** Round to nearest 250 only when cash rounding is on (default on; pass `rounding` to override). */
+export function roundCash(amount: number, rounding?: boolean): number {
+  const on = rounding ?? getSettings().cashRounding !== false;
+  return on ? roundToCash250(amount) : amount;
 }
 
 /** Parse an EAN-13 scale label barcode. Returns null when it isn't a scale label. */
