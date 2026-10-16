@@ -22,7 +22,7 @@ import {
   getSettings,
   getGroups,
   recordSaleMovements,
-  roundToCash250,
+  roundCash,
   parseScaleLabel,
   uid,
   getHeldCarts,
@@ -155,7 +155,7 @@ function PosPage() {
   );
 
   const itemsTotal = cart.reduce((sum, item) => sum + item.total, 0);
-  const total = roundToCash250(Math.max(0, itemsTotal - discount));
+  const total = roundCash(Math.max(0, itemsTotal - discount));
 
   // Poll the scale continuously so the live weight is always visible in the top bar
   useEffect(() => {
@@ -200,7 +200,7 @@ function PosPage() {
         const w = liveWeight;
         setCart((c) => [
           ...c,
-          { productId: p.id, name: p.name, unit: "kg", price: weightedUnitPrice(p), qty: w, total: roundToCash250(lineTotalWithOffer(p, w)) },
+          { productId: p.id, name: p.name, unit: "kg", price: weightedUnitPrice(p), qty: w, total: roundCash(lineTotalWithOffer(p, w)) },
         ]);
         toast.success(`${p.name} — ${w.toFixed(3)} كغم`);
         return;
@@ -267,7 +267,7 @@ function PosPage() {
         unit: "kg",
         price: weightedUnitPrice(p),
         qty: w,
-        total: roundToCash250(lineTotalWithOffer(p, w)),
+        total: roundCash(lineTotalWithOffer(p, w)),
       },
     ]);
     setWeightModal(null);
@@ -704,7 +704,7 @@ function PosPage() {
             </p>
             {parseFloat(weight) > 0 && (
               <p className="mb-4 text-center text-lg font-bold text-primary">
-                {formatMoney(roundToCash250(lineTotalWithOffer(weightModal, parseFloat(weight))))}
+                {formatMoney(roundCash(lineTotalWithOffer(weightModal, parseFloat(weight))))}
               </p>
             )}
             <div className="flex gap-2">

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lineTotalWithOffer, weightedUnitPrice, roundToCash250, parseScaleLabel, getSettings } from "./db";
+import { lineTotalWithOffer, weightedUnitPrice, roundToCash250, roundCash, parseScaleLabel, getSettings } from "./db";
 import type { Product } from "./types";
 
 const base: Product = { id: "1", name: "شاي", price: 1000, unit: "piece", category: "عام", stock: 100, active: true };
@@ -57,5 +57,22 @@ describe("proportional weighed offers", () => {
     const settings = { ...getSettings(), labelBarcodeEnabled: true, labelPrefixes: "20", labelPluLength: 5, labelValueType: "weight" as const, labelWeightDecimals: 3 };
     const result = parseScaleLabel("2000001015000", settings, [tomato]);
     expect(result).toMatchObject({ qty: 1.5, total: 1000 });
+  });
+});
+
+describe("roundCash — خيار التقريب لأقرب 250", () => {
+  const plain: Product = { ...base, unit: "kg", price: 1000 }; // 1.1 kg = 1100 exactly
+
+  it("rounds to nearest 250 when rounding is on", () => {
+    expect(roundCash(lineTotalWithOffer(plain, 1.125), true)).toBe(1250); // 1125 → أقرب 250
+  });
+
+  it("keeps the exact amount when rounding is off", () => {
+    expect(roundCash(lineTotalWithOffer(plain, 1.1), false)).toBeCloseTo(1100);
+    expect(roundCash(625, false)).toBe(625);
+  });
+
+  it("rounds 625 up to 750 when rounding is on", () => {
+    expect(roundCash(625, true)).toBe(750);
   });
 });

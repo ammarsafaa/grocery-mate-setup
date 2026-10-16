@@ -364,6 +364,7 @@ const DEFAULT_SETTINGS: Settings = {
   openDrawer: false,
   labelBarcodeEnabled: false,
   discountEnabled: true,
+  cashRounding: true,
   useScale: true,
   labelPrefixes: "20,21,22",
   labelPluLength: 5,
@@ -500,6 +501,12 @@ export function roundToCash250(amount: number): number {
   return Math.round(amount / 250) * 250;
 }
 
+/** Round to nearest 250 only when cash rounding is on (default on; pass `rounding` to override). */
+export function roundCash(amount: number, rounding?: boolean): number {
+  const on = rounding ?? getSettings().cashRounding !== false;
+  return on ? roundToCash250(amount) : amount;
+}
+
 /** Parse an EAN-13 scale label barcode. Returns null when it isn't a scale label. */
 export function parseScaleLabel(code: string, s: Settings, products: Product[]) {
   const c = code.trim();
@@ -520,5 +527,5 @@ export function parseScaleLabel(code: string, s: Settings, products: Product[]) 
   }
   const qty = raw / Math.pow(10, s.labelWeightDecimals ?? 3);
   if (qty <= 0) return { error: "الوزن في الملصق غير صحيح" } as const;
-  return { product, qty, total: roundToCash250(lineTotalWithOffer(product, qty)) } as const;
+  return { product, qty, total: roundCash(lineTotalWithOffer(product, qty)) } as const;
 }
