@@ -20,11 +20,14 @@ export const Route = createFileRoute("/api/public/updates/$")({
         const data = (await rel.json()) as { assets?: Array<{ name: string; url: string }> };
         const asset = data.assets?.find((a) => a.name === name);
         if (!asset) return new Response("الملف غير موجود", { status: 404 });
+        if (!asset.url.startsWith(`https://api.github.com/repos/${repo.owner}/${repo.repo}/releases/assets/`)) return new Response("مصدر غير مسموح", { status: 502 });
 
         const first = await fetch(asset.url, { headers: { ...gh, Accept: "application/octet-stream" }, redirect: "manual" });
         let file = first;
         const loc = first.headers.get("location");
         if (first.status >= 300 && first.status < 400 && loc) {
+          const target = new URL(loc);
+          if (target.protocol !== "https:" || !["release-assets.githubusercontent.com", "objects.githubusercontent.com"].includes(target.hostname)) return new Response("مصدر غير مسموح", { status: 502 });
           const range = request.headers.get("range");
           file = await fetch(loc, { headers: range ? { Range: range } : {} }); // signed URL, no token sent
         }
