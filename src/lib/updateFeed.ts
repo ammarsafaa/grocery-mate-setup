@@ -5,7 +5,7 @@ export function isAllowedUpdateFile(name: string): boolean {
 
 export function parseRepo(value: string | undefined): { owner: string; repo: string } | null {
   const m = String(value ?? "").trim().replace(/^https:\/\/github\.com\//, "").replace(/\.git$/, "").match(/^([A-Za-z0-9-]{1,39})\/([A-Za-z0-9._-]{1,100})$/);
-  return m ? { owner: m[1], repo: m[2] } : null;
+  return m?.[1] && m[2] ? { owner: m[1], repo: m[2] } : null;
 }
 
 export function sameSecret(a: string, b: string): boolean {

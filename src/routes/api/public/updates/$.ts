@@ -6,9 +6,9 @@ export const Route = createFileRoute("/api/public/updates/$")({
   server: {
     handlers: {
       GET: async ({ request, params }) => {
-        const key = process.env.UPDATE_DOWNLOAD_KEY ?? "";
-        const token = process.env.GITHUB_UPDATE_TOKEN ?? "";
-        const repo = parseRepo(process.env.GITHUB_UPDATE_REPO);
+        const key = process.env["UPDATE_DOWNLOAD_KEY"] ?? "";
+        const token = process.env["GITHUB_UPDATE_TOKEN"] ?? "";
+        const repo = parseRepo(process.env["GITHUB_UPDATE_REPO"]);
         if (!key || !token || !repo) return new Response("خدمة التحديث غير مهيأة", { status: 503 });
         if (!sameSecret(request.headers.get("x-zeros-update-key") ?? "", key)) return new Response("غير مصرح", { status: 401 });
         const name = String(params._splat ?? "");
