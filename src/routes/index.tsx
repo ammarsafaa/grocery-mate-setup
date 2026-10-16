@@ -396,9 +396,10 @@ function PosPage() {
                 </div>
               </div>
             )}
+            <div className="flex flex-wrap items-center gap-2 narrow:basis-full">
             <button
               onClick={() => setPriceMode((v) => !v)}
-              className={`flex h-12 items-center gap-2 rounded-xl px-5 font-bold transition ${priceMode ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
+              className={`flex h-12 shrink-0 items-center gap-2 rounded-xl px-5 font-bold transition short:h-10 short:px-3 short:text-sm ${priceMode ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
             >
               <Pencil className="h-4 w-4" />
               {priceMode ? "اضغط على منتج لتغيير سعره" : "تغيير سعر"}
@@ -406,7 +407,7 @@ function PosPage() {
             <button
               onClick={() => setWholesale((v) => !v)}
               title="تفعيل سعر الجملة للمنتجات التي لها سعر جملة"
-              className={`flex h-12 items-center gap-2 rounded-xl px-4 font-bold transition ${wholesale ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
+              className={`flex h-12 shrink-0 items-center gap-2 rounded-xl px-4 font-bold transition short:h-10 short:px-3 short:text-sm ${wholesale ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
             >
               <Layers className="h-4 w-4" />
               جملة
@@ -414,7 +415,7 @@ function PosPage() {
             <button
               onClick={() => setCartonMode((v) => !v)}
               title="إضافة المنتج ككرتونة كاملة"
-              className={`flex h-12 items-center gap-2 rounded-xl px-4 font-bold transition ${cartonMode ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
+              className={`flex h-12 shrink-0 items-center gap-2 rounded-xl px-4 font-bold transition short:h-10 short:px-3 short:text-sm ${cartonMode ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
             >
               <Package className="h-4 w-4" />
               كرتونة
@@ -422,17 +423,18 @@ function PosPage() {
             {settings.discountEnabled && (
               <button
                 onClick={() => { setDiscountDraft(discount ? String(discount) : ""); setDiscountOpen(true); }}
-                className={`flex h-12 items-center gap-2 rounded-xl px-4 font-bold transition ${discount > 0 ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
+                className={`flex h-12 shrink-0 items-center gap-2 rounded-xl px-4 font-bold transition short:h-10 short:px-3 short:text-sm ${discount > 0 ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
               >
                 <Percent className="h-4 w-4" />
                 خصم
               </button>
             )}
+            </div>
           </div>
           <div className="pos-products-grid min-h-0 flex-1 content-start gap-2 overflow-auto" style={{ "--pos-tile-width": `${posTileWidth(settings.productTileWidth)}px` } as CSSProperties}>
             {settings.useProductGroups && selectedGroup && !search && (
-              <Button variant="outline" onClick={() => setSelectedGroup(null)} className="pos-tile flex flex-col items-center justify-center gap-2 bg-secondary p-2 font-bold hover:border-primary active:scale-95">
-                <ArrowRight className={pic ? "h-12 w-12" : "h-6 w-6"} />
+              <Button variant="outline" onClick={() => setSelectedGroup(null)} className="pos-tile flex flex-col items-center justify-center gap-2 border-back bg-back p-2 font-black text-back-foreground hover:border-back hover:bg-back/90 active:scale-95">
+                <ArrowRight className={pic ? "h-14 w-14" : "h-9 w-9"} />
                 رجوع
               </Button>
             )}
