@@ -65,7 +65,7 @@ describe("roundCash — خيار التقريب لأقرب 250", () => {
 
   it("rounds to nearest 250 by default", () => {
     saveSettings({ ...getSettings(), cashRounding: true });
-    expect(roundCash(lineTotalWithOffer(plain, 1.125))).toBe(1125 === 1125 ? 1125 : 0); // 1125 → 1125 (already multiple of 125? no: 1125/250=4.5 → 1250)
+    expect(roundCash(lineTotalWithOffer(plain, 1.125))).toBe(1250); // 1125 → أقرب 250
   });
 
   it("keeps the exact amount when rounding is off", () => {
