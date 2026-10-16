@@ -363,29 +363,29 @@ function PosPage() {
             <label className="mb-2 block text-muted-foreground">كم فلوس بالقاصة؟</label>
             <input type="number" autoFocus value={endCash} onChange={(e) => setEndCash(e.target.value)} className="mb-4 h-14 w-full rounded-xl border border-border bg-secondary px-4 text-center text-2xl font-bold outline-none focus:border-primary" />
             <button disabled={ending} onClick={endShift} className="mb-2 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-destructive text-xl font-bold text-destructive-foreground disabled:opacity-50"><Printer className="h-6 w-6" /> غلق وطباعة</button>
-            <button onClick={() => setEndOpen(false)} className="h-12 w-full rounded-xl bg-secondary font-bold">رجوع</button>
+            <button onClick={() => setEndOpen(false)} className="h-12 w-full rounded-xl bg-back font-bold text-back-foreground">رجوع</button>
           </div>
         </div>
       )}
-      <div className="flex h-screen">
+      <div className="flex h-screen overflow-hidden">
         {/* Products grid */}
-        <div className="flex min-w-0 flex-1 flex-col p-4">
-          <div className="mb-4 flex gap-2">
+        <div className="flex min-w-0 flex-1 flex-col p-3 short:p-2 narrow:p-2">
+          <div className="mb-3 flex flex-wrap items-center gap-2 short:mb-2">
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") handleScan(); }}
               autoFocus
               placeholder="ابحث بالاسم أو امسح الباركود..."
-              className="h-12 flex-1 rounded-xl border border-border bg-card px-4 text-foreground outline-none focus:border-primary"
+              className="h-12 min-w-56 flex-1 rounded-xl border border-border bg-card px-4 text-foreground outline-none focus:border-primary short:h-10"
             />
             {settings.easyShift && (
-              <button onClick={() => setEndOpen(true)} className="h-12 rounded-xl bg-destructive px-5 font-bold text-destructive-foreground">إنهاء الوردية</button>
+              <button onClick={() => setEndOpen(true)} className="h-12 shrink-0 rounded-xl bg-destructive px-5 font-bold text-destructive-foreground short:h-10 short:px-3 short:text-sm">إنهاء الوردية</button>
             )}
             {settings.useScale !== false && (
-              <div className="flex h-12 min-w-48 items-center justify-between gap-3 rounded-xl border-2 border-primary/50 bg-card px-4 shadow-inner">
+              <div className="flex h-12 min-w-40 shrink-0 items-center justify-between gap-2 rounded-xl border-2 border-primary/50 bg-card px-3 shadow-inner narrow:min-w-36 short:h-10">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black tracking-tight text-primary">
+                  <span className="text-2xl font-black tracking-tight text-primary short:text-xl">
                     {liveWeight > 0 ? liveWeight.toFixed(3) : "0.000"}
                   </span>
                   <span className="text-xs font-bold text-muted-foreground">كغم</span>
@@ -396,9 +396,10 @@ function PosPage() {
                 </div>
               </div>
             )}
+            <div className="flex flex-wrap items-center gap-2 narrow:basis-full">
             <button
               onClick={() => setPriceMode((v) => !v)}
-              className={`flex h-12 items-center gap-2 rounded-xl px-5 font-bold transition ${priceMode ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
+              className={`flex h-12 shrink-0 items-center gap-2 rounded-xl px-5 font-bold transition short:h-10 short:px-3 short:text-sm ${priceMode ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
             >
               <Pencil className="h-4 w-4" />
               {priceMode ? "اضغط على منتج لتغيير سعره" : "تغيير سعر"}
@@ -406,7 +407,7 @@ function PosPage() {
             <button
               onClick={() => setWholesale((v) => !v)}
               title="تفعيل سعر الجملة للمنتجات التي لها سعر جملة"
-              className={`flex h-12 items-center gap-2 rounded-xl px-4 font-bold transition ${wholesale ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
+              className={`flex h-12 shrink-0 items-center gap-2 rounded-xl px-4 font-bold transition short:h-10 short:px-3 short:text-sm ${wholesale ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
             >
               <Layers className="h-4 w-4" />
               جملة
@@ -414,7 +415,7 @@ function PosPage() {
             <button
               onClick={() => setCartonMode((v) => !v)}
               title="إضافة المنتج ككرتونة كاملة"
-              className={`flex h-12 items-center gap-2 rounded-xl px-4 font-bold transition ${cartonMode ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
+              className={`flex h-12 shrink-0 items-center gap-2 rounded-xl px-4 font-bold transition short:h-10 short:px-3 short:text-sm ${cartonMode ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
             >
               <Package className="h-4 w-4" />
               كرتونة
@@ -422,19 +423,20 @@ function PosPage() {
             {settings.discountEnabled && (
               <button
                 onClick={() => { setDiscountDraft(discount ? String(discount) : ""); setDiscountOpen(true); }}
-                className={`flex h-12 items-center gap-2 rounded-xl px-4 font-bold transition ${discount > 0 ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
+                className={`flex h-12 shrink-0 items-center gap-2 rounded-xl px-4 font-bold transition short:h-10 short:px-3 short:text-sm ${discount > 0 ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
               >
                 <Percent className="h-4 w-4" />
                 خصم
               </button>
             )}
+            </div>
           </div>
           <div className="pos-products-grid min-h-0 flex-1 content-start gap-2 overflow-auto" style={{ "--pos-tile-width": `${posTileWidth(settings.productTileWidth)}px` } as CSSProperties}>
             {settings.useProductGroups && selectedGroup && !search && (
-              <Button variant="outline" onClick={() => setSelectedGroup(null)} className="pos-tile flex flex-col items-center justify-center gap-2 bg-secondary p-2 font-bold hover:border-primary active:scale-95">
-                <ArrowRight className={pic ? "h-12 w-12" : "h-6 w-6"} />
-                رجوع
-              </Button>
+              <button type="button" onClick={() => setSelectedGroup(null)} className="pos-tile flex cursor-pointer flex-col items-center justify-center gap-2 border-2 border-back bg-back p-2 font-black text-back-foreground hover:bg-back/90 active:scale-95">
+                <ArrowRight className={pic ? "h-14 w-14" : "h-10 w-10"} />
+                <span className="text-xl short:text-base">رجوع</span>
+              </button>
             )}
             {settings.useProductGroups && !selectedGroup && !search && groups.map((group) => (
               <Button variant="outline"
@@ -476,8 +478,8 @@ function PosPage() {
         </div>
 
         {/* Cart */}
-        <div className="flex w-80 shrink-0 flex-col border-r border-border bg-card xl:w-96">
-          <div className="flex items-center gap-2 border-b border-border p-4">
+        <div className="flex w-80 shrink-0 flex-col border-r border-border bg-card narrow:w-64 xl:w-96">
+          <div className="flex items-center gap-2 border-b border-border p-4 short:p-2">
             <ShoppingBasket className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-bold">الفاتورة الحالية</h2>
           </div>
@@ -490,7 +492,7 @@ function PosPage() {
             {cart.map((i, idx) => (
               <div
                 key={idx}
-                className="mb-2 flex items-center justify-between rounded-xl bg-secondary p-3"
+                className="mb-2 flex items-center justify-between rounded-xl bg-secondary p-3 short:mb-1.5 short:p-2"
               >
                 <div>
                   <div className="font-bold text-foreground">{i.name}</div>
@@ -510,8 +512,8 @@ function PosPage() {
               </div>
             ))}
           </div>
-          <div className="border-t border-border p-4">
-            <div className="mb-3 flex items-center justify-between text-xl font-bold">
+          <div className="border-t border-border p-4 short:p-3">
+            <div className="mb-3 flex items-center justify-between text-xl font-bold short:mb-2 short:text-lg">
               <span>الإجمالي</span>
               <span className={pic ? "text-4xl font-black text-primary" : "text-primary"}>{formatMoney(total)}</span>
             </div>
@@ -528,14 +530,14 @@ function PosPage() {
                   toast.success("تم تعليق الفاتورة");
                 }}
                 disabled={cart.length === 0}
-                className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-secondary font-bold disabled:opacity-40"
+                className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-secondary font-bold disabled:opacity-40 short:h-9"
               >
                 <PauseCircle className="h-4 w-4" />
                 تعليق
               </button>
               <button
                 onClick={() => { setHeld(getHeldCarts()); setHeldOpen(true); }}
-                className="relative flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-secondary font-bold"
+                className="relative flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-secondary font-bold short:h-9"
               >
                 <Undo2 className="h-4 w-4" />
                 المعلّقة
@@ -545,7 +547,7 @@ function PosPage() {
             <button
               onClick={() => { if (pic) { setPaidDraft(0); setPayOpen(true); if (settings.speakTotals) speakArabic(`المبلغ ${total} دينار`); } else checkout(); }}
               disabled={cart.length === 0}
-              className={`${pic ? "h-24" : "h-14"} w-full rounded-xl bg-primary text-lg font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-40`}
+              className={`${pic ? "h-24 short:h-20" : "h-14 short:h-12"} w-full rounded-xl bg-primary text-lg font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-40`}
             >
               <Printer className={pic ? "inline h-12 w-12" : "ml-2 inline h-5 w-5"} />
               {!pic && "دفع وحفظ الفاتورة"}
@@ -571,7 +573,7 @@ function PosPage() {
             </div>
             <div className="flex gap-3">
               <button disabled={paidDraft > 0 && paidDraft < total} onClick={() => { const change = Math.max(0, paidDraft - total); if (settings.speakTotals && change > 0) speakArabic(`الباقي ${change} دينار`); setPayOpen(false); checkout(paidDraft); }} className="flex h-20 flex-1 items-center justify-center rounded-xl bg-primary text-primary-foreground disabled:opacity-40"><Printer className="h-10 w-10"/></button>
-              <button onClick={() => setPayOpen(false)} className="flex h-20 w-28 items-center justify-center rounded-xl bg-secondary"><ArrowRight className="h-10 w-10"/></button>
+              <button onClick={() => setPayOpen(false)} className="flex h-20 w-28 items-center justify-center rounded-xl bg-back text-back-foreground"><ArrowRight className="h-10 w-10"/></button>
             </div>
           </div>
         </div>
@@ -669,7 +671,7 @@ function PosPage() {
                 </button>
               ))}
             </div>
-            <button onClick={() => setHeldOpen(false)} className="mt-4 h-12 w-full rounded-xl bg-secondary font-bold">رجوع</button>
+            <button onClick={() => setHeldOpen(false)} className="mt-4 h-12 w-full rounded-xl bg-back font-bold text-back-foreground">رجوع</button>
           </div>
         </div>
       )}

@@ -3,6 +3,9 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
+/* Cashier screens: narrow = up to 1100px wide (15" 1024x768), short = up to 800px tall */
+@custom-variant narrow (@media (max-width: 1100px));
+@custom-variant short (@media (max-height: 800px));
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -88,6 +91,9 @@
   --receipt: oklch(1 0 0);
   --receipt-foreground: oklch(0.12 0 0);
   --muted-receipt: oklch(0.55 0 0);
+  /* «رجوع» — a colour of its own so the cashier spots the way back instantly */
+  --back: oklch(0.78 0.15 78);
+  --back-foreground: oklch(0.2 0.05 80);
 }
 
 @theme inline {
@@ -96,6 +102,8 @@
   --color-receipt-foreground: var(--receipt-foreground);
   --color-muted-receipt: var(--muted-receipt);
   --color-warning: oklch(0.75 0.16 80);
+  --color-back: var(--back);
+  --color-back-foreground: var(--back-foreground);
 }
 
 :root[data-mode="light"] {
@@ -108,6 +116,7 @@
   --border: oklch(0.84 0.02 165); --input: oklch(0.84 0.02 165);
   --sidebar: oklch(0.94 0.02 165); --sidebar-foreground: oklch(0.2 0.02 170);
   --sidebar-accent: oklch(0.89 0.03 165); --sidebar-accent-foreground: oklch(0.2 0.02 170); --sidebar-border: oklch(0.84 0.02 165);
+  --back: oklch(0.66 0.16 70); --back-foreground: oklch(0.99 0.01 80);
 }
 
 .product-name { font-family: var(--product-font); font-size: var(--product-font-size); }
@@ -164,6 +173,17 @@
   overflow-wrap: anywhere;
   text-align: center;
   line-height: 1.4;
+}
+
+/* Short cashier screens (15" 1024x768): tiles keep the chosen size but lose spare padding */
+@media (max-height: 800px) {
+  .pos-products-grid .pos-tile {
+    padding: 6px;
+    gap: 2px;
+  }
+  .pos-tile-price {
+    line-height: 1.25;
+  }
 }
 
 @layer base {
