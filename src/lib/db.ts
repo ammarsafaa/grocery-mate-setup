@@ -364,6 +364,7 @@ const DEFAULT_SETTINGS: Settings = {
   openDrawer: false,
   labelBarcodeEnabled: false,
   discountEnabled: true,
+  cashRounding: true,
   useScale: true,
   labelPrefixes: "20,21,22",
   labelPluLength: 5,
