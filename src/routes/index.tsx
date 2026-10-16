@@ -363,29 +363,29 @@ function PosPage() {
             <label className="mb-2 block text-muted-foreground">كم فلوس بالقاصة؟</label>
             <input type="number" autoFocus value={endCash} onChange={(e) => setEndCash(e.target.value)} className="mb-4 h-14 w-full rounded-xl border border-border bg-secondary px-4 text-center text-2xl font-bold outline-none focus:border-primary" />
             <button disabled={ending} onClick={endShift} className="mb-2 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-destructive text-xl font-bold text-destructive-foreground disabled:opacity-50"><Printer className="h-6 w-6" /> غلق وطباعة</button>
-            <button onClick={() => setEndOpen(false)} className="h-12 w-full rounded-xl bg-secondary font-bold">رجوع</button>
+            <button onClick={() => setEndOpen(false)} className="h-12 w-full rounded-xl bg-back font-bold text-back-foreground">رجوع</button>
           </div>
         </div>
       )}
-      <div className="flex h-screen">
+      <div className="flex h-screen overflow-hidden">
         {/* Products grid */}
-        <div className="flex min-w-0 flex-1 flex-col p-4">
-          <div className="mb-4 flex gap-2">
+        <div className="flex min-w-0 flex-1 flex-col p-3 short:p-2 narrow:p-2">
+          <div className="mb-3 flex flex-wrap items-center gap-2 short:mb-2">
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") handleScan(); }}
               autoFocus
               placeholder="ابحث بالاسم أو امسح الباركود..."
-              className="h-12 flex-1 rounded-xl border border-border bg-card px-4 text-foreground outline-none focus:border-primary"
+              className="h-12 min-w-56 flex-1 rounded-xl border border-border bg-card px-4 text-foreground outline-none focus:border-primary short:h-10"
             />
             {settings.easyShift && (
-              <button onClick={() => setEndOpen(true)} className="h-12 rounded-xl bg-destructive px-5 font-bold text-destructive-foreground">إنهاء الوردية</button>
+              <button onClick={() => setEndOpen(true)} className="h-12 shrink-0 rounded-xl bg-destructive px-5 font-bold text-destructive-foreground short:h-10 short:px-3 short:text-sm">إنهاء الوردية</button>
             )}
             {settings.useScale !== false && (
-              <div className="flex h-12 min-w-48 items-center justify-between gap-3 rounded-xl border-2 border-primary/50 bg-card px-4 shadow-inner">
+              <div className="flex h-12 min-w-40 shrink-0 items-center justify-between gap-2 rounded-xl border-2 border-primary/50 bg-card px-3 shadow-inner narrow:min-w-36 short:h-10">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black tracking-tight text-primary">
+                  <span className="text-2xl font-black tracking-tight text-primary short:text-xl">
                     {liveWeight > 0 ? liveWeight.toFixed(3) : "0.000"}
                   </span>
                   <span className="text-xs font-bold text-muted-foreground">كغم</span>
