@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { native, type UpdateStatus } from "@/lib/native";
+import { getOpenShift } from "@/lib/db";
+import { toast } from "sonner";
 
 export function UpdatePanel() {
   const [status, setStatus] = useState<UpdateStatus | null>(null);
@@ -45,7 +47,7 @@ export function UpdatePanel() {
           {status?.state === "available" ? (
             <button onClick={() => n.downloadUpdate?.()} className="rounded-xl bg-primary px-6 py-3 font-bold text-primary-foreground">تحميل التحديث</button>
           ) : status?.state === "ready" ? (
-            <button onClick={() => n.installUpdate?.()} className="rounded-xl bg-primary px-6 py-3 font-bold text-primary-foreground">تثبيت الآن</button>
+            <button onClick={() => { if (getOpenShift()) { toast.error("أغلق الوردية قبل تثبيت التحديث."); return; } n.installUpdate?.(); }} className="rounded-xl bg-primary px-6 py-3 font-bold text-primary-foreground">تثبيت الآن</button>
           ) : (
             <button disabled={checking || status?.state === "downloading"} onClick={check} className="rounded-xl bg-primary px-6 py-3 font-bold text-primary-foreground disabled:opacity-50">البحث عن تحديث</button>
           )}

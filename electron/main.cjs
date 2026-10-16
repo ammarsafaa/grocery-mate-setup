@@ -520,6 +520,16 @@ ipcMain.handle("print-receipt", async (_event, html, printerName, copies) => {
 // ---- Auto updates (GitHub Releases). Only needs internet while updating ----
 let updater = null;
 try { updater = require("electron-updater").autoUpdater; updater.autoDownload = false; } catch { updater = null; }
+// Private feed: the build writes update-config.json (feed URL + limited download key, never a GitHub token).
+let updateConfigured = false;
+try {
+  const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, "update-config.json"), "utf8"));
+  if (updater && cfg.url && cfg.key) {
+    updater.setFeedURL({ provider: "generic", url: cfg.url });
+    updater.requestHeaders = { "x-zeros-update-key": cfg.key };
+    updateConfigured = true;
+  }
+} catch { /* public GitHub feed fallback */ }
 let updWin = null;
 function sendUpd(s) { if (updWin && !updWin.isDestroyed()) updWin.webContents.send("update-status", s); }
 if (updater) {
@@ -535,7 +545,22 @@ ipcMain.handle("update-check", async () => {
   try { await updater.checkForUpdates(); return { ok: true }; } catch (e) { return { ok: false, error: String(e.message || e) }; }
 });
 ipcMain.handle("update-download", async () => { try { await updater.downloadUpdate(); return { ok: true }; } catch (e) { return { ok: false, error: String(e.message || e) }; } });
-ipcMain.on("update-install", () => { allowQuitGlobal = true; updater.quitAndInstall(false, true); });
+ipcMain.on("update-install", async () => {
+  // Safety copy of the local database before installing.
+  try {
+    if (db && dbPath) {
+      const dir = path.join(path.dirname(dbPath), "Backups");
+      fs.mkdirSync(dir, { recursive: true });
+      await db.backup(path.join(dir, `before-update-${Date.now()}.db`));
+    }
+  } catch { /* still allow update */ }
+  allowQuitGlobal = true; updater.quitAndInstall(false, true);
+});
+// Quiet background checks: shortly after start, then every 4 hours.
+function autoCheck() { if (updater && app.isPackaged) updater.checkForUpdates().catch(() => {}); }
+setTimeout(autoCheck, 20000);
+setInterval(autoCheck, 4 * 60 * 60 * 1000);
+void updateConfigured;
 let allowQuitGlobal = false;
 
 app.whenReady().then(async () => {

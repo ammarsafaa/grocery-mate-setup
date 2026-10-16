@@ -15,6 +15,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "../lib/auth";
 import { CloseAppGuard } from "../components/CloseAppGuard";
+import { UpdateNotification } from "../components/UpdateNotification";
 import "@fontsource/cairo/400.css";
 import "@fontsource/cairo/600.css";
 import "@fontsource/cairo/700.css";
@@ -114,6 +115,7 @@ function RootComponent() {
       <AuthProvider>
         <Outlet />
         <CloseAppGuard />
+        <UpdateNotification />
         <Toaster position="top-center" richColors dir="rtl" />
       </AuthProvider>
     </QueryClientProvider>
