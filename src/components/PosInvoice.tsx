@@ -1,6 +1,6 @@
 import { Bike, Printer, ShoppingBasket, Trash2, PauseCircle, Undo2, CreditCard, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatMoney, saleTotal, saleTotalWithDelivery } from "@/lib/db";
+import { formatMoney, saleTotal } from "@/lib/db";
 import type { CartItem, Product, Settings } from "@/lib/types";
 import type { DeliveryFields } from "@/lib/deliveryFields";
 
@@ -26,7 +26,6 @@ interface Props {
 export function PosInvoice({ cart, products, settings, discount, fields, onFields, highlight, onRemove, onQuantity, onPay, onDelivery, onPrint, onHold, onHeld, heldCount, canPrint }: Props) {
   const rounding = settings.cashRounding !== false;
   const total = saleTotal(cart, discount, rounding);
-  const fee = Math.max(0, settings.deliveryFee ?? 0);
   return (
     <aside className="pos-invoice flex min-h-0 min-w-0 flex-col border-r border-border bg-card" aria-label="الفاتورة الحالية">
       <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-3 short:py-2">
