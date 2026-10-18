@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-ro
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 import { posTileWidth } from "@/lib/posTileSize";
-import { ArrowRight, FolderOpen, Printer, Scale, Trash2, ShoppingBasket, PlayCircle, Pencil, Percent, Package, Layers, PauseCircle, Undo2 } from "lucide-react";
+import { ArrowRight, FolderOpen, Printer, Scale, Trash2, ShoppingBasket, PlayCircle, Pencil, Percent, Package, Layers, PauseCircle, Undo2, Bike } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/AppLayout";
@@ -23,6 +23,7 @@ import {
   getGroups,
   recordSaleMovements,
   saleTotal,
+  saleTotalWithDelivery,
   parseScaleLabel,
   uid,
   getHeldCarts,
@@ -99,6 +100,8 @@ function PosPage() {
   const [discount, setDiscount] = useState(0);
   const [discountOpen, setDiscountOpen] = useState(false);
   const [discountDraft, setDiscountDraft] = useState("");
+  const [deliveryOpen, setDeliveryOpen] = useState(false);
+  const [deliveryForm, setDeliveryForm] = useState({ name: "", phone: "", address: "" });
   const [held, setHeld] = useState(getHeldCarts());
   const [heldOpen, setHeldOpen] = useState(false);
   const pic = !!settings.pictureMode;
@@ -277,8 +280,10 @@ function PosPage() {
     setWeightModal(null);
   };
 
-  const checkout = async (paidAmount?: number) => {
+  const checkout = async (paidAmount?: number, delivery?: Sale["delivery"]) => {
     if (!user || !shift || cart.length === 0) return;
+    const fee = delivery ? Math.max(0, settings.deliveryFee ?? 0) : 0;
+    const finalTotal = delivery ? saleTotalWithDelivery(cart, discount, roundingEnabled, fee) : total;
     const sale: Sale = {
       id: uid(),
       number: nextSaleNumber(),
@@ -286,15 +291,16 @@ function PosPage() {
       userId: user.id,
       userName: user.name,
       items: cart,
-      total,
+      total: finalTotal,
       createdAt: new Date().toISOString(),
-      paid: paidAmount && paidAmount > total ? paidAmount : total,
-      change: paidAmount && paidAmount > total ? paidAmount - total : 0,
+      paid: paidAmount && paidAmount > finalTotal ? paidAmount : finalTotal,
+      change: paidAmount && paidAmount > finalTotal ? paidAmount - finalTotal : 0,
       terminal: currentTerminal(),
       ...(discount > 0 ? { discount } : {}),
+      ...(delivery ? { delivery: { ...delivery, fee } } : {}),
     };
     addSale(sale);
-    if (settings.speakTotals && !pic) speakArabic(`المبلغ ${total} دينار`);
+    if (settings.speakTotals && !pic) speakArabic(`المبلغ ${finalTotal} دينار`);
     // Decrement stock once per product, even when it appears on several cart lines.
     const sold = new Map<string, number>();
     for (const item of cart) sold.set(item.productId, (sold.get(item.productId) ?? 0) + item.qty);
@@ -426,7 +432,7 @@ function PosPage() {
             </button>
             {settings.discountEnabled && (
               <button
-                onClick={() => { setDiscountDraft(discount ? String(discount) : ""); setDiscountOpen(true); }}
+                onClick={() => { setDiscountDraft(""); setDiscountOpen(true); }}
                 className={`flex h-12 shrink-0 items-center gap-2 rounded-xl px-4 font-bold transition short:h-10 short:px-3 short:text-sm ${discount > 0 ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
               >
                 <Percent className="h-4 w-4" />
@@ -548,14 +554,27 @@ function PosPage() {
                 {held.length > 0 && <span className="absolute -top-2 -left-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-black text-primary-foreground">{held.length}</span>}
               </button>
             </div>
-            <button
-              onClick={() => { if (pic) { setPaidDraft(0); setPayOpen(true); if (settings.speakTotals) speakArabic(`المبلغ ${total} دينار`); } else checkout(); }}
-              disabled={cart.length === 0}
-              className={`${pic ? "h-24 short:h-20" : "h-14 short:h-12"} w-full rounded-xl bg-primary text-lg font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-40`}
-            >
-              <Printer className={pic ? "inline h-12 w-12" : "ml-2 inline h-5 w-5"} />
-              {!pic && "دفع وحفظ الفاتورة"}
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { if (pic) { setPaidDraft(0); setPayOpen(true); if (settings.speakTotals) speakArabic(`المبلغ ${total} دينار`); } else checkout(); }}
+                disabled={cart.length === 0}
+                className={`${pic ? "h-24 short:h-20" : "h-14 short:h-12"} flex-1 rounded-xl bg-primary text-lg font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-40`}
+              >
+                <Printer className={pic ? "inline h-12 w-12" : "ml-2 inline h-5 w-5"} />
+                {!pic && "دفع وحفظ الفاتورة"}
+              </button>
+              {settings.deliveryEnabled && (
+                <button
+                  onClick={() => { setDeliveryForm({ name: "", phone: "", address: "" }); setDeliveryOpen(true); }}
+                  disabled={cart.length === 0}
+                  title="حفظ الفاتورة كطلب توصيل"
+                  className={`${pic ? "h-24 short:h-20" : "h-14 short:h-12"} flex w-16 shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl bg-amber-600 font-bold text-white transition hover:opacity-90 disabled:opacity-40 narrow:w-14`}
+                >
+                  <Bike className={pic ? "h-10 w-10" : "h-6 w-6"} />
+                  <span className="text-xs">توصيل</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -642,7 +661,7 @@ function PosPage() {
               >
                 تطبيق
               </button>
-              <button onClick={() => { setDiscount(0); setDiscountOpen(false); }} className="h-12 flex-1 rounded-xl bg-secondary font-bold">إزالة الخصم</button>
+              <button onClick={() => { setDiscount(0); setDiscountOpen(false); }} className="h-12 flex-1 rounded-xl bg-secondary font-bold">رجوع بدون خصم</button>
             </div>
           </div>
         </div>
@@ -679,6 +698,54 @@ function PosPage() {
               ))}
             </div>
             <button onClick={() => setHeldOpen(false)} className="mt-4 h-12 w-full rounded-xl bg-back font-bold text-back-foreground">رجوع</button>
+          </div>
+        </div>
+      )}
+
+      {/* Delivery modal */}
+      {deliveryOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6">
+            <div className="mb-4 flex items-center gap-2">
+              <Bike className="h-7 w-7 text-amber-500" />
+              <h3 className="text-xl font-bold">طلب توصيل</h3>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block text-sm font-semibold">اسم الزبون</label>
+                <input autoFocus value={deliveryForm.name} onChange={(e) => setDeliveryForm({ ...deliveryForm, name: e.target.value })} className="h-12 w-full rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary" />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold">رقم الهاتف</label>
+                <input type="tel" dir="ltr" value={deliveryForm.phone} onChange={(e) => setDeliveryForm({ ...deliveryForm, phone: e.target.value })} className="h-12 w-full rounded-xl border border-border bg-secondary px-4 text-left outline-none focus:border-primary" />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold">العنوان</label>
+                <input value={deliveryForm.address} onChange={(e) => setDeliveryForm({ ...deliveryForm, address: e.target.value })} className="h-12 w-full rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary" />
+              </div>
+            </div>
+            <div className="mt-4 space-y-1 rounded-xl bg-secondary p-3 text-sm">
+              <div className="flex justify-between"><span>مجموع المواد</span><b dir="ltr">{formatMoney(total)}</b></div>
+              <div className="flex justify-between"><span>أجور التوصيل</span><b dir="ltr">{formatMoney(Math.max(0, settings.deliveryFee ?? 0))}</b></div>
+              <div className="flex justify-between border-t border-border pt-1 text-base font-bold text-primary"><span>الإجمالي مع التوصيل</span><b dir="ltr">{formatMoney(saleTotalWithDelivery(cart, discount, roundingEnabled, Math.max(0, settings.deliveryFee ?? 0)))}</b></div>
+            </div>
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={() => {
+                  if (!deliveryForm.name.trim() || !deliveryForm.phone.trim() || !deliveryForm.address.trim()) {
+                    toast.error("اكتب اسم الزبون والهاتف والعنوان");
+                    return;
+                  }
+                  setDeliveryOpen(false);
+                  checkout(undefined, { name: deliveryForm.name.trim(), phone: deliveryForm.phone.trim(), address: deliveryForm.address.trim(), fee: 0 });
+                }}
+                className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-amber-600 font-bold text-white"
+              >
+                <Bike className="h-5 w-5" />
+                حفظ طلب التوصيل
+              </button>
+              <button onClick={() => setDeliveryOpen(false)} className="h-12 flex-1 rounded-xl bg-back font-bold text-back-foreground">رجوع</button>
+            </div>
           </div>
         </div>
       )}

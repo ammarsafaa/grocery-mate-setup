@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lineTotalWithOffer, weightedUnitPrice, roundCash, saleTotal, parseScaleLabel, getSettings } from "./db";
+import { lineTotalWithOffer, weightedUnitPrice, roundCash, saleTotal, saleTotalWithDelivery, parseScaleLabel, getSettings } from "./db";
 import type { Product } from "./types";
 
 const base: Product = { id: "1", name: "شاي", price: 1000, unit: "piece", category: "عام", stock: 100, active: true };
@@ -80,6 +80,26 @@ describe("invoice-only optional rounding", () => {
   it.each([true, false])("weight barcode keeps 1100 regardless of rounding=%s", (cashRounding) => {
     const settings = { ...getSettings(), cashRounding, labelBarcodeEnabled: true, labelPrefixes: "20", labelPluLength: 5, labelValueType: "weight" as const, labelWeightDecimals: 3 };
     expect(parseScaleLabel("2000001011000", settings, [tomato])).toMatchObject({ qty: 1.1, total: 1100 });
+  });
+});
+
+describe("saleTotalWithDelivery — أجور التوصيل الثابتة", () => {
+  const items = [{ total: 1100 }, { total: 625 }]; // 1725
+
+  it("يضيف الأجور بعد التقريب فتبقى دقيقة", () => {
+    expect(saleTotalWithDelivery(items, 0, true, 3000)).toBe(4750); // 1750 + 3000
+  });
+
+  it("يضيف الأجور للمجموع الدقيق عند إطفاء التقريب", () => {
+    expect(saleTotalWithDelivery(items, 0, false, 3000)).toBe(4725);
+  });
+
+  it("بدون أجور يساوي مجموع البيع العادي", () => {
+    expect(saleTotalWithDelivery(items, 100, true, 0)).toBe(saleTotal(items, 100, true));
+  });
+
+  it("الأجور السالبة تُعامل صفراً", () => {
+    expect(saleTotalWithDelivery(items, 0, false, -500)).toBe(1725);
   });
 });
 

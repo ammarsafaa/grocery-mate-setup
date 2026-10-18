@@ -67,11 +67,11 @@ export function receiptContent(sale: Sale, design: ReceiptDesign = getReceiptDes
       case "logo": return design.logo ? `<img src="${design.logo}" class="pl-logo" />` : "";
       case "store": return esc(st.storeName);
       case "contact": return `${esc(design.address)}${design.address && design.phone ? "<br>" : ""}${esc(design.phone)}`;
-      case "invoice": return `فاتورة رقم: ${sale.terminal ? `${sale.terminal}-${sale.number}` : sale.number}`;
+      case "invoice": return `${sale.delivery ? "فاتورة توصيل رقم: " : "فاتورة رقم: "}${sale.terminal ? `${sale.terminal}-${sale.number}` : sale.number}`;
       case "date": return new Date(sale.createdAt).toLocaleString("en-GB");
-      case "cashier": return `الكاشير: ${esc(sale.userName)}`;
+      case "cashier": return `الكاشير: ${esc(sale.userName)}` + (sale.delivery ? `<br><b>توصيل إلى:</b> ${esc(sale.delivery.name)}<br><b>الهاتف:</b> ${esc(sale.delivery.phone)}<br><b>العنوان:</b> ${esc(sale.delivery.address)}` : "");
       case "items": return `<table class="${tb}"><thead><tr><th>المنتج</th><th>الكمية/الوزن</th><th>سعر الوحدة</th><th>المبلغ</th></tr></thead><tbody>${sale.items.map((i) => `<tr><td>${esc(i.name)}</td><td>${i.unit === "kg" ? `${i.qty.toFixed(3)} كغم` : `${i.qty} قطعة`}</td><td>${n(i.price)}${i.unit === "kg" ? "/كغم" : ""}</td><td>${n(i.total)}</td></tr>`).join("")}</tbody></table>`;
-      case "totals": return (sale.discount ? line("الإجمالي قبل الخصم", formatMoney(sale.total + sale.discount, st.currency)) + line("الخصم", formatMoney(sale.discount, st.currency)) : "") + line("الإجمالي", formatMoney(sale.total, st.currency)) + (sale.paid !== undefined ? line("المدفوع", formatMoney(sale.paid, st.currency)) + line("الباقي", formatMoney(sale.change ?? 0, st.currency)) : "");
+      case "totals": { const fee = sale.delivery?.fee ?? 0; const itemsPart = sale.total - fee; return (sale.discount ? line("الإجمالي قبل الخصم", formatMoney(itemsPart + sale.discount, st.currency)) + line("الخصم", formatMoney(sale.discount, st.currency)) : "") + (fee > 0 ? line("مجموع المواد", formatMoney(itemsPart, st.currency)) + line("أجور التوصيل", formatMoney(fee, st.currency)) : "") + line("الإجمالي", formatMoney(sale.total, st.currency)) + (sale.paid !== undefined ? line("المدفوع", formatMoney(sale.paid, st.currency)) + line("الباقي", formatMoney(sale.change ?? 0, st.currency)) : ""); }
       case "footer": return esc(design.footer);
       default: return "";
     }
