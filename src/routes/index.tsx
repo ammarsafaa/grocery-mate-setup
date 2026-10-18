@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-ro
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 import { posTileWidth } from "@/lib/posTileSize";
-import { ArrowRight, FolderOpen, Printer, Scale, Trash2, ShoppingBasket, PlayCircle, Pencil, Percent, Package, Layers, PauseCircle, Undo2 } from "lucide-react";
+import { ArrowRight, FolderOpen, Printer, Scale, Trash2, ShoppingBasket, PlayCircle, Pencil, Percent, Package, Layers, PauseCircle, Undo2, Bike } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/AppLayout";
@@ -23,6 +23,7 @@ import {
   getGroups,
   recordSaleMovements,
   saleTotal,
+  saleTotalWithDelivery,
   parseScaleLabel,
   uid,
   getHeldCarts,
@@ -292,13 +293,14 @@ function PosPage() {
       items: cart,
       total: finalTotal,
       createdAt: new Date().toISOString(),
-      paid: paidAmount && paidAmount > total ? paidAmount : total,
-      change: paidAmount && paidAmount > total ? paidAmount - total : 0,
+      paid: paidAmount && paidAmount > finalTotal ? paidAmount : finalTotal,
+      change: paidAmount && paidAmount > finalTotal ? paidAmount - finalTotal : 0,
       terminal: currentTerminal(),
       ...(discount > 0 ? { discount } : {}),
+      ...(delivery ? { delivery: { ...delivery, fee } } : {}),
     };
     addSale(sale);
-    if (settings.speakTotals && !pic) speakArabic(`المبلغ ${total} دينار`);
+    if (settings.speakTotals && !pic) speakArabic(`المبلغ ${finalTotal} دينار`);
     // Decrement stock once per product, even when it appears on several cart lines.
     const sold = new Map<string, number>();
     for (const item of cart) sold.set(item.productId, (sold.get(item.productId) ?? 0) + item.qty);
