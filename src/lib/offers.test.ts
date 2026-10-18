@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lineTotalWithOffer, weightedUnitPrice, roundCash, saleTotal, parseScaleLabel, getSettings } from "./db";
+import { lineTotalWithOffer, weightedUnitPrice, roundCash, saleTotal, saleTotalWithDelivery, parseScaleLabel, getSettings } from "./db";
 import type { Product } from "./types";
 
 const base: Product = { id: "1", name: "شاي", price: 1000, unit: "piece", category: "عام", stock: 100, active: true };
