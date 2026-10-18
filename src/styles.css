@@ -94,6 +94,8 @@
   /* «رجوع» — a colour of its own so the cashier spots the way back instantly */
   --back: oklch(0.78 0.15 78);
   --back-foreground: oklch(0.2 0.05 80);
+  --delivery: oklch(0.7 0.18 55);
+  --delivery-foreground: oklch(0.15 0.02 55);
 }
 
 @theme inline {
@@ -104,6 +106,23 @@
   --color-warning: oklch(0.75 0.16 80);
   --color-back: var(--back);
   --color-back-foreground: var(--back-foreground);
+  --color-delivery: var(--delivery);
+  --color-delivery-foreground: var(--delivery-foreground);
+}
+
+.pos-invoice { width: 46%; max-width: 660px; }
+.pos-invoice-table th, .pos-invoice-table td { padding: 10px 6px; overflow-wrap: anywhere; }
+.pos-invoice-table td { border-bottom: 1px solid var(--border); }
+.pos-invoice-table th { font-weight: 600; }
+.pos-line-added { background: var(--accent); }
+@media (max-width: 1100px) {
+  .pos-invoice { width: 47%; }
+  .pos-invoice-table th, .pos-invoice-table td { padding: 8px 4px; }
+}
+@media (max-width: 640px) {
+  .pos-workspace { flex-direction: column; overflow: auto; }
+  .pos-workspace > .pos-product-panel { flex: none; height: 42%; min-height: 240px; }
+  .pos-invoice { width: 100%; max-width: none; min-height: 560px; flex: 1 0 auto; }
 }
 
 :root[data-mode="light"] {
