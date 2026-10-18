@@ -28,3 +28,5 @@
 - Windows private updates use a Cloud release proxy; GitHub credentials stay server-side and the installer carries only a restricted download key, so clients cannot access repository contents.
 - Update notifications mount once in the root; installation must wait for closed shifts and a successful SQLite backup, so updates cannot interrupt selling or lose the recovery copy.
 - POS displays pre-rounding and settlement amounts using saleTotal with rounding off/on respectively, so visible figures share the existing discount and nonnegative-total rules without changing posting logic.
+- POS invoice presentation lives in PosInvoice; the sale route owns cart and posting state so inline delivery and table controls reuse existing pricing and stock posting.
+- Delivery field validation is shared through deliveryFields and tested independently so optional-field settings behave consistently without duplicating required-field rules.
