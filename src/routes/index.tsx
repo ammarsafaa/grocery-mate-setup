@@ -712,15 +712,15 @@ function PosPage() {
             </div>
             <div className="space-y-3">
               <div>
-                <label className="mb-1 block text-sm font-semibold">اسم الزبون</label>
+                <label className="mb-1 block text-sm font-semibold">اسم الزبون{settings.deliveryNameOptional ? " (اختياري)" : ""}</label>
                 <input autoFocus value={deliveryForm.name} onChange={(e) => setDeliveryForm({ ...deliveryForm, name: e.target.value })} className="h-12 w-full rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary" />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-semibold">رقم الهاتف</label>
+                <label className="mb-1 block text-sm font-semibold">رقم الهاتف{settings.deliveryPhoneOptional ? " (اختياري)" : ""}</label>
                 <input type="tel" dir="ltr" value={deliveryForm.phone} onChange={(e) => setDeliveryForm({ ...deliveryForm, phone: e.target.value })} className="h-12 w-full rounded-xl border border-border bg-secondary px-4 text-left outline-none focus:border-primary" />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-semibold">العنوان</label>
+                <label className="mb-1 block text-sm font-semibold">العنوان{settings.deliveryAddressOptional ? " (اختياري)" : ""}</label>
                 <input value={deliveryForm.address} onChange={(e) => setDeliveryForm({ ...deliveryForm, address: e.target.value })} className="h-12 w-full rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary" />
               </div>
             </div>
@@ -732,8 +732,12 @@ function PosPage() {
             <div className="mt-4 flex gap-2">
               <button
                 onClick={() => {
-                  if (!deliveryForm.name.trim() || !deliveryForm.phone.trim() || !deliveryForm.address.trim()) {
-                    toast.error("اكتب اسم الزبون والهاتف والعنوان");
+                  const missing: string[] = [];
+                  if (!settings.deliveryNameOptional && !deliveryForm.name.trim()) missing.push("الاسم");
+                  if (!settings.deliveryPhoneOptional && !deliveryForm.phone.trim()) missing.push("الهاتف");
+                  if (!settings.deliveryAddressOptional && !deliveryForm.address.trim()) missing.push("العنوان");
+                  if (missing.length > 0) {
+                    toast.error(`اكتب ${missing.join(" و")} الزبون`);
                     return;
                   }
                   setDeliveryOpen(false);
