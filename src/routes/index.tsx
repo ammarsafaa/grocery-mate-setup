@@ -99,6 +99,8 @@ function PosPage() {
   const [discount, setDiscount] = useState(0);
   const [discountOpen, setDiscountOpen] = useState(false);
   const [discountDraft, setDiscountDraft] = useState("");
+  const [deliveryOpen, setDeliveryOpen] = useState(false);
+  const [deliveryForm, setDeliveryForm] = useState({ name: "", phone: "", address: "" });
   const [held, setHeld] = useState(getHeldCarts());
   const [heldOpen, setHeldOpen] = useState(false);
   const pic = !!settings.pictureMode;
@@ -277,8 +279,10 @@ function PosPage() {
     setWeightModal(null);
   };
 
-  const checkout = async (paidAmount?: number) => {
+  const checkout = async (paidAmount?: number, delivery?: Sale["delivery"]) => {
     if (!user || !shift || cart.length === 0) return;
+    const fee = delivery ? Math.max(0, settings.deliveryFee ?? 0) : 0;
+    const finalTotal = delivery ? saleTotalWithDelivery(cart, discount, roundingEnabled, fee) : total;
     const sale: Sale = {
       id: uid(),
       number: nextSaleNumber(),
@@ -286,7 +290,7 @@ function PosPage() {
       userId: user.id,
       userName: user.name,
       items: cart,
-      total,
+      total: finalTotal,
       createdAt: new Date().toISOString(),
       paid: paidAmount && paidAmount > total ? paidAmount : total,
       change: paidAmount && paidAmount > total ? paidAmount - total : 0,
