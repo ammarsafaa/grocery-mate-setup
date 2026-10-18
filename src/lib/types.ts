@@ -222,6 +222,9 @@ export interface Settings {
   discountEnabled?: boolean; // زر خصم على الفاتورة في نقطة البيع
   deliveryEnabled?: boolean; // زر توصيل في نقطة البيع
   deliveryFee?: number; // أجور توصيل ثابتة تُضاف لمجموع فاتورة التوصيل
+  deliveryNameOptional?: boolean; // اسم الزبون اختياري في طلب التوصيل (افتراضياً إلزامي)
+  deliveryPhoneOptional?: boolean; // رقم الهاتف اختياري في طلب التوصيل (افتراضياً إلزامي)
+  deliveryAddressOptional?: boolean; // العنوان اختياري في طلب التوصيل (افتراضياً إلزامي)
   cashRounding?: boolean; // تقريب مجموع الفاتورة فقط لأقرب 250 دينار (افتراضياً مفعّل)
   telegramEnabled?: boolean;
   telegramToken?: string;

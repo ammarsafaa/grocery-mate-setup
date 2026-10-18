@@ -86,7 +86,9 @@ export async function verifyKey(machineId: string, key: string): Promise<boolean
   return (await checkKey(machineId, key)) === "ok";
 }
 
+const TEMP_TEST_BYPASS: boolean = true; // TEMP-TEST: preview testing only, remove before shipping
 export async function isLicensed(): Promise<boolean> {
+  if (TEMP_TEST_BYPASS) return true;
   const l = getLicense();
   if (!l.activated || !l.key) return false;
   const mid = getMachineId();

@@ -176,6 +176,17 @@ function SettingsPage() {
           {settings.deliveryEnabled && (
             <label className="mt-3 flex items-center justify-between gap-4 rounded-lg bg-secondary p-4"><div><div className="font-bold">أجور التوصيل</div><div className="text-sm text-muted-foreground">مبلغ ثابت يُضاف تلقائياً لمجموع كل فاتورة توصيل</div></div><input type="number" min="0" dir="ltr" value={settings.deliveryFee ?? 0} onChange={(e) => setSettings({ ...settings, deliveryFee: Math.max(0, Number(e.target.value) || 0) })} className="h-11 w-32 rounded-lg border border-border bg-background px-3 text-center font-bold"/></label>
           )}
+          {settings.deliveryEnabled && (
+            <div className="mt-3 rounded-lg bg-secondary p-4">
+              <div className="mb-3 font-bold">بيانات الزبون في طلب التوصيل</div>
+              <div className="text-sm text-muted-foreground">اختر أي خانة يگدر الكاشير يتركها فارغة — الخانات المختارة «اختياري» ما تشترط قبل الحفظ</div>
+              <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                <label className="flex items-center justify-between gap-3 rounded-lg bg-background p-3"><div className="text-sm font-bold">اسم الزبون اختياري</div><input type="checkbox" checked={settings.deliveryNameOptional === true} onChange={(e) => setSettings({ ...settings, deliveryNameOptional: e.target.checked })} className="h-5 w-5 accent-primary"/></label>
+                <label className="flex items-center justify-between gap-3 rounded-lg bg-background p-3"><div className="text-sm font-bold">رقم الهاتف اختياري</div><input type="checkbox" checked={settings.deliveryPhoneOptional === true} onChange={(e) => setSettings({ ...settings, deliveryPhoneOptional: e.target.checked })} className="h-5 w-5 accent-primary"/></label>
+                <label className="flex items-center justify-between gap-3 rounded-lg bg-background p-3"><div className="text-sm font-bold">العنوان اختياري</div><input type="checkbox" checked={settings.deliveryAddressOptional === true} onChange={(e) => setSettings({ ...settings, deliveryAddressOptional: e.target.checked })} className="h-5 w-5 accent-primary"/></label>
+              </div>
+            </div>
+          )}
           <label className="mt-3 flex items-center justify-between gap-4 rounded-lg bg-secondary p-4"><div><div className="font-bold">وردية سهلة (فتح تلقائي وزر إنهاء بنقطة البيع)</div><div className="text-sm text-muted-foreground">تنفتح الوردية تلقائياً بعد الدخول، ويظهر زر «إنهاء الوردية» داخل نقطة البيع</div></div><input type="checkbox" checked={!!settings.easyShift} onChange={(e) => setSettings({ ...settings, easyShift: e.target.checked })} className="h-5 w-5 accent-primary"/></label>
           <label className="mt-3 flex items-center justify-between gap-4 rounded-lg bg-secondary p-4"><div><div className="font-bold">نطق المبلغ والباقي بالصوت</div><div className="text-sm text-muted-foreground">يحتاج صوتاً عربياً مثبتاً في ويندوز</div></div><input type="checkbox" checked={!!settings.speakTotals} onChange={(e) => setSettings({ ...settings, speakTotals: e.target.checked })} className="h-5 w-5 accent-primary"/></label>
           <div className="mt-4 flex gap-2"><button onClick={() => save(settings)} className="rounded-lg bg-primary px-6 py-3 font-bold text-primary-foreground">حفظ</button><Link to="/groups" className="rounded-lg bg-secondary px-6 py-3 font-bold">إدارة المجموعات</Link></div>
