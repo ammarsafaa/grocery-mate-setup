@@ -109,6 +109,7 @@ function PosPage() {
     const timer = setTimeout(() => setHighlight(null), 1100);
     return () => clearTimeout(timer);
   }, [highlight, cart]);
+  const [deliveryOpen, setDeliveryOpen] = useState(false);
   const [deliveryForm, setDeliveryForm] = useState({ name: "", phone: "", address: "" });
   const [held, setHeld] = useState(getHeldCarts());
   const [heldOpen, setHeldOpen] = useState(false);
@@ -519,11 +520,7 @@ function PosPage() {
             setCart(cart.map((line, i) => i === index ? { ...line, qty, price, total: lineTotalWithOffer(product, qty, price) } : line));
           }}
           onPay={() => { if (pic) { setPaidDraft(0); setPayOpen(true); if (settings.speakTotals) speakArabic(`المبلغ ${total} دينار`); } else checkout(); }}
-          onDelivery={() => {
-            const missing = missingDeliveryFields(deliveryForm, settings);
-            if (missing.length) { toast.error(`اكتب ${missing.join(" و")} الزبون`); return; }
-            checkout(undefined, { name: deliveryForm.name.trim(), phone: deliveryForm.phone.trim(), address: deliveryForm.address.trim(), fee: 0 });
-          }}
+          onDelivery={() => setDeliveryOpen(true)}
           canPrint={cart.length === 0 && lastSale !== null}
           onPrint={async () => {
             if (cart.length > 0) { toast.error("احفظ الفاتورة بالدفع أو التوصيل قبل طباعتها"); return; }
@@ -533,6 +530,37 @@ function PosPage() {
           onHeld={() => { setHeld(getHeldCarts()); setHeldOpen(true); }}
         />
       </div>
+
+      {deliveryOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6">
+            <h2 className="mb-4 text-lg font-bold">بيانات التوصيل</h2>
+            <div className="space-y-3">
+              {([
+                ["name", "اسم الزبون", settings.deliveryNameOptional],
+                ["phone", "رقم الهاتف", settings.deliveryPhoneOptional],
+                ["address", "العنوان", settings.deliveryAddressOptional],
+              ] as const).map(([key, label, optional]) => <div key={key}>
+                <label htmlFor={`delivery-${key}`} className="mb-1 block text-sm font-semibold">{label}{optional && <span className="text-muted-foreground"> (اختياري)</span>}</label>
+                <input id={`delivery-${key}`} value={deliveryForm[key]} type={key === "phone" ? "tel" : "text"} dir={key === "phone" ? "ltr" : "rtl"} onChange={(e) => setDeliveryForm({ ...deliveryForm, [key]: e.target.value })} className="h-11 w-full rounded-md border border-border bg-secondary px-3 outline-none focus:border-primary" />
+              </div>)}
+            </div>
+            <div className="mt-4 space-y-1 text-sm">
+              <div className="flex justify-between"><span>أجور التوصيل</span><span dir="ltr">{formatMoney(Math.max(0, settings.deliveryFee ?? 0))}</span></div>
+              <div className="flex justify-between text-lg font-bold text-primary"><span>الإجمالي مع التوصيل</span><span dir="ltr">{formatMoney(saleTotalWithDelivery(cart, discount, roundingEnabled, Math.max(0, settings.deliveryFee ?? 0)))}</span></div>
+            </div>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <Button className="h-12 bg-delivery text-delivery-foreground hover:bg-delivery/90" onClick={() => {
+                const missing = missingDeliveryFields(deliveryForm, settings);
+                if (missing.length) { toast.error(`اكتب ${missing.join(" و")} الزبون`); return; }
+                setDeliveryOpen(false);
+                checkout(undefined, { name: deliveryForm.name.trim(), phone: deliveryForm.phone.trim(), address: deliveryForm.address.trim(), fee: 0 });
+              }}>حفظ التوصيل</Button>
+              <Button variant="outline" className="h-12" onClick={() => setDeliveryOpen(false)}>رجوع</Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Picture-mode payment: tap the notes the customer handed over */}
       {payOpen && (
