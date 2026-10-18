@@ -83,6 +83,26 @@ describe("invoice-only optional rounding", () => {
   });
 });
 
+describe("saleTotalWithDelivery — أجور التوصيل الثابتة", () => {
+  const items = [{ total: 1100 }, { total: 625 }]; // 1725
+
+  it("يضيف الأجور بعد التقريب فتبقى دقيقة", () => {
+    expect(saleTotalWithDelivery(items, 0, true, 3000)).toBe(4750); // 1750 + 3000
+  });
+
+  it("يضيف الأجور للمجموع الدقيق عند إطفاء التقريب", () => {
+    expect(saleTotalWithDelivery(items, 0, false, 3000)).toBe(4725);
+  });
+
+  it("بدون أجور يساوي مجموع البيع العادي", () => {
+    expect(saleTotalWithDelivery(items, 100, true, 0)).toBe(saleTotal(items, 100, true));
+  });
+
+  it("الأجور السالبة تُعامل صفراً", () => {
+    expect(saleTotalWithDelivery(items, 0, false, -500)).toBe(1725);
+  });
+});
+
 describe("roundCash — خيار التقريب لأقرب 250", () => {
   const plain: Product = { ...base, unit: "kg", price: 1000 }; // 1.1 kg = 1100 exactly
 
