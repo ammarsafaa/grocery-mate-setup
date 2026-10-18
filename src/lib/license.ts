@@ -87,7 +87,6 @@ export async function verifyKey(machineId: string, key: string): Promise<boolean
 }
 
 export async function isLicensed(): Promise<boolean> {
-  if (new URLSearchParams(location.search).has('testmode')) return true;
   const l = getLicense();
   if (!l.activated || !l.key) return false;
   const mid = getMachineId();
