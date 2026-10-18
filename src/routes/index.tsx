@@ -225,13 +225,15 @@ function PosPage() {
       return;
     }
     if (cartonMode) {
-      if (!p.cartonPrice || !p.cartonQty) {
+      const cartonPrice = p.cartonPrice;
+      const cartonQty = p.cartonQty;
+      if (!cartonPrice || !cartonQty) {
         toast.error("هذا المنتج بدون سعر كرتونة");
         return;
       }
       setCart((c) => [
         ...c,
-        { productId: p.id, name: `${p.name} (كرتونة)`, unit: "piece", price: p.cartonPrice / p.cartonQty, qty: p.cartonQty, total: p.cartonPrice },
+        { productId: p.id, name: `${p.name} (كرتونة)`, unit: "piece", price: cartonPrice / cartonQty, qty: cartonQty, total: cartonPrice },
       ]);
       toast.success(`${p.name} — كرتونة (${p.cartonQty} قطعة)`);
       return;
