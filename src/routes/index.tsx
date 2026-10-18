@@ -432,7 +432,7 @@ function PosPage() {
             </button>
             {settings.discountEnabled && (
               <button
-                onClick={() => { setDiscountDraft(discount ? String(discount) : ""); setDiscountOpen(true); }}
+                onClick={() => { setDiscountDraft(""); setDiscountOpen(true); }}
                 className={`flex h-12 shrink-0 items-center gap-2 rounded-xl px-4 font-bold transition short:h-10 short:px-3 short:text-sm ${discount > 0 ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}
               >
                 <Percent className="h-4 w-4" />
@@ -554,14 +554,27 @@ function PosPage() {
                 {held.length > 0 && <span className="absolute -top-2 -left-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-black text-primary-foreground">{held.length}</span>}
               </button>
             </div>
-            <button
-              onClick={() => { if (pic) { setPaidDraft(0); setPayOpen(true); if (settings.speakTotals) speakArabic(`المبلغ ${total} دينار`); } else checkout(); }}
-              disabled={cart.length === 0}
-              className={`${pic ? "h-24 short:h-20" : "h-14 short:h-12"} w-full rounded-xl bg-primary text-lg font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-40`}
-            >
-              <Printer className={pic ? "inline h-12 w-12" : "ml-2 inline h-5 w-5"} />
-              {!pic && "دفع وحفظ الفاتورة"}
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { if (pic) { setPaidDraft(0); setPayOpen(true); if (settings.speakTotals) speakArabic(`المبلغ ${total} دينار`); } else checkout(); }}
+                disabled={cart.length === 0}
+                className={`${pic ? "h-24 short:h-20" : "h-14 short:h-12"} flex-1 rounded-xl bg-primary text-lg font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-40`}
+              >
+                <Printer className={pic ? "inline h-12 w-12" : "ml-2 inline h-5 w-5"} />
+                {!pic && "دفع وحفظ الفاتورة"}
+              </button>
+              {settings.deliveryEnabled && (
+                <button
+                  onClick={() => { setDeliveryForm({ name: "", phone: "", address: "" }); setDeliveryOpen(true); }}
+                  disabled={cart.length === 0}
+                  title="حفظ الفاتورة كطلب توصيل"
+                  className={`${pic ? "h-24 short:h-20" : "h-14 short:h-12"} flex w-16 shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl bg-amber-600 font-bold text-white transition hover:opacity-90 disabled:opacity-40 narrow:w-14`}
+                >
+                  <Bike className={pic ? "h-10 w-10" : "h-6 w-6"} />
+                  <span className="text-xs">توصيل</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -648,7 +661,7 @@ function PosPage() {
               >
                 تطبيق
               </button>
-              <button onClick={() => { setDiscount(0); setDiscountOpen(false); }} className="h-12 flex-1 rounded-xl bg-secondary font-bold">إزالة الخصم</button>
+              <button onClick={() => { setDiscount(0); setDiscountOpen(false); }} className="h-12 flex-1 rounded-xl bg-secondary font-bold">رجوع بدون خصم</button>
             </div>
           </div>
         </div>
