@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { PosInvoice } from "@/components/PosInvoice";
 import { missingDeliveryFields } from "@/lib/deliveryFields";
 import { posTileWidth } from "@/lib/posTileSize";
-import { ArrowRight, FolderOpen, Printer, Scale, Trash2, ShoppingBasket, PlayCircle, Pencil, Percent, Package, Layers, PauseCircle, Undo2, Bike } from "lucide-react";
+import { ArrowRight, FolderOpen, Printer, Scale, Trash2, ShoppingBasket, PlayCircle, Pencil, Percent, Package, Layers, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/AppLayout";
@@ -505,7 +505,7 @@ function PosPage() {
         </div>
 
         <PosInvoice
-          cart={cart} settings={settings} discount={discount} fields={deliveryForm}
+          cart={cart} products={products} settings={settings} discount={discount} fields={deliveryForm}
           onFields={setDeliveryForm} highlight={highlight} heldCount={held.length}
           onRemove={(index) => setCart(cart.filter((_, i) => i !== index))}
           onQuantity={(index, delta) => {
@@ -524,7 +524,7 @@ function PosPage() {
             if (missing.length) { toast.error(`اكتب ${missing.join(" و")} الزبون`); return; }
             checkout(undefined, { name: deliveryForm.name.trim(), phone: deliveryForm.phone.trim(), address: deliveryForm.address.trim(), fee: 0 });
           }}
-          canPrint={cart.length > 0 || lastSale !== null}
+          canPrint={cart.length === 0 && lastSale !== null}
           onPrint={async () => {
             if (cart.length > 0) { toast.error("احفظ الفاتورة بالدفع أو التوصيل قبل طباعتها"); return; }
             if (lastSale) await printHtml(buildReceiptHtml(lastSale));
