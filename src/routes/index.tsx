@@ -702,6 +702,54 @@ function PosPage() {
         </div>
       )}
 
+      {/* Delivery modal */}
+      {deliveryOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6">
+            <div className="mb-4 flex items-center gap-2">
+              <Bike className="h-7 w-7 text-amber-500" />
+              <h3 className="text-xl font-bold">طلب توصيل</h3>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block text-sm font-semibold">اسم الزبون</label>
+                <input autoFocus value={deliveryForm.name} onChange={(e) => setDeliveryForm({ ...deliveryForm, name: e.target.value })} className="h-12 w-full rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary" />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold">رقم الهاتف</label>
+                <input type="tel" dir="ltr" value={deliveryForm.phone} onChange={(e) => setDeliveryForm({ ...deliveryForm, phone: e.target.value })} className="h-12 w-full rounded-xl border border-border bg-secondary px-4 text-left outline-none focus:border-primary" />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold">العنوان</label>
+                <input value={deliveryForm.address} onChange={(e) => setDeliveryForm({ ...deliveryForm, address: e.target.value })} className="h-12 w-full rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary" />
+              </div>
+            </div>
+            <div className="mt-4 space-y-1 rounded-xl bg-secondary p-3 text-sm">
+              <div className="flex justify-between"><span>مجموع المواد</span><b dir="ltr">{formatMoney(total)}</b></div>
+              <div className="flex justify-between"><span>أجور التوصيل</span><b dir="ltr">{formatMoney(Math.max(0, settings.deliveryFee ?? 0))}</b></div>
+              <div className="flex justify-between border-t border-border pt-1 text-base font-bold text-primary"><span>الإجمالي مع التوصيل</span><b dir="ltr">{formatMoney(saleTotalWithDelivery(cart, discount, roundingEnabled, Math.max(0, settings.deliveryFee ?? 0)))}</b></div>
+            </div>
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={() => {
+                  if (!deliveryForm.name.trim() || !deliveryForm.phone.trim() || !deliveryForm.address.trim()) {
+                    toast.error("اكتب اسم الزبون والهاتف والعنوان");
+                    return;
+                  }
+                  setDeliveryOpen(false);
+                  checkout(undefined, { name: deliveryForm.name.trim(), phone: deliveryForm.phone.trim(), address: deliveryForm.address.trim(), fee: 0 });
+                }}
+                className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-amber-600 font-bold text-white"
+              >
+                <Bike className="h-5 w-5" />
+                حفظ طلب التوصيل
+              </button>
+              <button onClick={() => setDeliveryOpen(false)} className="h-12 flex-1 rounded-xl bg-back font-bold text-back-foreground">رجوع</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Weight modal */}
       {weightModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4">
