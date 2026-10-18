@@ -2,6 +2,8 @@ import { native } from "@/lib/native";
 import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
+import { PosInvoice } from "@/components/PosInvoice";
+import { missingDeliveryFields } from "@/lib/deliveryFields";
 import { posTileWidth } from "@/lib/posTileSize";
 import { ArrowRight, FolderOpen, Printer, Scale, Trash2, ShoppingBasket, PlayCircle, Pencil, Percent, Package, Layers, PauseCircle, Undo2, Bike } from "lucide-react";
 import { toast } from "sonner";
@@ -100,7 +102,13 @@ function PosPage() {
   const [discount, setDiscount] = useState(0);
   const [discountOpen, setDiscountOpen] = useState(false);
   const [discountDraft, setDiscountDraft] = useState("");
-  const [deliveryOpen, setDeliveryOpen] = useState(false);
+  const [highlight, setHighlight] = useState<string | null>(null);
+  const [lastSale, setLastSale] = useState<Sale | null>(null);
+  useEffect(() => {
+    if (!highlight) return;
+    const timer = setTimeout(() => setHighlight(null), 1100);
+    return () => clearTimeout(timer);
+  }, [highlight, cart]);
   const [deliveryForm, setDeliveryForm] = useState({ name: "", phone: "", address: "" });
   const [held, setHeld] = useState(getHeldCarts());
   const [heldOpen, setHeldOpen] = useState(false);
@@ -155,7 +163,7 @@ function PosPage() {
   }, []);
 
   const filtered = useMemo(
-    () => products.filter((p) => (!selectedGroup || p.groupId === selectedGroup) && (p.name.includes(search) || p.barcode?.includes(search))),
+    () => products.filter((p) => (!selectedGroup || selectedGroup === "__all" || p.groupId === selectedGroup) && (p.name.includes(search) || p.barcode?.includes(search))),
     [products, search, selectedGroup],
   );
 
@@ -209,7 +217,7 @@ function PosPage() {
           ...c,
           { productId: p.id, name: p.name, unit: "kg", price: weightedUnitPrice(p), qty: w, total: lineTotalWithOffer(p, w) },
         ]);
-        toast.success(`${p.name} — ${w.toFixed(3)} كغم`);
+        setHighlight(p.id);
         return;
       }
       setWeight("");
@@ -223,7 +231,7 @@ function PosPage() {
       }
       setCart((c) => [
         ...c,
-        { productId: p.id, name: `${p.name} (كرتونة)`, unit: "piece", price: p.cartonPrice! / p.cartonQty!, qty: p.cartonQty!, total: p.cartonPrice! },
+        { productId: p.id, name: `${p.name} (كرتونة)`, unit: "piece", price: p.cartonPrice / p.cartonQty, qty: p.cartonQty, total: p.cartonPrice },
       ]);
       toast.success(`${p.name} — كرتونة (${p.cartonQty} قطعة)`);
       return;
@@ -254,7 +262,7 @@ function PosPage() {
       const { product: p, qty, total: lineTotal } = label;
       const price = getSettings().labelValueType === "weight" ? weightedUnitPrice(p) : p.price;
       setCart((c) => [...c, { productId: p.id, name: p.name, unit: p.unit, price, qty, total: lineTotal }]);
-      toast.success(`${p.name} — ${qty.toFixed(3)} كغم`);
+      setHighlight(p.id);
       setSearch("");
       return;
     }
@@ -277,6 +285,7 @@ function PosPage() {
         total: lineTotalWithOffer(p, w),
       },
     ]);
+    setHighlight(p.id);
     setWeightModal(null);
   };
 
@@ -300,6 +309,8 @@ function PosPage() {
       ...(delivery ? { delivery: { ...delivery, fee } } : {}),
     };
     addSale(sale);
+    setLastSale(sale);
+    setDeliveryForm({ name: "", phone: "", address: "" });
     if (settings.speakTotals && !pic) speakArabic(`المبلغ ${finalTotal} دينار`);
     // Decrement stock once per product, even when it appears on several cart lines.
     const sold = new Map<string, number>();
@@ -377,9 +388,9 @@ function PosPage() {
           </div>
         </div>
       )}
-      <div className="flex h-screen overflow-hidden">
+      <div className="pos-workspace flex h-screen overflow-hidden">
         {/* Products grid */}
-        <div className="flex min-w-0 flex-1 flex-col p-3 short:p-2 narrow:p-2">
+        <div className="pos-product-panel flex min-w-0 flex-1 flex-col p-3 short:p-2 narrow:p-2">
           <div className="mb-3 flex flex-wrap items-center gap-2 short:mb-2">
             <input
               value={search}
@@ -441,6 +452,10 @@ function PosPage() {
             )}
             </div>
           </div>
+          {settings.useProductGroups && <nav aria-label="مجموعات المنتجات" className="mb-3 flex shrink-0 gap-2 overflow-x-auto pb-1 short:mb-2">
+            <Button variant={selectedGroup === "__all" ? "default" : "secondary"} className="shrink-0" onClick={() => setSelectedGroup("__all")}><Layers />الكل</Button>
+            {groups.map((group) => <Button key={group.id} variant={selectedGroup === group.id ? "default" : "secondary"} className="shrink-0" onClick={() => setSelectedGroup(group.id)}><FolderOpen />{group.name}</Button>)}
+          </nav>}
           <div className="pos-products-grid min-h-0 flex-1 content-start gap-2 overflow-auto" style={{ "--pos-tile-width": `${posTileWidth(settings.productTileWidth)}px` } as CSSProperties}>
             {settings.useProductGroups && selectedGroup && !search && (
               <button type="button" onClick={() => setSelectedGroup(null)} className="col-span-full flex h-11 w-fit cursor-pointer items-center gap-2 justify-self-start rounded-xl border-2 border-back bg-back px-4 font-black text-back-foreground hover:bg-back/90 active:scale-95 short:h-9">
@@ -487,96 +502,34 @@ function PosPage() {
           </div>
         </div>
 
-        {/* Cart */}
-        <div className="flex w-80 shrink-0 flex-col border-r border-border bg-card narrow:w-64 xl:w-96">
-          <div className="flex items-center gap-2 border-b border-border p-4 short:p-2">
-            <ShoppingBasket className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-bold">الفاتورة الحالية</h2>
-          </div>
-          <div className="flex-1 overflow-auto p-3">
-            {cart.length === 0 && (
-              <p className="mt-8 text-center text-sm text-muted-foreground">
-                اختر المنتجات لإضافتها
-              </p>
-            )}
-            {cart.map((i, idx) => (
-              <div
-                key={idx}
-                className="mb-2 flex items-center justify-between rounded-xl bg-secondary p-3 short:mb-1.5 short:p-2"
-              >
-                <div>
-                  <div className="font-bold text-foreground">{i.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {i.unit === "kg" ? `${i.qty.toFixed(3)} كغم × ${formatMoney(i.price)} / كغم` : `${i.qty} قطعة × ${formatMoney(i.price)}`}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-primary">{formatMoney(i.total)}</span>
-                  <button
-                    onClick={() => setCart(cart.filter((_, x) => x !== idx))}
-                    className="text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2 className={pic ? "h-8 w-8 text-destructive" : "h-4 w-4"} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="border-t border-border p-4 short:p-3">
-            {discount > 0 && <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground"><span>الخصم</span><span>-{formatMoney(discount)}</span></div>}
-            {roundingEnabled && <div className="mb-1 flex flex-wrap items-center justify-between gap-x-2 text-sm font-semibold text-muted-foreground" data-testid="original-sale-total"><span>المجموع الأصلي</span><span dir="ltr">{formatMoney(originalTotal)}</span></div>}
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-x-2 text-xl font-bold short:mb-2 short:text-lg" data-testid="final-sale-total">
-              <span className={roundingEnabled ? "text-base short:text-sm" : ""}>{roundingEnabled ? "المجموع بعد التقريب" : "الإجمالي"}</span>
-              <span dir="ltr" className={pic ? "text-3xl font-black text-primary short:text-2xl" : "text-primary"}>{formatMoney(total)}</span>
-            </div>
-            <div className="mb-3 flex gap-2">
-              <button
-                onClick={() => {
-                  if (cart.length === 0) return;
-                  holdCart(cart, user?.name ?? "");
-                  setCart([]);
-                  setDiscount(0);
-                  setHeld(getHeldCarts());
-                  toast.success("تم تعليق الفاتورة");
-                }}
-                disabled={cart.length === 0}
-                className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-secondary font-bold disabled:opacity-40 short:h-9"
-              >
-                <PauseCircle className="h-4 w-4" />
-                تعليق
-              </button>
-              <button
-                onClick={() => { setHeld(getHeldCarts()); setHeldOpen(true); }}
-                className="relative flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-secondary font-bold short:h-9"
-              >
-                <Undo2 className="h-4 w-4" />
-                المعلّقة
-                {held.length > 0 && <span className="absolute -top-2 -left-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-black text-primary-foreground">{held.length}</span>}
-              </button>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => { if (pic) { setPaidDraft(0); setPayOpen(true); if (settings.speakTotals) speakArabic(`المبلغ ${total} دينار`); } else checkout(); }}
-                disabled={cart.length === 0}
-                className={`${pic ? "h-24 short:h-20" : "h-14 short:h-12"} flex-1 rounded-xl bg-primary text-lg font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-40`}
-              >
-                <Printer className={pic ? "inline h-12 w-12" : "ml-2 inline h-5 w-5"} />
-                {!pic && "دفع وحفظ الفاتورة"}
-              </button>
-              {settings.deliveryEnabled && (
-                <button
-                  onClick={() => { setDeliveryForm({ name: "", phone: "", address: "" }); setDeliveryOpen(true); }}
-                  disabled={cart.length === 0}
-                  title="حفظ الفاتورة كطلب توصيل"
-                  className={`${pic ? "h-24 short:h-20" : "h-14 short:h-12"} flex w-16 shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl bg-amber-600 font-bold text-white transition hover:opacity-90 disabled:opacity-40 narrow:w-14`}
-                >
-                  <Bike className={pic ? "h-10 w-10" : "h-6 w-6"} />
-                  <span className="text-xs">توصيل</span>
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+        <PosInvoice
+          cart={cart} settings={settings} discount={discount} fields={deliveryForm}
+          onFields={setDeliveryForm} highlight={highlight} heldCount={held.length}
+          onRemove={(index) => setCart(cart.filter((_, i) => i !== index))}
+          onQuantity={(index, delta) => {
+            const item = cart[index];
+            if (!item || item.unit !== "piece" || item.name.includes("كرتونة")) return;
+            const product = products.find((p) => p.id === item.productId);
+            if (!product) return;
+            const qty = item.qty + delta;
+            if (qty <= 0) { setCart(cart.filter((_, i) => i !== index)); return; }
+            const price = piecePrice(product, qty);
+            setCart(cart.map((line, i) => i === index ? { ...line, qty, price, total: lineTotalWithOffer(product, qty, price) } : line));
+          }}
+          onPay={() => { if (pic) { setPaidDraft(0); setPayOpen(true); if (settings.speakTotals) speakArabic(`المبلغ ${total} دينار`); } else checkout(); }}
+          onDelivery={() => {
+            const missing = missingDeliveryFields(deliveryForm, settings);
+            if (missing.length) { toast.error(`اكتب ${missing.join(" و")} الزبون`); return; }
+            checkout(undefined, { name: deliveryForm.name.trim(), phone: deliveryForm.phone.trim(), address: deliveryForm.address.trim(), fee: 0 });
+          }}
+          canPrint={cart.length > 0 || lastSale !== null}
+          onPrint={async () => {
+            if (cart.length > 0) { toast.error("احفظ الفاتورة بالدفع أو التوصيل قبل طباعتها"); return; }
+            if (lastSale) await printHtml(buildReceiptHtml(lastSale));
+          }}
+          onHold={() => { if (!cart.length) return; holdCart(cart, user?.name ?? ""); setCart([]); setDiscount(0); setDeliveryForm({ name: "", phone: "", address: "" }); setHeld(getHeldCarts()); toast.success("تم تعليق الفاتورة"); }}
+          onHeld={() => { setHeld(getHeldCarts()); setHeldOpen(true); }}
+        />
       </div>
 
       {/* Picture-mode payment: tap the notes the customer handed over */}
@@ -702,58 +655,6 @@ function PosPage() {
         </div>
       )}
 
-      {/* Delivery modal */}
-      {deliveryOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4">
-          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6">
-            <div className="mb-4 flex items-center gap-2">
-              <Bike className="h-7 w-7 text-amber-500" />
-              <h3 className="text-xl font-bold">طلب توصيل</h3>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <label className="mb-1 block text-sm font-semibold">اسم الزبون{settings.deliveryNameOptional ? " (اختياري)" : ""}</label>
-                <input autoFocus value={deliveryForm.name} onChange={(e) => setDeliveryForm({ ...deliveryForm, name: e.target.value })} className="h-12 w-full rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary" />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-semibold">رقم الهاتف{settings.deliveryPhoneOptional ? " (اختياري)" : ""}</label>
-                <input type="tel" dir="ltr" value={deliveryForm.phone} onChange={(e) => setDeliveryForm({ ...deliveryForm, phone: e.target.value })} className="h-12 w-full rounded-xl border border-border bg-secondary px-4 text-left outline-none focus:border-primary" />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-semibold">العنوان{settings.deliveryAddressOptional ? " (اختياري)" : ""}</label>
-                <input value={deliveryForm.address} onChange={(e) => setDeliveryForm({ ...deliveryForm, address: e.target.value })} className="h-12 w-full rounded-xl border border-border bg-secondary px-4 outline-none focus:border-primary" />
-              </div>
-            </div>
-            <div className="mt-4 space-y-1 rounded-xl bg-secondary p-3 text-sm">
-              <div className="flex justify-between"><span>مجموع المواد</span><b dir="ltr">{formatMoney(total)}</b></div>
-              <div className="flex justify-between"><span>أجور التوصيل</span><b dir="ltr">{formatMoney(Math.max(0, settings.deliveryFee ?? 0))}</b></div>
-              <div className="flex justify-between border-t border-border pt-1 text-base font-bold text-primary"><span>الإجمالي مع التوصيل</span><b dir="ltr">{formatMoney(saleTotalWithDelivery(cart, discount, roundingEnabled, Math.max(0, settings.deliveryFee ?? 0)))}</b></div>
-            </div>
-            <div className="mt-4 flex gap-2">
-              <button
-                onClick={() => {
-                  const missing: string[] = [];
-                  if (!settings.deliveryNameOptional && !deliveryForm.name.trim()) missing.push("الاسم");
-                  if (!settings.deliveryPhoneOptional && !deliveryForm.phone.trim()) missing.push("الهاتف");
-                  if (!settings.deliveryAddressOptional && !deliveryForm.address.trim()) missing.push("العنوان");
-                  if (missing.length > 0) {
-                    toast.error(`اكتب ${missing.join(" و")} الزبون`);
-                    return;
-                  }
-                  setDeliveryOpen(false);
-                  checkout(undefined, { name: deliveryForm.name.trim(), phone: deliveryForm.phone.trim(), address: deliveryForm.address.trim(), fee: 0 });
-                }}
-                className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-amber-600 font-bold text-white"
-              >
-                <Bike className="h-5 w-5" />
-                حفظ طلب التوصيل
-              </button>
-              <button onClick={() => setDeliveryOpen(false)} className="h-12 flex-1 rounded-xl bg-back font-bold text-back-foreground">رجوع</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Weight modal */}
       {weightModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4">
@@ -762,8 +663,7 @@ function PosPage() {
             <p className="mb-4 text-sm text-muted-foreground">
               السعر: {formatMoney(weightModal.price)} / كغم
             </p>
-            <label className="mb-2 block text-sm font-semibold">{settings.useScale === false ? "الوزن (كغم)" : "الوزن من الميزان (كغم)"}</label>
-            {settings.useScale === false ? (
+            <label className="mb-2 block text-sm font-semibold">الوزن (كغم)</label>
               <input
                 autoFocus
                 type="number"
@@ -774,11 +674,6 @@ function PosPage() {
                 placeholder="0.000"
                 className="mb-2 h-16 w-full rounded-xl border border-border bg-secondary px-4 text-center text-3xl font-bold outline-none focus:border-primary"
               />
-            ) : (
-              <div className="mb-2 flex h-16 w-full items-center justify-center rounded-xl border border-border bg-secondary text-3xl font-bold">
-                {weight || "—"}
-              </div>
-            )}
             <p className="mb-4 text-center text-xs text-muted-foreground">
               {scaleStatus}
             </p>
