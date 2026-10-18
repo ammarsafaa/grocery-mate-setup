@@ -364,6 +364,8 @@ const DEFAULT_SETTINGS: Settings = {
   openDrawer: false,
   labelBarcodeEnabled: false,
   discountEnabled: true,
+  deliveryEnabled: false,
+  deliveryFee: 0,
   cashRounding: true,
   useScale: true,
   labelPrefixes: "20,21,22",
@@ -510,6 +512,11 @@ export function roundCash(amount: number, rounding?: boolean): number {
 /** Sum exact line amounts, apply the invoice discount, then optionally round once. */
 export function saleTotal(items: ReadonlyArray<{ total: number }>, discount: number, rounding: boolean): number {
   return roundCash(Math.max(0, items.reduce((sum, item) => sum + item.total, 0) - discount), rounding);
+}
+
+/** Delivery orders: the fixed fee is added after rounding so it stays exact. */
+export function saleTotalWithDelivery(items: ReadonlyArray<{ total: number }>, discount: number, rounding: boolean, fee: number): number {
+  return saleTotal(items, discount, rounding) + Math.max(0, fee);
 }
 
 /** Parse an EAN-13 scale label barcode. Returns null when it isn't a scale label. */

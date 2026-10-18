@@ -65,6 +65,8 @@ export interface Sale {
   discount?: number; // خصم ثابت على الفاتورة
   returnedAt?: string; // ISO — الفاتورة أُرجعت
   returnedBy?: string;
+  /** طلب توصيل: بيانات الزبون وأجور التوصيل (الأجور داخلة ضمن total) */
+  delivery?: { name: string; phone: string; address: string; fee: number };
 }
 
 /** فاتورة معلّقة: تبقى محفوظة حتى لو انسد البرنامج */
@@ -218,6 +220,8 @@ export interface Settings {
   labelValueType: "weight" | "price";
   labelWeightDecimals: number;
   discountEnabled?: boolean; // زر خصم على الفاتورة في نقطة البيع
+  deliveryEnabled?: boolean; // زر توصيل في نقطة البيع
+  deliveryFee?: number; // أجور توصيل ثابتة تُضاف لمجموع فاتورة التوصيل
   cashRounding?: boolean; // تقريب مجموع الفاتورة فقط لأقرب 250 دينار (افتراضياً مفعّل)
   telegramEnabled?: boolean;
   telegramToken?: string;
