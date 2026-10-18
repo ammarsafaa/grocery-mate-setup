@@ -1,6 +1,6 @@
 import { Bike, Printer, ShoppingBasket, Trash2, PauseCircle, Undo2, CreditCard, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatMoney, saleTotal, saleTotalWithDelivery } from "@/lib/db";
+import { formatMoney, saleTotal } from "@/lib/db";
 import type { CartItem, Product, Settings } from "@/lib/types";
 import type { DeliveryFields } from "@/lib/deliveryFields";
 
@@ -26,23 +26,8 @@ interface Props {
 export function PosInvoice({ cart, products, settings, discount, fields, onFields, highlight, onRemove, onQuantity, onPay, onDelivery, onPrint, onHold, onHeld, heldCount, canPrint }: Props) {
   const rounding = settings.cashRounding !== false;
   const total = saleTotal(cart, discount, rounding);
-  const fee = Math.max(0, settings.deliveryFee ?? 0);
   return (
     <aside className="pos-invoice flex min-h-0 min-w-0 flex-col border-r border-border bg-card" aria-label="الفاتورة الحالية">
-      {settings.deliveryEnabled && <section className="border-b border-border p-4 short:p-3">
-        <h2 className="mb-3 flex items-center gap-2 text-sm font-bold short:mb-2"><Bike className="h-5 w-5 text-primary" />بيانات التوصيل</h2>
-        <div className="grid grid-cols-3 gap-3 narrow:gap-2">
-          {([
-            ["name", "اسم الزبون", settings.deliveryNameOptional],
-            ["phone", "رقم الهاتف", settings.deliveryPhoneOptional],
-            ["address", "العنوان", settings.deliveryAddressOptional],
-          ] as const).map(([key, label, optional]) => <div key={key} className="min-w-0">
-            <label htmlFor={`delivery-${key}`} className="mb-1 block text-xs font-semibold">{label}{optional && <span className="text-muted-foreground"> (اختياري)</span>}</label>
-            <input id={`delivery-${key}`} value={fields[key]} type={key === "phone" ? "tel" : "text"} dir={key === "phone" ? "ltr" : "rtl"} onChange={(e) => onFields({ ...fields, [key]: e.target.value })} className="h-10 w-full min-w-0 rounded-md border border-border bg-secondary px-2 text-sm outline-none focus:border-primary short:h-9" />
-          </div>)}
-        </div>
-        <div className="mt-3 flex items-center justify-end gap-3 text-xs short:mt-2"><span className="text-muted-foreground">أجور التوصيل</span><span dir="ltr" className="font-bold">{formatMoney(fee)}</span></div>
-      </section>}
       <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-3 short:py-2">
         <h2 className="flex items-center gap-2 text-sm font-bold"><ShoppingBasket className="h-5 w-5 text-primary" />قائمة المشتريات</h2>
         <span className="text-xs text-muted-foreground">{cart.length} أصناف</span>
@@ -70,7 +55,6 @@ export function PosInvoice({ cart, products, settings, discount, fields, onField
         {discount > 0 && <div className="mb-2 flex justify-between text-xs text-muted-foreground"><span>الخصم</span><span dir="ltr">-{formatMoney(discount)}</span></div>}
         {rounding && <div className="mb-2 flex justify-between gap-2 text-sm text-muted-foreground" data-testid="original-sale-total"><span>المجموع الأصلي</span><span dir="ltr">{formatMoney(saleTotal(cart, discount, false))}</span></div>}
         <div className="mb-2 flex justify-between gap-2 font-bold" data-testid="final-sale-total"><span>{rounding ? "المجموع بعد التقريب" : "مجموع المواد"}</span><span dir="ltr" className="text-primary">{formatMoney(total)}</span></div>
-        {settings.deliveryEnabled && <><div className="mb-2 flex justify-between gap-2 text-sm"><span>أجور التوصيل</span><span dir="ltr">{formatMoney(fee)}</span></div><div className="mb-3 flex justify-between gap-2 border-t border-border pt-2 text-lg font-bold text-primary"><span>الإجمالي مع التوصيل</span><span dir="ltr">{formatMoney(saleTotalWithDelivery(cart, discount, rounding, fee))}</span></div></>}
         <div className="mb-2 flex gap-2">
           <Button variant="secondary" className="h-9 flex-1" onClick={onHold} disabled={!cart.length}><PauseCircle />تعليق</Button>
           <Button variant="secondary" className="h-9 flex-1" onClick={onHeld}><Undo2 />المعلّقة{heldCount > 0 && <span>{heldCount}</span>}</Button>
