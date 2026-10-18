@@ -52,7 +52,7 @@ export function PosInvoice({ cart, products, settings, discount, fields, onField
           <colgroup><col className="w-[29%]"/><col className="w-[24%]"/><col className="w-[19%]"/><col className="w-[20%]"/><col className="w-[8%]"/></colgroup>
           <thead className="sticky top-0 z-10 bg-secondary text-muted-foreground"><tr><th>المنتج</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th><th><span className="sr-only">حذف</span></th></tr></thead>
           <tbody>{cart.map((item, index) => <tr key={index} className={highlight === item.productId ? "pos-line-added" : ""}>
-            <td className="font-bold"><div className="flex items-center gap-2"><img src={products.find((product) => product.id === item.productId)?.image} alt="" className="h-8 w-8 shrink-0 object-contain empty:hidden" onError={(event) => { event.currentTarget.hidden = true; }} /><span>{item.name}</span></div></td>
+            <td className="font-bold"><div className="flex items-center gap-2">{products.find((product) => product.id === item.productId)?.image && <img src={products.find((product) => product.id === item.productId)?.image} alt="" className="h-8 w-8 shrink-0 object-contain" />}<span>{item.name}</span></div></td>
             <td><div className="flex flex-wrap items-center justify-center gap-1">
               {item.unit === "piece" && !item.name.includes("كرتونة") && <Button variant="ghost" size="icon" className="h-6 w-6" aria-label={`تقليل كمية ${item.name}`} onClick={() => onQuantity(index, -1)}><Minus /></Button>}
               <span dir="ltr" className="font-semibold">{item.unit === "kg" ? item.qty.toFixed(3) : item.qty}</span>
