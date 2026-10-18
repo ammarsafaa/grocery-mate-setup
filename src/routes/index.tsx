@@ -91,7 +91,7 @@ function PosPage() {
   const [liveWeight, setLiveWeight] = useState(0);
   const [settings, setSettings] = useState(getSettings());
   const [groups, setGroups] = useState<ProductGroup[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<string | null>("__all");
   const [priceMode, setPriceMode] = useState(false);
   const [priceEdit, setPriceEdit] = useState<Product | null>(null);
   const [priceDraft, setPriceDraft] = useState("");
