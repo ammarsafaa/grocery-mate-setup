@@ -29,7 +29,7 @@ export function PosInvoice({ cart, products, settings, discount, fields, onField
   return (
     <aside className="pos-invoice flex min-h-0 min-w-0 flex-col border-r border-border bg-card" aria-label="الفاتورة الحالية">
       <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-3 short:py-2">
-        <h2 className="flex items-center gap-2 text-sm font-bold"><ShoppingBasket className="h-5 w-5 text-primary" />قائمة المشتريات</h2>
+        <h2 className="flex items-center gap-2 text-sm font-bold"><ShoppingBasket className="h-5 w-5 text-primary" />قائمة المبيعات</h2>
         <span className="text-xs text-muted-foreground">{cart.length} أصناف</span>
       </header>
       <div className="min-h-0 flex-1 overflow-auto" aria-live="polite">
