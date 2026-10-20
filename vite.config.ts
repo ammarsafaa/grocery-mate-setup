@@ -16,8 +16,4 @@ export default defineConfig({
     server: { entry: "server" },
     ...(electron ? { spa: { enabled: true } } : {}),
   },
-  vite: {
-    // electron/*.test.cjs are Node built-in tests (run with: node --test electron/), not Vitest suites.
-    test: { exclude: ["**/node_modules/**", "electron/**", "dist/**", ".output/**"] },
-  },
 });
