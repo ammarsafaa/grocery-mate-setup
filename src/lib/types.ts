@@ -226,6 +226,7 @@ export interface Settings {
   deliveryPhoneOptional?: boolean; // رقم الهاتف اختياري في طلب التوصيل (افتراضياً إلزامي)
   deliveryAddressOptional?: boolean; // العنوان اختياري في طلب التوصيل (افتراضياً إلزامي)
   cashRounding?: boolean; // تقريب مجموع الفاتورة فقط لأقرب 250 دينار (افتراضياً مفعّل)
+  showChange?: boolean; // عرض خانة الباقي بنافذة الدفع (افتراضياً ظاهرة)
   telegramEnabled?: boolean;
   telegramToken?: string;
   telegramChatIds?: string; // comma separated
