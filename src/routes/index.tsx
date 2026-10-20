@@ -576,9 +576,9 @@ function PosPage() {
               ))}
               <button onClick={() => setPaidDraft(0)} className="flex h-20 items-center justify-center rounded-xl bg-destructive text-destructive-foreground"><Trash2 className="h-9 w-9"/></button>
             </div>
-            <div className="my-5 grid grid-cols-2 gap-3 text-center">
+            <div className={settings.showChange !== false ? "my-5 grid grid-cols-2 gap-3 text-center" : "my-5 text-center"}>
               <div className="rounded-xl bg-secondary p-4"><div className="text-3xl">💵</div><div className="text-3xl font-black">{formatMoney(paidDraft)}</div></div>
-              <div className="rounded-xl bg-primary/15 p-4"><div className="text-3xl">↩️</div><div className="text-3xl font-black text-primary">{formatMoney(Math.max(0, paidDraft - total))}</div></div>
+              {settings.showChange !== false && <div className="rounded-xl bg-primary/15 p-4"><div className="text-3xl">↩️</div><div className="text-3xl font-black text-primary">{formatMoney(Math.max(0, paidDraft - total))}</div></div>}
             </div>
             <div className="flex gap-3">
               <button disabled={paidDraft > 0 && paidDraft < total} onClick={() => { const change = Math.max(0, paidDraft - total); if (settings.speakTotals && change > 0) speakArabic(`الباقي ${change} دينار`); setPayOpen(false); checkout(paidDraft); }} className="flex h-20 flex-1 items-center justify-center rounded-xl bg-primary text-primary-foreground disabled:opacity-40"><Printer className="h-10 w-10"/></button>
