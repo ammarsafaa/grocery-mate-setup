@@ -34,8 +34,8 @@ export function PosInvoice({ cart, products, settings, discount, fields, onField
       </header>
       <div className="min-h-0 flex-1 overflow-auto" aria-live="polite">
         <table className="pos-invoice-table w-full table-fixed text-right text-xs">
-          <colgroup><col className="w-[29%]"/><col className="w-[24%]"/><col className="w-[19%]"/><col className="w-[20%]"/><col className="w-[8%]"/></colgroup>
-          <thead className="sticky top-0 z-10 bg-secondary text-muted-foreground"><tr><th>المنتج</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th><th><span className="sr-only">حذف</span></th></tr></thead>
+          <colgroup><col className="w-[40%]"/><col className="w-[26%]"/><col className="w-[24%]"/><col className="w-[10%]"/></colgroup>
+          <thead className="sticky top-0 z-10 bg-secondary text-muted-foreground"><tr><th>المنتج</th><th>الكمية</th><th>سعر الوحدة</th><th><span className="sr-only">حذف</span></th></tr></thead>
           <tbody>{cart.map((item, index) => <tr key={index} className={highlight === item.productId ? "pos-line-added" : ""}>
             <td className="font-bold"><div className="flex items-center gap-2">{products.find((product) => product.id === item.productId)?.image && <img src={products.find((product) => product.id === item.productId)?.image} alt="" className="h-8 w-8 shrink-0 object-contain" />}<span>{item.name}</span></div></td>
             <td><div className="flex flex-wrap items-center justify-center gap-1">
@@ -45,7 +45,6 @@ export function PosInvoice({ cart, products, settings, discount, fields, onField
               <span className="w-full text-center text-muted-foreground">{item.unit === "kg" ? "كغم" : "قطعة"}</span>
             </div></td>
             <td><span dir="ltr">{formatMoney(item.price)}</span></td>
-            <td className="font-bold text-primary"><span dir="ltr">{formatMoney(item.total)}</span></td>
             <td><Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" aria-label={`حذف ${item.name}`} onClick={() => onRemove(index)}><Trash2 /></Button></td>
           </tr>)}</tbody>
         </table>
